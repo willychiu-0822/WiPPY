@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build output
+frontend/dist/
+
+# Environment variables
+.env
+frontend/.env
+backend/.env
+*.env.local
+
+# Firebase
+.firebase/
+*-debug.log
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# GCP service account keys (NEVER commit these)
+*service-account*.json
+*credentials*.json
+gcp-key*.json
+*-firebase-adminsdk-*.json
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Backend compiled output
+backend/dist/
+
+# Env backups
+.env.backup
+.env.production
+.env.local

@@ -55,9 +55,9 @@ HarnessRun (Firestore, status: queued)
 
 ---
 
-## Harness Pipeline — v1.0
+## Harness Pipeline — v0.5 (preview)
 
-> 目前版本為 **v1.0**。Pipeline 已具備基本可觀測性、自動修復與非同步執行能力，已知限制與後續方向見 [Roadmap](#roadmap)。
+> 目前版本為 **v0.5 (preview)**。Pipeline 已具備基本可觀測性、自動修復與非同步執行能力，已知限制與後續方向見 [Roadmap](#roadmap)。
 
 ### 7-Stage 總表
 
@@ -121,7 +121,7 @@ lastError    : (失敗時填入，如 repair_failed / max_llm_calls_exceeded)
 
 ## Roadmap
 
-### v1.0 已知限制（程式碼已驗證）
+### v0.5 (preview) 已知限制（程式碼已驗證）
 
 | 限制 | 說明 |
 |---|---|

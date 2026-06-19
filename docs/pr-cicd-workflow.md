@@ -66,24 +66,14 @@ PRs and pushes to `main` run:
 
 Pushes to `main` deploy:
 
-- Backend source to Cloud Run service `wippy-backend` in `asia-east1`.
-- Frontend `frontend/dist` to Firebase Hosting project `wippy-mvp`.
-- Firestore rules and indexes from `firestore.rules` and `firestore.indexes.json`.
+- Deployment target values are read from `deployment/production.env`.
+- Backend source deploys to Cloud Run service `wippy-backend` in `asia-east1`.
+- Frontend `frontend/dist` deploys to Firebase Hosting project `wippy-mvp`.
+- Firestore rules and indexes deploy from `firestore.rules` and `firestore.indexes.json`.
 
 ## Required GitHub Configuration
 
-Set these repository variables:
-
-- `GCP_PROJECT_ID`: `wippy-mvp`
-- `FIREBASE_PROJECT_ID`: `wippy-mvp`
-- `GCP_REGION`: `asia-east1`
-- `CLOUD_RUN_SERVICE`: `wippy-backend`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
-- `VITE_API_BASE_URL`
+Deployment target values live in `deployment/production.env`; do not duplicate them as GitHub variables unless intentionally overriding the workflow later.
 
 Set these production environment secrets:
 

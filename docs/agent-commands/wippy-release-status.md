@@ -5,25 +5,26 @@ Report what WiPPY version is currently in production.
 ## Steps
 
 1. Run `git ls-remote origin main` to get the latest remote main commit.
-2. When GitHub auth works, run:
+2. Read `deployment/production.env` for production project, service, region, and URLs.
+3. When GitHub auth works, run:
 
 ```powershell
 gh run list --workflow "Deploy Production" --branch main --limit 5 --json databaseId,status,conclusion,headSha,url,createdAt
 ```
 
-3. If GCP auth works, run:
+4. If GCP auth works, run:
 
 ```powershell
-gcloud run services describe wippy-backend --region asia-east1 --project wippy-mvp --format=json
+gcloud run services describe <CLOUD_RUN_SERVICE> --region <GCP_REGION> --project <GCP_PROJECT_ID> --format=json
 ```
 
-4. Check Firebase Hosting:
+5. Check Firebase Hosting:
 
 ```powershell
-Invoke-WebRequest -Uri "https://wippy-mvp.web.app" -Method Get -UseBasicParsing
+Invoke-WebRequest -Uri "<FIREBASE_HOSTING_URL>" -Method Get -UseBasicParsing
 ```
 
-5. Check backend health from the discovered Cloud Run URL, or report that the URL could not be discovered.
+6. Check backend health from `CLOUD_RUN_URL`, or report that the URL could not be discovered.
 
 ## Output
 

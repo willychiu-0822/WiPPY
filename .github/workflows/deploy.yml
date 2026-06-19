@@ -14,12 +14,6 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
-env:
-  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID || 'wippy-mvp' }}
-  GCP_REGION: ${{ vars.GCP_REGION || 'asia-east1' }}
-  CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'wippy-backend' }}
-  FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || vars.GCP_PROJECT_ID || 'wippy-mvp' }}
-
 jobs:
   test:
     name: Production preflight
@@ -33,6 +27,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Load production deploy target
+        id: deploy-target
+        shell: bash
+        run: |
+          while IFS= read -r line || [[ -n "$line" ]]; do
+            [[ -z "$line" || "$line" == \#* ]] && continue
+            echo "$line" >> "$GITHUB_ENV"
+            echo "$line" >> "$GITHUB_OUTPUT"
+          done < deployment/production.env
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -52,8 +56,9 @@ jobs:
       - name: Deploy backend to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v3
         with:
-          service: ${{ env.CLOUD_RUN_SERVICE }}
-          region: ${{ env.GCP_REGION }}
+          project_id: ${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}
+          service: ${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}
+          region: ${{ steps.deploy-target.outputs.GCP_REGION }}
           source: backend
 
       - name: Install frontend dependencies
@@ -63,13 +68,7 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
         run: npm run build
 
       - name: Install Firebase CLI

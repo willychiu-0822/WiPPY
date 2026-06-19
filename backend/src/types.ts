@@ -220,6 +220,30 @@ export interface HarnessRun {
   updatedAt: Timestamp;
 }
 
+// ─── Run Trace (Harness v2 · Layer 1) ─────────────────────────────────────────
+// A structured, replayable record of one harness run. Events live in the
+// harnessRuns/{runId}/events subcollection (one doc per seq) so a single large
+// LLM output can never blow the 1MB doc limit.
+
+export type TraceEventType =
+  | 'stage_enter'
+  | 'stage_exit'
+  | 'llm_call'      // full input messages + raw output + durationMs (never truncated)
+  | 'validation'    // validation outcome + feedback
+  | 'repair'        // repair prompt + repaired output
+  | 'persist'       // committed docIds (messageIds / knowledgeIds), per batch
+  | 'error';        // message + stack
+
+export interface TraceEvent {
+  seq: number;                       // monotonically increasing within one run
+  stage: HarnessStage | 'orchestrator';
+  type: TraceEventType;
+  timestampMs: number;
+  durationMs?: number;
+  payload: Record<string, unknown>;  // shape depends on type
+  ttlExpiry: Timestamp;              // mirrors the owning run, drives the TTL policy
+}
+
 export interface RateLimitResult {
   allowed: boolean;
   remaining: number;

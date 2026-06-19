@@ -1,0 +1,4 @@
+interface:
+  display_name: "WiPPY Check Deploy"
+  short_description: "Verify production deployment status."
+  default_prompt: "Use $wippy-check-deploy to confirm the latest WiPPY production deployment."

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { getFoundations, getWishes, getSlotsForDate, saveSlotsForDate } from '../lib/firestore';
 import { generateSlots, buildTimeline } from '../lib/schedule';
 import type { Foundation, Wish, Slot, TimeBlock } from '../types';

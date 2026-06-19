@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { addFoundation, addWish, updateUserDoc, createLinkToken } from '../lib/firestore';
 import type { Foundation, Wish } from '../types';
 

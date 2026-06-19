@@ -1,0 +1,4 @@
+interface:
+  display_name: "WiPPY Release Status"
+  short_description: "Report the current production version."
+  default_prompt: "Use $wippy-release-status to report what WiPPY version is live in production."

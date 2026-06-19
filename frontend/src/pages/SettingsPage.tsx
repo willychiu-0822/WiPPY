@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import {
   getFoundations, addFoundation, deleteFoundation,
   getWishes, addWish, deleteWish, createLinkToken,

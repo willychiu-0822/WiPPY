@@ -17,7 +17,7 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, googleProvider);
       navigate('/today');
-    } catch (e: unknown) {
+    } catch {
       setError('Google 登入失敗，請再試一次');
     } finally {
       setLoading(false);

@@ -1,0 +1,4 @@
+interface:
+  display_name: "WiPPY Merge PR"
+  short_description: "Squash merge an approved WiPPY PR."
+  default_prompt: "Use $wippy-merge-pr to merge the approved WiPPY PR."

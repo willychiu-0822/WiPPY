@@ -1,0 +1,4 @@
+interface:
+  display_name: "WiPPY Prepare PR"
+  short_description: "Test, commit, push, and open a PR."
+  default_prompt: "Use $wippy-prepare-pr to prepare the current WiPPY changes as a pull request."

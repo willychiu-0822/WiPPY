@@ -1,0 +1,4 @@
+interface:
+  display_name: "WiPPY Check PR"
+  short_description: "Check PR CI and merge readiness."
+  default_prompt: "Use $wippy-check-pr to check whether this WiPPY PR is ready to merge."

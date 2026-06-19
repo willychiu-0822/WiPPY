@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { getRecords } from '../lib/firestore';
 import type { Record as WRecord, FeelEmoji } from '../types';
 

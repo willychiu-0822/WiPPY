@@ -1,0 +1,4 @@
+interface:
+  display_name: "WiPPY Start Work"
+  short_description: "Create a safe WiPPY work branch."
+  default_prompt: "Use $wippy-start-work to start a new WiPPY feature branch."

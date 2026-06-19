@@ -3,20 +3,15 @@ import { Firestore } from 'firebase-admin/firestore';
 import type { LLMProvider, LLMMessage } from './llmProvider';
 import type { AgentSession, AgentSessionMessage, HarnessRun, HarnessStage, AgentIntent } from '../types';
 import { buildContextEnvelope, type ContextEnvelope } from './contextBuilder';
-import { validateMessagePlan } from './planValidator';
-import { persistEffects } from './persistenceAdapter';
+import { RunTracer, type TraceStage } from './runTrace';
+import { intentRegistry, type AnyIntentHandler } from '../harness/intents/registry';
 
 const MAX_LLM_CALLS = 3;
 const MAX_SESSION_HISTORY = 20;
+// Trace events fall back to a 30-day TTL if the run doc has no ttlExpiry (mirrors agent.ts).
+const TRACE_TTL_FALLBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface GeneratedMessageDraft {
-  content: string;
-  targetGroups: string[];
-  triggerValue: string;
-  sequenceOrder: number;
-}
 
 export interface HarnessInput {
   runId: string;
@@ -192,51 +187,6 @@ EXTRACTED_KNOWLEDGE:
 - 在 JSON 落地模式下，嚴格遵守純 JSON 規格，不輸出其他格式。`;
 }
 
-// ─── Parsers ──────────────────────────────────────────────────────────────────
-
-function checkMessageItems(parsed: unknown[]): GeneratedMessageDraft[] | null {
-  if (!Array.isArray(parsed) || parsed.length === 0) return null;
-  for (const item of parsed) {
-    const i = item as Record<string, unknown>;
-    if (typeof i.content !== 'string' || typeof i.triggerValue !== 'string' || typeof i.sequenceOrder !== 'number') return null;
-  }
-  return parsed as GeneratedMessageDraft[];
-}
-
-function tryParseMessagePlan(text: string): GeneratedMessageDraft[] | null {
-  try {
-    // Strip markdown code fences first
-    const stripped = text.replace(/```(?:json)?\s*/gi, '').replace(/```\s*/g, '').trim();
-
-    // Try direct array parse on stripped text
-    if (stripped.startsWith('[')) {
-      try {
-        const parsed = JSON.parse(stripped) as unknown[];
-        const result = checkMessageItems(parsed);
-        if (result) return result;
-      } catch { /* fall through */ }
-    }
-
-    // Try regex extraction from stripped or original text
-    const match = stripped.match(/\[\s*\{[\s\S]*\}\s*\]/) ?? text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if (!match) return null;
-    const parsed = JSON.parse(match[0]) as unknown[];
-    return checkMessageItems(parsed);
-  } catch { return null; }
-}
-
-function tryParseKnowledge(text: string): Array<{ knowledgeType: string; title: string; content: string }> | null {
-  try {
-    const idx = text.indexOf('EXTRACTED_KNOWLEDGE:');
-    if (idx === -1) return null;
-    const after = text.slice(idx + 'EXTRACTED_KNOWLEDGE:'.length).trim();
-    const match = after.match(/\[\s*\{[\s\S]*?\}\s*\]/);
-    if (!match) return null;
-    const parsed = JSON.parse(match[0]);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch { return null; }
-}
-
 // ─── Main orchestrator ────────────────────────────────────────────────────────
 
 export async function executeHarness(
@@ -247,11 +197,30 @@ export async function executeHarness(
   const { runId, activityId, userId, userMessage, sessionId } = input;
   let llmCallCount = 0;
 
+  // ─── Run Trace (Layer 1) ──────────────────────────────────────────────────
+  let tracer: RunTracer | null = null;
+  let currentStage: TraceStage = 'orchestrator';
+
+  // Advance to a stage: close out the previous stage, flush its events at the
+  // boundary (so a later crash still preserves them), then open the new stage.
+  const enterStage = async (stage: HarnessStage): Promise<void> => {
+    if (tracer && currentStage !== 'orchestrator') {
+      tracer.stageExit(currentStage);
+      await tracer.flush();
+    }
+    await setStage(db, runId, stage);
+    tracer?.stageEnter(stage);
+    currentStage = stage;
+  };
+
   const callLLM = async (messages: LLMMessage[]): Promise<string> => {
     if (++llmCallCount > MAX_LLM_CALLS) throw new Error('max_llm_calls_exceeded');
     await db.collection('harnessRuns').doc(runId).update({ llmCallCount, updatedAt: admin.firestore.Timestamp.now() });
+    const startedAt = Date.now();
     try {
-      return await llm.chat(messages);
+      const result = await llm.chat(messages);
+      tracer?.llmCall(currentStage, messages, result, Date.now() - startedAt);
+      return result;
     } catch (err) {
       const msg = String(err);
       if (msg.includes('429') || msg.toLowerCase().includes('rate_limit')) throw new Error('llm_rate_limit_error');
@@ -260,8 +229,14 @@ export async function executeHarness(
   };
 
   try {
+    // Load the run's ttlExpiry so trace events expire alongside the run.
+    const runSnap = await db.collection('harnessRuns').doc(runId).get();
+    const ttlExpiry = (runSnap.data() as HarnessRun | undefined)?.ttlExpiry
+      ?? admin.firestore.Timestamp.fromDate(new Date(Date.now() + TRACE_TTL_FALLBACK_MS));
+    tracer = new RunTracer(db, runId, ttlExpiry);
+
     // load_context
-    await setStage(db, runId, 'load_context');
+    await enterStage('load_context');
     const session = await getOrCreateSession(db, activityId, userId, sessionId);
     const ctx = await buildContextEnvelope(db, activityId, userId, session);
     log('INFO', runId, 'load_context', 'Context loaded', { knowledge: ctx.knowledge.length, msgs: ctx.existingMessages.length });
@@ -274,7 +249,7 @@ export async function executeHarness(
     }
 
     // build_prompt
-    await setStage(db, runId, 'build_prompt');
+    await enterStage('build_prompt');
     const sysPrompt = buildSystemPrompt(ctx);
     const history: LLMMessage[] = ctx.recentTurns.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
     const llmMessages: LLMMessage[] = [
@@ -284,53 +259,57 @@ export async function executeHarness(
     ];
 
     // run_planner
-    await setStage(db, runId, 'run_planner');
+    await enterStage('run_planner');
     const rawReply = await callLLM(llmMessages);
     log('INFO', runId, 'run_planner', 'LLM replied', { len: rawReply.length });
 
-    // parse_output
-    await setStage(db, runId, 'parse_output');
-    let messagePlan = tryParseMessagePlan(rawReply);
-    const extractedKnowledge = tryParseKnowledge(rawReply);
-    const intentType: AgentIntent = messagePlan ? 'plan_messages' : extractedKnowledge ? 'extract_knowledge' : 'general_chat';
+    // parse_output: try handlers in priority order (plan > knowledge > chat).
+    await enterStage('parse_output');
+    let matched: { handler: AnyIntentHandler; parsed: unknown } | null = null;
+    for (const handler of intentRegistry) {
+      const parsed = handler.detect(rawReply);
+      if (parsed != null) { matched = { handler, parsed }; break; }
+    }
+    if (!matched) throw new Error('no_intent_matched'); // generalChat always matches; defensive
+    const intentType: AgentIntent = matched.handler.name;
 
-    // validate_output + repair
-    await setStage(db, runId, 'validate_output');
-    if (messagePlan) {
-      const validation = validateMessagePlan(messagePlan);
-      if (!validation.valid) {
-        log('WARN', runId, 'validate_output', 'Validation failed, repairing', { feedback: validation.feedback });
-        const repairMsg = `你上一次的輸出格式有誤，請修正後只輸出正確 JSON 陣列。\n錯誤：${validation.feedback}\n原輸出（前 300 字）：${rawReply.slice(0, 300)}`;
-        const repaired = await callLLM([...llmMessages, { role: 'assistant', content: rawReply }, { role: 'user', content: repairMsg }]);
-        messagePlan = tryParseMessagePlan(repaired);
-        if (messagePlan) {
-          const recheck = validateMessagePlan(messagePlan);
-          if (!recheck.valid) throw new Error(`repair_failed: ${recheck.feedback}`);
-        }
-      }
+    // validate_output + repair (handler-agnostic: any intent can repair).
+    await enterStage('validate_output');
+    let outcome = matched.handler.validate(matched.parsed, ctx);
+    tracer?.validation(currentStage, outcome.valid, outcome.feedback);
+    if (!outcome.valid) {
+      log('WARN', runId, 'validate_output', 'Validation failed, repairing', { intent: intentType, feedback: outcome.feedback });
+      const hint = matched.handler.repairHint?.() ?? '';
+      const repairMsg = `你上一次的輸出有誤，請依錯誤修正後重新輸出。${hint}\n錯誤：${outcome.feedback}\n原輸出（前 300 字）：${rawReply.slice(0, 300)}`;
+      const repaired = await callLLM([...llmMessages, { role: 'assistant', content: rawReply }, { role: 'user', content: repairMsg }]);
+      tracer?.repair(currentStage, repairMsg, repaired);
+      const reparsed = matched.handler.detect(repaired);
+      if (reparsed == null) throw new Error('repair_failed: 無法解析修正後的輸出');
+      outcome = matched.handler.validate(reparsed, ctx);
+      tracer?.validation(currentStage, outcome.valid, outcome.feedback);
+      if (!outcome.valid) throw new Error(`repair_failed: ${outcome.feedback}`);
+      matched.parsed = reparsed;
     }
 
     // persist_effects
-    await setStage(db, runId, 'persist_effects');
+    await enterStage('persist_effects');
     const now = admin.firestore.Timestamp.now();
+    const persistResult = await matched.handler.persist(db, matched.parsed, {
+      activityId,
+      userId,
+      runId,
+      agentSessionId: session.id,
+      activityTargetGroups: ctx.activity.targetGroups,
+      onBatchCommitted: (info) => tracer?.persist(currentStage, info.messageIds, info.knowledgeIds, info.batchIndex),
+    });
 
-    const { savedMessages, savedKnowledgeCount, batchCount } = await persistEffects(
-      db,
-      (messagePlan ?? []).map((d) => ({
-        ...d,
-        targetGroups: d.targetGroups.includes('all') ? ctx.activity.targetGroups : d.targetGroups,
-        agentSessionId: session.id,
-        runId,
-        activityId,
-        userId,
-      })),
-      (extractedKnowledge ?? []).map((k) => ({ ...k, activityId, userId, runId }))
-    );
+    const generatedMessageCount = intentType === 'plan_messages' ? persistResult.savedCount : 0;
+    const extractedKnowledgeCount = intentType === 'extract_knowledge' ? persistResult.savedCount : 0;
 
-    await db.collection('harnessRuns').doc(runId).update({ persistedBatches: batchCount, updatedAt: now });
-    log('INFO', runId, 'persist_effects', 'Persisted', { messages: savedMessages.length, knowledge: savedKnowledgeCount, batches: batchCount });
+    await db.collection('harnessRuns').doc(runId).update({ persistedBatches: persistResult.batchCount, updatedAt: now });
+    log('INFO', runId, 'persist_effects', 'Persisted', { intent: intentType, saved: persistResult.savedCount, batches: persistResult.batchCount });
 
-    if (savedMessages.length > 0) {
+    if (generatedMessageCount > 0) {
       await db.collection('agentSessions').doc(session.id).update({ lastGeneratedPlanAt: now, updatedAt: now });
     }
 
@@ -347,27 +326,26 @@ export async function executeHarness(
     });
 
     // finalize_response
-    await setStage(db, runId, 'finalize_response');
-    let displayReply = rawReply;
-    const ekIdx = rawReply.indexOf('EXTRACTED_KNOWLEDGE:');
-    if (ekIdx !== -1) displayReply = rawReply.slice(0, ekIdx).trim();
-    if (messagePlan && savedMessages.length > 0) {
-      displayReply = `已為你規劃 ${savedMessages.length} 則推播訊息，請在「推播企畫」頁籤確認內容。`;
-    }
+    await enterStage('finalize_response');
+    const displayReply = matched.handler.finalize(rawReply, matched.parsed, persistResult);
 
+    tracer?.stageExit(currentStage);
     await finishRun(db, runId, {
       status: 'completed',
       intentType,
       reply: displayReply,
-      generatedMessageCount: savedMessages.length,
-      extractedKnowledgeCount: savedKnowledgeCount,
+      generatedMessageCount,
+      extractedKnowledgeCount,
     });
+    await tracer?.flush();
 
-    return { reply: displayReply, generatedMessageCount: savedMessages.length, extractedKnowledgeCount: savedKnowledgeCount, sessionId: session.id, intentType };
+    return { reply: displayReply, generatedMessageCount, extractedKnowledgeCount, sessionId: session.id, intentType };
 
   } catch (err) {
     const errMsg = String(err).slice(0, 500);
     log('ERROR', runId, 'error', errMsg);
+    tracer?.error(currentStage, err);
+    try { await tracer?.flush(); } catch { /* trace flush is best-effort; never mask the original error */ }
     await finishRun(db, runId, { status: 'failed', lastError: errMsg });
     throw err;
   }

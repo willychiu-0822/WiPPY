@@ -27,19 +27,33 @@ export interface KnowledgeDraft {
 export interface PersistResult {
   savedMessages: ActivityMessage[];
   savedKnowledgeCount: number;
+  savedKnowledgeIds: string[];
   batchCount: number;
+}
+
+/** Reported after each batch commits, so a trace can record exactly what landed. */
+export interface BatchCommitInfo {
+  batchIndex: number;
+  messageIds: string[];
+  knowledgeIds: string[];
 }
 
 export async function persistEffects(
   db: Firestore,
   messages: MessageDraft[],
-  knowledge: KnowledgeDraft[]
+  knowledge: KnowledgeDraft[],
+  onBatchCommitted?: (info: BatchCommitInfo) => void
 ): Promise<PersistResult> {
   const now = admin.firestore.Timestamp.now();
   const savedMessages: ActivityMessage[] = [];
   const validKnowledgeTypes = new Set(['background', 'restriction', 'character', 'faq']);
 
-  type Op = { ref: admin.firestore.DocumentReference; data: Record<string, unknown> };
+  type Op = {
+    ref: admin.firestore.DocumentReference;
+    data: Record<string, unknown>;
+    kind: 'message' | 'knowledge';
+    id: string;
+  };
   const ops: Op[] = [];
 
   for (const draft of messages) {
@@ -67,15 +81,17 @@ export async function persistEffects(
       updatedAt: now,
     };
     savedMessages.push(msg);
-    ops.push({ ref, data: { ...msg, runId: draft.runId } });
+    ops.push({ ref, data: { ...msg, runId: draft.runId }, kind: 'message', id: ref.id });
   }
 
-  let savedKnowledgeCount = 0;
+  const savedKnowledgeIds: string[] = [];
   for (const item of knowledge) {
     if (!validKnowledgeTypes.has(item.knowledgeType)) continue;
     const ref = db.collection('activityKnowledge').doc();
     ops.push({
       ref,
+      kind: 'knowledge',
+      id: ref.id,
       data: {
         id: ref.id,
         activityId: item.activityId,
@@ -90,18 +106,24 @@ export async function persistEffects(
         updatedAt: now,
       },
     });
-    savedKnowledgeCount++;
+    savedKnowledgeIds.push(ref.id);
   }
 
   let batchCount = 0;
   for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+    const slice = ops.slice(i, i + BATCH_LIMIT);
     const batch = db.batch();
-    for (const op of ops.slice(i, i + BATCH_LIMIT)) {
+    for (const op of slice) {
       batch.set(op.ref, op.data);
     }
     await batch.commit();
+    onBatchCommitted?.({
+      batchIndex: batchCount,
+      messageIds: slice.filter((o) => o.kind === 'message').map((o) => o.id),
+      knowledgeIds: slice.filter((o) => o.kind === 'knowledge').map((o) => o.id),
+    });
     batchCount++;
   }
 
-  return { savedMessages, savedKnowledgeCount, batchCount };
+  return { savedMessages, savedKnowledgeCount: savedKnowledgeIds.length, savedKnowledgeIds, batchCount };
 }

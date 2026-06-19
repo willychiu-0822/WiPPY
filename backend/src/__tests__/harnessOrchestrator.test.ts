@@ -59,11 +59,19 @@ function makeLLM(reply: string | string[]): LLMProvider {
 
 function buildDb(sessionExists = true) {
   const stageLog: string[] = [];
+  const traceWrites: any[] = []; // flushed trace events (committed via db.batch)
   const runRef = {
     update: jest.fn().mockImplementation((patch: Record<string, unknown>) => {
       if (patch.currentStage) stageLog.push(patch.currentStage as string);
       return Promise.resolve();
     }),
+    // RunTracer reads the run doc for ttlExpiry, and writes events to the
+    // harnessRuns/{runId}/events subcollection.
+    get: jest.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({ ttlExpiry: { seconds: 9999, nanoseconds: 0 } }),
+    }),
+    collection: jest.fn(() => ({ doc: jest.fn((id: string) => ({ id })) })),
   };
   const sessionRef = {
     id: 'new_session_id',
@@ -83,7 +91,18 @@ function buildDb(sessionExists = true) {
       if (name === 'activities') return { doc: jest.fn(() => actRef) };
       return { doc: jest.fn(() => ({ set: jest.fn().mockResolvedValue(undefined), update: jest.fn().mockResolvedValue(undefined) })) };
     }),
+    batch: jest.fn(() => {
+      const staged: any[] = [];
+      return {
+        set: (ref: any, data: any) => staged.push({ id: ref.id, data }),
+        commit: () => {
+          traceWrites.push(...staged);
+          return Promise.resolve();
+        },
+      };
+    }),
     stageLog,
+    traceWrites,
     runRef,
     sessionRef,
     actRef,
@@ -157,6 +176,17 @@ describe('executeHarness — intent detection', () => {
   it('detects extract_knowledge', async () => {
     const db = buildDb();
     const output = await executeHarness(db as any, makeLLM(KNOWLEDGE_REPLY), { runId: RUN_ID, activityId: ACT_ID, userId: USER_ID, userMessage: '說明活動' });
+    expect(output.intentType).toBe('extract_knowledge');
+  });
+
+  it('repairs extract_knowledge when validation fails (handler-agnostic repair)', async () => {
+    // empty title fails validateExtractedKnowledge → repair loop → valid on retry
+    const badKnowledge = '好的\nEXTRACTED_KNOWLEDGE:\n[{"knowledgeType":"background","title":"","content":"x"}]';
+    const goodKnowledge = '好的\nEXTRACTED_KNOWLEDGE:\n[{"knowledgeType":"background","title":"標題","content":"內容"}]';
+    const db = buildDb();
+    const llm = makeLLM([badKnowledge, goodKnowledge]);
+    const output = await executeHarness(db as any, llm, { runId: RUN_ID, activityId: ACT_ID, userId: USER_ID, userMessage: '說明活動' });
+    expect((llm.chat as jest.Mock)).toHaveBeenCalledTimes(2);
     expect(output.intentType).toBe('extract_knowledge');
   });
 
@@ -263,5 +293,43 @@ describe('executeHarness — session handling', () => {
     const updateCall = (db.sessionRef.update as jest.Mock).mock.calls[0][0] as { messages: Array<{ role: string; content: string }> };
     const userMsg = updateCall.messages.find((m) => m.role === 'user' && m.content === '你好');
     expect(userMsg).toBeDefined();
+  });
+});
+
+// ─── Run trace (Layer 1) ──────────────────────────────────────────────────────
+
+describe('executeHarness — run trace', () => {
+  it('records an llm_call event with full input and output', async () => {
+    const db = buildDb();
+    await executeHarness(db as any, makeLLM('一般對話回覆'), { runId: RUN_ID, activityId: ACT_ID, userId: USER_ID, userMessage: '你好' });
+    const llmEvents = db.traceWrites.filter((e) => e.data.type === 'llm_call');
+    expect(llmEvents).toHaveLength(1);
+    expect(llmEvents[0].data.payload.output).toBe('一般對話回覆');
+    expect(Array.isArray(llmEvents[0].data.payload.input)).toBe(true);
+    expect(llmEvents[0].data.stage).toBe('run_planner');
+  });
+
+  it('records stage_enter and stage_exit for every stage', async () => {
+    const db = buildDb();
+    await executeHarness(db as any, makeLLM('ok'), { runId: RUN_ID, activityId: ACT_ID, userId: USER_ID, userMessage: '你好' });
+    const entered = db.traceWrites.filter((e) => e.data.type === 'stage_enter').map((e) => e.data.stage);
+    expect(entered).toEqual([
+      'load_context', 'build_prompt', 'run_planner', 'parse_output',
+      'validate_output', 'persist_effects', 'finalize_response',
+    ]);
+    const exited = db.traceWrites.filter((e) => e.data.type === 'stage_exit').map((e) => e.data.stage);
+    expect(exited).toEqual(entered);
+  });
+
+  it('flushes an error event when a stage throws', async () => {
+    (buildContextEnvelope as jest.Mock).mockRejectedValue(new Error('boom'));
+    const db = buildDb();
+    await expect(
+      executeHarness(db as any, makeLLM('ok'), { runId: RUN_ID, activityId: ACT_ID, userId: USER_ID, userMessage: '你好' })
+    ).rejects.toThrow('boom');
+    const errEvents = db.traceWrites.filter((e) => e.data.type === 'error');
+    expect(errEvents).toHaveLength(1);
+    expect(errEvents[0].data.payload.message).toBe('boom');
+    expect(errEvents[0].data.stage).toBe('load_context');
   });
 });

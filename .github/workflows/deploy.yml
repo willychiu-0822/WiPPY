@@ -60,6 +60,10 @@ jobs:
           service: ${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}
           region: ${{ steps.deploy-target.outputs.GCP_REGION }}
           source: backend
+          env_vars: |
+            LLM_PROVIDER=gemini
+            LLM_MODEL=gemma-4-26b-a4b-it
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
       - name: Install frontend dependencies
         working-directory: frontend

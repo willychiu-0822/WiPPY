@@ -83,6 +83,23 @@ service cloud.firestore {
       allow read, write: if false; // Backend only
     }
 
+    // ── Water tracker: backend only ──────────────────────────────────────────
+    match /waterUsers/{userId} {
+      allow read, write: if false;
+    }
+
+    match /waterGroups/{groupId} {
+      allow read, write: if false;
+
+      match /members/{memberId} {
+        allow read, write: if false;
+      }
+
+      match /records/{recordId} {
+        allow read, write: if false;
+      }
+    }
+
     // ── V1: LINE link tokens ──────────────────────────────────────────────────
     match /lineLinks/{token} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;

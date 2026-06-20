@@ -41,6 +41,36 @@ jobs:
       - name: Test
         run: npm test -- --runInBand
 
+  backend-container:
+    name: Backend Docker readiness
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build backend image
+        run: docker build -t wippy-backend-ci ./backend
+
+      - name: Start backend container
+        run: docker run --detach --rm --name wippy-backend-ci -p 8080:8080 wippy-backend-ci
+
+      - name: Wait for /health
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8080/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs wippy-backend-ci
+          exit 1
+
+      - name: Stop backend container
+        if: always()
+        run: docker stop wippy-backend-ci || true
+
   frontend:
     name: Frontend lint, build, and test
     runs-on: ubuntu-latest

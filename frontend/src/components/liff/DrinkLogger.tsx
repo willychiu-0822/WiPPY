@@ -30,7 +30,6 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
   const [history, setHistory] = useState<number[]>([]);
   const [customInput, setCustomInput] = useState('');
   const [overflow, setOverflow] = useState<OverflowDialog>({ open: false, handled: false, feedbackMsg: null });
-  const [dropAnim, setDropAnim] = useState(false);
   const prevTotal = useRef(0);
 
   const total = history.reduce((s, n) => s + n, 0);
@@ -93,8 +92,6 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
     if (total <= 0 || submitting) return;
     const ml = total;
     const type = drinkType;
-    setDropAnim(true);
-    setTimeout(() => setDropAnim(false), 700);
     handleReset();
     await onSubmit(ml, type);
   }
@@ -128,8 +125,7 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
       <div className="text-center">
         <div
           data-testid="running-total"
-          className={`text-5xl font-bold text-sky-700 transition-all duration-150 ${dropAnim ? 'scale-110' : ''}`}
-          style={{ transition: 'transform 0.15s ease' }}
+          className="text-5xl font-bold text-sky-700"
         >
           {Math.round(total)}
         </div>
@@ -206,18 +202,6 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
       >
         {submitting ? '記錄中...' : submitLabel}
       </button>
-
-      {/* Water drop animation */}
-      {dropAnim && (
-        <div className="fixed inset-0 pointer-events-none flex items-center justify-center z-40">
-          <span
-            className="text-6xl animate-bounce"
-            style={{ animation: 'dropFall 0.7s ease-out forwards' }}
-          >
-            💧
-          </span>
-        </div>
-      )}
 
       {/* Overflow dialog */}
       {overflow.open && (

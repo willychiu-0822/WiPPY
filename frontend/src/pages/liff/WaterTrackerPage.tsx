@@ -5,8 +5,8 @@ import type { DrinkType, SessionResponse, DrinkResponse, AchievementId } from '.
 import DailyProgress from '../../components/liff/DailyProgress';
 import DrinkLogger from '../../components/liff/DrinkLogger';
 import Leaderboard from '../../components/liff/Leaderboard';
-import AchievementToast from '../../components/liff/AchievementToast';
 import ShareButton from '../../components/liff/ShareButton';
+import DrinkResultModal from '../../components/liff/DrinkResultModal';
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -27,11 +27,13 @@ export default function WaterTrackerPage() {
   const { ready, loading: liffLoading, error: liffError, profile, idToken, groupId } = useLiff();
 
   const [sessionData, setSessionData] = useState<SessionResponse | null>(null);
-  const [lastDrink, setLastDrink] = useState<DrinkResponse | null>(null);
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [achievementQueue, setAchievementQueue] = useState<AchievementId[]>([]);
+
+  // Post-drink result modal
+  const [drinkResult, setDrinkResult] = useState<DrinkResponse | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   // POST /session on mount (once liff is ready)
   useEffect(() => {
@@ -54,9 +56,9 @@ export default function WaterTrackerPage() {
       setSubmitting(true);
       try {
         const res = await waterApi.drink(groupId, ml, drinkType, idToken ?? undefined);
-        setLastDrink(res);
+        setDrinkResult(res);
 
-        // Refresh leaderboard via session-derived today, update member stats
+        // Update leaderboard optimistically
         setSessionData(prev => {
           if (!prev) return prev;
           const updatedMembers = prev.today.members.map(m =>
@@ -64,10 +66,8 @@ export default function WaterTrackerPage() {
               ? { ...m, todayMl: res.member.todayMl, streak: res.member.streak }
               : m
           );
-          // Re-sort
           updatedMembers.sort((a, b) => b.todayMl - a.todayMl);
           updatedMembers.forEach((m, i) => { m.rank = i + 1; });
-          // Recalculate gaps
           for (let i = 0; i < updatedMembers.length; i++) {
             updatedMembers[i].gapToAbove = i === 0 ? null : updatedMembers[i - 1].todayMl - updatedMembers[i].todayMl;
             updatedMembers[i].leadOverSecond = i === 0 && updatedMembers.length > 1 ? updatedMembers[0].todayMl - updatedMembers[1].todayMl : null;
@@ -92,11 +92,8 @@ export default function WaterTrackerPage() {
           };
         });
 
-        // Queue achievements
-        const allAchievements = [...res.eventAchievements, ...res.newPersistentAchievements];
-        if (allAchievements.length > 0) {
-          setAchievementQueue(q => [...q, ...allAchievements]);
-        }
+        // Show result modal
+        setShowModal(true);
       } catch (err) {
         console.error('Drink error:', err);
       } finally {
@@ -105,10 +102,6 @@ export default function WaterTrackerPage() {
     },
     [groupId, idToken]
   );
-
-  function dismissAchievement(id: AchievementId) {
-    setAchievementQueue(q => q.filter((a, i) => !(i === 0 && a === id)));
-  }
 
   // ── Render states ───────────────────────────────────────────────────────────
 
@@ -155,11 +148,24 @@ export default function WaterTrackerPage() {
   if (!sessionData) return <Skeleton />;
 
   const { today, member } = sessionData;
+  const modalAchievements: AchievementId[] = drinkResult
+    ? [...drinkResult.eventAchievements, ...drinkResult.newPersistentAchievements]
+    : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
-      {/* Achievement Toast */}
-      <AchievementToast queue={achievementQueue} onDismiss={dismissAchievement} />
+
+      {/* Post-drink result modal */}
+      {showModal && drinkResult && (
+        <DrinkResultModal
+          member={drinkResult.member}
+          achievements={modalAchievements}
+          surpassedCount={drinkResult.surpassedCount}
+          idToken={idToken}
+          groupId={groupId ?? ''}
+          onClose={() => setShowModal(false)}
+        />
+      )}
 
       {/* Header */}
       <header className="px-4 pt-5 pb-3 flex items-center justify-between">
@@ -191,16 +197,19 @@ export default function WaterTrackerPage() {
           aboveDisplayName={today.me.aboveDisplayName}
         />
 
+        {/* Share button — always visible */}
+        <ShareButton
+          member={member}
+          surpassedCount={drinkResult?.surpassedCount}
+          achievements={modalAchievements}
+          idToken={idToken}
+        />
+
         {/* Drink Logger */}
         <section className="bg-white rounded-2xl p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-sky-600 mb-3">記錄喝水</h2>
           <DrinkLogger onSubmit={handleDrink} submitting={submitting} />
         </section>
-
-        {/* Share button (after first drink) */}
-        {lastDrink && (
-          <ShareButton lastDrink={lastDrink} idToken={idToken} />
-        )}
 
         {/* Leaderboard */}
         <section className="bg-white rounded-2xl p-4 shadow-sm">

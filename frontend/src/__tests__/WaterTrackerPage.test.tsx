@@ -1,6 +1,7 @@
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
 
 // ─── Mock @line/liff ─────────────────────────────────────────────────────────
 
@@ -9,11 +10,7 @@ vi.mock('@line/liff', () => ({
     init: vi.fn().mockResolvedValue(undefined),
     isLoggedIn: vi.fn(() => true),
     getIDToken: vi.fn(() => 'mock-id-token'),
-    getProfile: vi.fn().mockResolvedValue({
-      userId: 'Utest1',
-      displayName: 'Test User',
-      pictureUrl: '',
-    }),
+    getProfile: vi.fn().mockResolvedValue({ userId: 'Utest1', displayName: 'Test User', pictureUrl: '' }),
     getContext: vi.fn(() => ({ type: 'group', groupId: 'Ctest1' })),
     isApiAvailable: vi.fn(() => false),
     shareTargetPicker: vi.fn().mockResolvedValue({ status: 'success' }),
@@ -21,7 +18,27 @@ vi.mock('@line/liff', () => ({
   },
 }));
 
-// ─── Mock liffApi — use vi.hoisted so data is available when factory runs ─────
+// ─── Mock useLiff directly — avoids LIFF init + .env.local DEV_FALLBACK ──────
+
+const mockUseLiff = vi.hoisted(() => ({
+  ready: true,
+  loading: false,
+  error: null as string | null,
+  profile: { userId: 'Utest1', displayName: 'Test User', pictureUrl: '' },
+  context: { type: 'group' as const, groupId: 'Ctest1' },
+  idToken: 'mock-id-token',
+  groupId: 'Ctest1' as string | null,
+}));
+
+vi.mock('../contexts/useLiff', () => ({
+  useLiff: () => mockUseLiff,
+}));
+
+vi.mock('../contexts/LiffContext', () => ({
+  LiffProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+
+// ─── Mock liffApi ─────────────────────────────────────────────────────────────
 
 const { mockSessionData, mockDrinkResponse } = vi.hoisted(() => {
   const sessionData = {
@@ -52,27 +69,11 @@ const { mockSessionData, mockDrinkResponse } = vi.hoisted(() => {
         { rank: 1, lineUserId: 'Utest1', displayName: 'Test User', pictureUrl: '', todayMl: 300, streak: 2, gapToAbove: null, leadOverSecond: 100 },
         { rank: 2, lineUserId: 'Uother', displayName: 'Other', pictureUrl: '', todayMl: 200, streak: 0, gapToAbove: 100, leadOverSecond: null },
       ],
-      me: {
-        lineUserId: 'Utest1',
-        rank: 1,
-        todayMl: 300,
-        gapToAbove: null,
-        leadOverSecond: 100,
-        aboveDisplayName: null,
-      },
+      me: { lineUserId: 'Utest1', rank: 1, todayMl: 300, gapToAbove: null, leadOverSecond: 100, aboveDisplayName: null },
     },
   };
-
   const drinkResponse = {
-    record: {
-      id: 'rec1',
-      lineUserId: 'Utest1',
-      displayName: 'Test User',
-      ml: 200,
-      drinkType: 'water' as const,
-      date: '2026-06-20',
-      timestamp: { _seconds: 0, _nanoseconds: 0 },
-    },
+    record: { id: 'rec1', lineUserId: 'Utest1', displayName: 'Test User', ml: 200, drinkType: 'water' as const, date: '2026-06-20', timestamp: { _seconds: 0, _nanoseconds: 0 } },
     member: { ...sessionData.member, todayMl: 500 },
     rankBefore: 1,
     rankAfter: 1,
@@ -80,7 +81,6 @@ const { mockSessionData, mockDrinkResponse } = vi.hoisted(() => {
     eventAchievements: ['now_im_best' as const],
     newPersistentAchievements: [],
   };
-
   return { mockSessionData: sessionData, mockDrinkResponse: drinkResponse };
 });
 
@@ -92,13 +92,7 @@ vi.mock('../lib/liffApi', async (importOriginal) => {
       session: vi.fn().mockResolvedValue(mockSessionData),
       drink: vi.fn().mockResolvedValue(mockDrinkResponse),
       todayLeaderboard: vi.fn().mockResolvedValue(mockSessionData.today),
-      myProfile: vi.fn().mockResolvedValue({
-        member: mockSessionData.member,
-        rank: 1,
-        gapToAbove: null,
-        leadOverSecond: 100,
-        aboveDisplayName: null,
-      }),
+      myProfile: vi.fn().mockResolvedValue({ member: mockSessionData.member, rank: 1, gapToAbove: null, leadOverSecond: 100, aboveDisplayName: null }),
       weeklyStats: vi.fn().mockResolvedValue({ dailyTotals: [], memberBreakdown: [] }),
       taunts: vi.fn().mockResolvedValue({ taunts: ['喝多一點！'] }),
     },
@@ -165,7 +159,7 @@ describe('WaterTrackerPage — drink flow', () => {
     );
   });
 
-  it('shows achievement toast after drink', async () => {
+  it('shows result modal with achievement after drink', async () => {
     render(<Wrapper />);
     await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
 
@@ -174,16 +168,44 @@ describe('WaterTrackerPage — drink flow', () => {
       fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
     });
 
-    await waitFor(() => expect(screen.getByText('現在我最棒 🏆')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('現在我最棒！')).toBeInTheDocument());
+  });
+
+  it('modal has share and dismiss buttons', async () => {
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: '+200' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /分享成就到群組/ })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /忍痛放棄/ })).toBeInTheDocument();
+    });
+  });
+
+  it('modal closes on dismiss', async () => {
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: '+200' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
+    });
+    await waitFor(() => screen.getByText('現在我最棒！'));
+
+    fireEvent.click(screen.getByRole('button', { name: /忍痛放棄/ }));
+    await waitFor(() => expect(screen.queryByText('現在我最棒！')).not.toBeInTheDocument());
   });
 });
 
 describe('WaterTrackerPage — non-group guard', () => {
   it('shows friendly message when not in a group context', async () => {
-    const liff = await import('@line/liff');
-    (liff.default.getContext as ReturnType<typeof vi.fn>).mockReturnValueOnce({ type: 'utou' });
-
+    mockUseLiff.groupId = null;
     render(<Wrapper />);
     await waitFor(() => expect(screen.getByText('請在群組內開啟')).toBeInTheDocument());
+    mockUseLiff.groupId = 'Ctest1'; // restore
   });
 });

@@ -11,18 +11,10 @@ import { sendLogsRouter } from './routes/api/sendLogs';
 import { activitiesRouter } from './routes/api/activities';
 import { agentRouter } from './routes/api/agent';
 import { internalRouter } from './routes/internal/harness';
-
-export function initializeFirebaseApp(): void {
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: process.env.FIREBASE_PROJECT_ID,
-    });
-  }
-}
+import { ensureFirebaseApp } from './firebase';
 
 export function createApp() {
-  initializeFirebaseApp();
+  ensureFirebaseApp();
 
   const app = express();
 

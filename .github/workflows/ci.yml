@@ -53,7 +53,7 @@ jobs:
         run: docker build -t wippy-backend-ci ./backend
 
       - name: Start backend container
-        run: docker run --detach --rm --name wippy-backend-ci -p 8080:8080 wippy-backend-ci
+        run: docker run --detach --name wippy-backend-ci -p 8080:8080 wippy-backend-ci
 
       - name: Wait for /health
         shell: bash

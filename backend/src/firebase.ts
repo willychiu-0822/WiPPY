@@ -3,14 +3,17 @@ import { Firestore } from 'firebase-admin/firestore';
 
 let db: Firestore | null = null;
 
+export function ensureFirebaseApp(): void {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      ...(process.env.FIREBASE_PROJECT_ID ? { projectId: process.env.FIREBASE_PROJECT_ID } : {}),
+    });
+  }
+}
+
 export function getDb(): Firestore {
   if (!db) {
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-        projectId: process.env.FIREBASE_PROJECT_ID,
-      });
-    }
+    ensureFirebaseApp();
     db = admin.firestore();
   }
   return db;

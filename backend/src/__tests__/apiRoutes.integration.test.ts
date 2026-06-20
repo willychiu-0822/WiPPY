@@ -3,6 +3,7 @@ import type { AddressInfo } from 'net';
 
 const mockVerifyIdToken = jest.fn();
 const mockGetDb = jest.fn();
+const mockEnsureFirebaseApp = jest.fn();
 const mockListActivities = jest.fn();
 const mockCreateActivity = jest.fn();
 const mockGetActivity = jest.fn();
@@ -39,7 +40,10 @@ jest.mock('@line/bot-sdk', () => ({
   })),
 }));
 
-jest.mock('../firebase', () => ({ getDb: () => mockGetDb() }));
+jest.mock('../firebase', () => ({
+  getDb: () => mockGetDb(),
+  ensureFirebaseApp: () => mockEnsureFirebaseApp(),
+}));
 
 jest.mock('../services/activityService', () => ({
   createActivity: (...args: unknown[]) => mockCreateActivity(...args),
@@ -153,7 +157,11 @@ describe('backend API route integration safety net', () => {
   });
 
   afterEach((done) => {
-    server.close(done);
+    if (server) {
+      server.close(done);
+      return;
+    }
+    done();
   });
 
   it('returns Cloud Run health with an ISO timestamp', async () => {

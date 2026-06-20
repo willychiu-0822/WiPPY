@@ -80,6 +80,28 @@ describe('createLLMProvider — factory', () => {
       isConfigured: true,
     });
   });
+
+  it('reports gemini as configured when GEMINI_API_KEY is set', () => {
+    process.env.LLM_PROVIDER = 'gemini';
+    process.env.GEMINI_API_KEY = 'test-api-key';
+
+    expect(getLLMConfigStatus()).toEqual({
+      provider: 'gemini',
+      missingEnv: [],
+      isConfigured: true,
+    });
+  });
+
+  it('reports missing GEMINI_API_KEY for gemini provider', () => {
+    process.env.LLM_PROVIDER = 'gemini';
+    delete process.env.GEMINI_API_KEY;
+
+    expect(getLLMConfigStatus()).toEqual({
+      provider: 'gemini',
+      missingEnv: ['GEMINI_API_KEY'],
+      isConfigured: false,
+    });
+  });
 });
 
 describe('OpenAI-compatible provider (nvidia)', () => {

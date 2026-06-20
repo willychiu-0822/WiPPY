@@ -86,15 +86,19 @@ class OllamaProvider implements LLMProvider {
   }
 }
 
-// ─── Vertex AI (Gemini) provider ─────────────────────────────────────────────
+// ─── Google AI (shared by Vertex AI and AI Studio) ──────────────────────────
 
-class VertexAIProvider implements LLMProvider {
+class GoogleAIProvider implements LLMProvider {
   private ai: GoogleGenAI;
   private model: string;
 
-  constructor(projectId: string, location: string, model: string) {
-    this.ai = new GoogleGenAI({ vertexai: true, project: projectId, location });
-    this.model = model;
+  constructor(opts: { apiKey: string; model: string } | { projectId: string; location: string; model: string }) {
+    if ('apiKey' in opts) {
+      this.ai = new GoogleGenAI({ apiKey: opts.apiKey });
+    } else {
+      this.ai = new GoogleGenAI({ vertexai: true, project: opts.projectId, location: opts.location });
+    }
+    this.model = opts.model;
   }
 
   async chat(messages: LLMMessage[]): Promise<string> {
@@ -111,7 +115,7 @@ class VertexAIProvider implements LLMProvider {
     });
 
     const content = response.text;
-    if (!content) throw new Error('Vertex AI returned empty response');
+    if (!content) throw new Error('Google AI returned empty response');
     return content;
   }
 }
@@ -129,13 +133,18 @@ export function createLLMProvider(): LLMProvider {
   }
 
   switch (provider) {
+    case 'gemini':
+      return new GoogleAIProvider({
+        apiKey: requireEnv('GEMINI_API_KEY'),
+        model: process.env.LLM_MODEL ?? 'gemma-4-26b-a4b-it',
+      });
     case 'vertex_ai':
     case 'vertexai':
-      return new VertexAIProvider(
-        requireEnv('GCP_PROJECT_ID'),
-        process.env.GCP_LOCATION ?? 'global',
-        process.env.LLM_MODEL ?? 'gemini-3.1-flash-lite-preview'
-      );
+      return new GoogleAIProvider({
+        projectId: requireEnv('GCP_PROJECT_ID'),
+        location: process.env.GCP_LOCATION ?? 'global',
+        model: process.env.LLM_MODEL ?? 'gemini-3.1-flash-lite-preview',
+      });
     case 'ollama':
       return new OllamaProvider(
         process.env.LLM_BASE_URL ?? 'http://localhost:11434',
@@ -158,6 +167,10 @@ export function getLLMConfigStatus(env: NodeJS.ProcessEnv = process.env): LLMCon
   const provider = getLLMProviderName(env);
 
   switch (provider) {
+    case 'gemini': {
+      const missingEnv = ['GEMINI_API_KEY'].filter((name) => !env[name]?.trim());
+      return { provider, missingEnv, isConfigured: missingEnv.length === 0 };
+    }
     case 'vertex_ai':
     case 'vertexai': {
       const missingEnv = ['GCP_PROJECT_ID'].filter((name) => !env[name]?.trim());

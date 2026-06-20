@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as admin from 'firebase-admin';
+import { ensureFirebaseApp } from '../firebase';
 
 // Extend Express Request to carry verified userId
 declare global {
@@ -25,6 +26,7 @@ export async function authMiddleware(
   const token = authHeader.split('Bearer ')[1];
 
   try {
+    ensureFirebaseApp();
     const decoded = await admin.auth().verifyIdToken(token);
     req.userId = decoded.uid;
     next();

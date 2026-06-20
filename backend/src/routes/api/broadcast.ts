@@ -1,14 +1,10 @@
 import express, { Request, Response } from 'express';
-import { Client } from '@line/bot-sdk';
 import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
 import { authMiddleware } from '../../middleware/auth';
+import { getLineClient } from '../../line';
 
 const router = express.Router();
-
-const lineClient = new Client({
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN!,
-});
 
 // POST /api/broadcast/preview
 // Returns per-group content preview before sending (supports F1-3 per-group tweak)
@@ -60,6 +56,7 @@ router.post('/multi', authMiddleware, async (req: Request, res: Response) => {
       let errorMessage: string | null = null;
 
       try {
+        const lineClient = getLineClient();
         await lineClient.pushMessage(groupId, { type: 'text', text: content });
       } catch (err) {
         status = 'failed';

@@ -18,9 +18,14 @@ describe('firestore.rules production ownership guardrails', () => {
   });
 
   it('keeps backend-only collections unwritable from clients', () => {
-    for (const collection of ['groups', 'sendLogs', 'harnessRuns', 'rateLimits']) {
+    for (const collection of ['groups', 'sendLogs', 'harnessRuns', 'rateLimits', 'waterUsers', 'waterGroups']) {
       expect(rules).toMatch(new RegExp(`match /${collection}/\\{[^}]+\\} \\{[\\s\\S]*allow (read, )?write: if false`));
     }
+  });
+
+  it('keeps water subcollections closed to frontend clients', () => {
+    expect(rules).toMatch(/match \/waterGroups\/\{groupId\} \{[\s\S]*match \/members\/\{memberId\} \{[\s\S]*allow read, write: if false/);
+    expect(rules).toMatch(/match \/waterGroups\/\{groupId\} \{[\s\S]*match \/records\/\{recordId\} \{[\s\S]*allow read, write: if false/);
   });
 
   it('requires create requests to claim the authenticated owner for client-created docs', () => {

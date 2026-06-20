@@ -10,6 +10,7 @@ import { broadcastRouter } from './routes/api/broadcast';
 import { sendLogsRouter } from './routes/api/sendLogs';
 import { activitiesRouter } from './routes/api/activities';
 import { agentRouter } from './routes/api/agent';
+import { waterRouter } from './routes/api/water';
 import { internalRouter } from './routes/internal/harness';
 import { ensureFirebaseApp } from './firebase';
 
@@ -33,6 +34,7 @@ export function createApp() {
   app.use('/api/send-logs', express.json(), sendLogsRouter);
   app.use('/api/activities', express.json(), activitiesRouter);
   app.use('/api/agent', express.json(), agentRouter);
+  app.use('/api/water', express.json(), waterRouter);
   app.use('/api/internal', express.json(), internalRouter);
 
   app.use('/webhook', webhookRouter);

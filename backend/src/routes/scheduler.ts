@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getDb } from '../firebase';
 import { getLineClient } from '../line';
+import { resetDailyWater } from '../services/waterService';
 
 const router = express.Router();
 
@@ -55,6 +56,16 @@ router.post('/tick', async (_req: Request, res: Response) => {
     });
   } catch (err) {
     console.error('Scheduler tick unexpected error:', err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
+router.post('/water-reset', async (_req: Request, res: Response) => {
+  try {
+    const resetMembers = await resetDailyWater(getDb());
+    res.json({ ok: true, resetMembers });
+  } catch (err) {
+    console.error('Water reset scheduler error:', err);
     res.status(500).json({ error: String(err) });
   }
 });

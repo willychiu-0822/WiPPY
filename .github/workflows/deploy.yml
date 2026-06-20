@@ -64,6 +64,7 @@ jobs:
             LLM_PROVIDER=gemini
             LLM_MODEL=gemma-4-26b-a4b-it
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            LIFF_CHANNEL_ID=${{ steps.deploy-target.outputs.LIFF_CHANNEL_ID }}
 
       - name: Install frontend dependencies
         working-directory: frontend

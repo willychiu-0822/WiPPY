@@ -1,14 +1,10 @@
 import express, { Request, Response } from 'express';
-import { Client } from '@line/bot-sdk';
 import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
 import { authMiddleware } from '../../middleware/auth';
+import { getLineClient } from '../../line';
 
 const router = express.Router();
-
-const lineClient = new Client({
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN!,
-});
 
 const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
 
@@ -105,6 +101,7 @@ router.post('/:groupId/messages', authMiddleware, async (req: Request, res: Resp
     let errorMessage: string | null = null;
 
     try {
+      const lineClient = getLineClient();
       await lineClient.pushMessage(groupId, { type: 'text', text: content });
     } catch (err) {
       status = 'failed';
@@ -151,6 +148,7 @@ router.post('/sync', authMiddleware, async (req: Request, res: Response) => {
     for (const doc of snap.docs) {
       const groupId = doc.id;
       try {
+        const lineClient = getLineClient();
         const summary = await lineClient.getGroupSummary(groupId);
         const members = await lineClient.getGroupMembersCount(groupId);
         await doc.ref.update({

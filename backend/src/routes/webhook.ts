@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express';
-import { middleware, Client, WebhookEvent } from '@line/bot-sdk';
+import { middleware, WebhookEvent } from '@line/bot-sdk';
 import * as admin from 'firebase-admin';
 import { getDb } from '../firebase';
+import { getLineClient, getLineMiddlewareConfig, hasLineWebhookConfig } from '../line';
 import {
   upsertGroupOnJoin,
   setGroupInactive,
@@ -12,33 +13,34 @@ import {
 
 const router = express.Router();
 
-const lineConfig = {
-  channelSecret: process.env.LINE_CHANNEL_SECRET!,
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN!,
-};
-
-const lineClient = new Client(lineConfig);
-
 // Single-user V1 constants — set via Cloud Run env vars
 const OWNER_USER_ID = process.env.OWNER_USER_ID!;
 const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
 
 // LINE SDK middleware validates signature using raw body
-router.post('/line', middleware(lineConfig), (req: Request, res: Response) => {
-  // Respond immediately — LINE requires a response within 15 seconds
-  res.json({ ok: true });
+if (hasLineWebhookConfig()) {
+  const lineConfig = getLineMiddlewareConfig();
+  router.post('/line', middleware(lineConfig), (req: Request, res: Response) => {
+    // Respond immediately — LINE requires a response within 15 seconds
+    res.json({ ok: true });
 
-  // Process events out-of-band
-  setImmediate(() => {
-    const events: WebhookEvent[] = req.body.events;
-    Promise.all(events.map(handleEvent)).catch((err) => {
-      console.error(JSON.stringify({ event: 'webhook_error', error: String(err) }));
+    // Process events out-of-band
+    setImmediate(() => {
+      const events: WebhookEvent[] = req.body.events;
+      Promise.all(events.map(handleEvent)).catch((err) => {
+        console.error(JSON.stringify({ event: 'webhook_error', error: String(err) }));
+      });
     });
   });
-});
+} else {
+  router.post('/line', (_req: Request, res: Response) => {
+    res.status(503).json({ error: 'LINE webhook is not configured' });
+  });
+}
 
 async function handleEvent(event: WebhookEvent): Promise<void> {
   const db = getDb();
+  const lineClient = getLineClient();
 
   // ── Group: bot joined ─────────────────────────────────────────────────────
   if (event.type === 'join' && event.source.type === 'group') {
@@ -165,6 +167,7 @@ async function processLinkToken(
   replyToken: string
 ): Promise<void> {
   const db = getDb();
+  const lineClient = getLineClient();
   const linkRef = db.collection('lineLinks').doc(linkToken);
   const linkSnap = await linkRef.get();
 

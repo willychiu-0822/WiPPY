@@ -1,14 +1,10 @@
 import express, { Request, Response } from 'express';
-import { Client } from '@line/bot-sdk';
 import * as admin from 'firebase-admin';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getDb } from '../firebase';
+import { getLineClient } from '../line';
 
 const router = express.Router();
-
-const lineClient = new Client({
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN!,
-});
 
 const TZ = 'Asia/Taipei';
 
@@ -123,6 +119,7 @@ async function sendFeelPrompt(
   startTime: string,
   endTime: string
 ): Promise<void> {
+  const lineClient = getLineClient();
   const message = {
     type: 'flex' as const,
     altText: `剛才的「${wishName}」感覺如何？`,
@@ -252,6 +249,7 @@ async function processScheduledActivityMessages(): Promise<number> {
     // Push to each target group
     for (const groupId of targetGroups) {
       try {
+        const lineClient = getLineClient();
         const resp = await lineClient.pushMessage(groupId, { type: 'text', text: content });
         if (!firstLineMessageId) {
           firstLineMessageId = (resp as { messageId?: string })?.messageId ?? null;

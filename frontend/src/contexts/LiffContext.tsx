@@ -38,6 +38,41 @@ const DEV_CONTEXT = {
   },
 };
 
+type DecodedIdToken = ReturnType<Liff['getDecodedIDToken']>;
+
+function formatLiffError(err: unknown, fallback: string) {
+  if (err instanceof Error && err.message) {
+    const code = 'code' in err && typeof err.code === 'string' ? err.code : null;
+    return code ? `${code}: ${err.message}` : err.message;
+  }
+
+  if (err && typeof err === 'object') {
+    const code = 'code' in err && typeof (err as { code?: unknown }).code === 'string'
+      ? (err as { code: string }).code
+      : null;
+    const message = 'message' in err && typeof (err as { message?: unknown }).message === 'string'
+      ? (err as { message: string }).message
+      : null;
+
+    if (code && message) return `${code}: ${message}`;
+    if (message) return message;
+    if (code) return code;
+  }
+
+  return fallback;
+}
+
+function buildProfileFromDecodedToken(decodedIdToken: DecodedIdToken): LiffProfile | null {
+  if (!decodedIdToken?.sub) return null;
+
+  return {
+    userId: decodedIdToken.sub,
+    displayName: decodedIdToken.name ?? 'LINE User',
+    pictureUrl: decodedIdToken.picture ?? '',
+    statusMessage: '',
+  };
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function LiffProvider({ children }: { children: ReactNode }) {
@@ -77,18 +112,34 @@ export function LiffProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        await liff.init({ liffId: import.meta.env.VITE_LIFF_ID });
+        await liff.init({
+          liffId: import.meta.env.VITE_LIFF_ID,
+          withLoginOnExternalBrowser: true,
+        });
 
         if (!liff.isLoggedIn()) {
           liff.login();
           return;
         }
 
-        const [profile, ctx, idToken] = await Promise.all([
-          liff.getProfile(),
-          Promise.resolve(liff.getContext()),
-          Promise.resolve(liff.getIDToken()),
-        ]);
+        const ctx = liff.getContext();
+        const idToken = liff.getIDToken();
+        const decodedIdToken = liff.getDecodedIDToken();
+
+        if (!idToken || !decodedIdToken?.sub) {
+          throw new Error('LIFF ID token unavailable');
+        }
+
+        let profile: LiffProfile;
+        try {
+          profile = await liff.getProfile();
+        } catch (profileError) {
+          const fallbackProfile = buildProfileFromDecodedToken(decodedIdToken);
+          if (!fallbackProfile) {
+            throw new Error(formatLiffError(profileError, 'Unable to fetch LINE profile'));
+          }
+          profile = fallbackProfile;
+        }
 
         const groupId =
           ctx?.type === 'group' ? (ctx as { groupId?: string }).groupId ?? null : null;
@@ -109,7 +160,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           ...s,
           ready: false,
           loading: false,
-          error: err instanceof Error ? err.message : 'LIFF init failed',
+          error: formatLiffError(err, 'LIFF init failed'),
         }));
       }
     }

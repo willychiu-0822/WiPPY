@@ -109,7 +109,7 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
   const detailRow = history.length > 0 ? history.join(' + ') : null;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-[clamp(8px,1.6dvh,16px)]">
 
       {/* Drink type selector */}
       <div className="flex flex-wrap justify-center gap-2">
@@ -118,7 +118,7 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
             key={opt.type}
             onClick={() => setDrinkType(opt.type)}
             aria-label={`${opt.emoji} ${opt.label}`}
-            className={`min-h-[44px] flex-1 rounded-2xl px-2 py-2 text-sm font-black transition ${
+            className={`min-h-[clamp(38px,5.6dvh,44px)] flex-1 rounded-2xl px-2 py-1.5 text-sm font-black transition ${
               drinkType === opt.type
                 ? 'bg-sky-500 bg-white text-sky-900 shadow-lg shadow-black/20'
                 : 'border border-white/20 bg-white/10 text-white hover:bg-white/20'
@@ -133,13 +133,13 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
       <div className="text-center">
         <div
           data-testid="running-total"
-          className="font-['Archivo'] text-6xl font-black leading-none tracking-normal text-white drop-shadow-lg"
+          className="font-['Archivo'] text-[clamp(44px,10dvh,64px)] font-black leading-none tracking-normal text-white drop-shadow-lg"
         >
           {Math.round(total)}
           <span className="ml-1 text-2xl font-black text-white/60">ml</span>
         </div>
         {detailRow && (
-          <div className="mt-2 font-['Archivo'] text-xs font-bold text-white/80">{detailRow}</div>
+          <div className="mt-1 font-['Archivo'] text-xs font-bold text-white/80">{detailRow}</div>
         )}
       </div>
 
@@ -149,7 +149,7 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
           <button
             key={amt}
             onClick={() => addAmount(amt)}
-            className="min-h-[54px] rounded-2xl border border-white/25 bg-white/10 font-['Archivo'] text-lg font-black text-white transition hover:bg-white/20 active:scale-95"
+            className="min-h-[clamp(44px,6.2dvh,54px)] rounded-2xl border border-white/25 bg-white/10 font-['Archivo'] text-lg font-black text-white transition hover:bg-white/20 active:scale-95"
           >
             +{amt}
           </button>
@@ -168,12 +168,12 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
           }}
           onKeyDown={handleCustomKeyDown}
           placeholder="自訂 ml"
-          className="min-h-[48px] flex-1 rounded-2xl border border-white/25 bg-black/20 px-4 text-sm text-white outline-none placeholder:text-white/45 focus:border-sky-300"
+          className="min-h-[clamp(42px,5.8dvh,48px)] flex-1 rounded-2xl border border-white/25 bg-black/20 px-4 text-sm text-white outline-none placeholder:text-white/45 focus:border-sky-300"
         />
         <button
           onClick={handleCustomAdd}
           disabled={!customInput || parseInt(customInput, 10) <= 0}
-          className="min-h-[48px] rounded-2xl bg-white px-5 text-sm font-black text-sky-900 transition hover:bg-sky-50 disabled:opacity-40"
+          className="min-h-[clamp(42px,5.8dvh,48px)] rounded-2xl bg-white px-5 text-sm font-black text-sky-900 transition hover:bg-sky-50 disabled:opacity-40"
         >
           加入
         </button>
@@ -190,7 +190,7 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
           onClick={handleBackspace}
           disabled={history.length === 0}
           aria-label="← 退格"
-          className="min-h-[44px] flex-1 rounded-2xl border border-white/15 bg-black/20 text-sm font-bold text-white/80 transition hover:bg-black/30 disabled:opacity-40"
+          className="min-h-[clamp(40px,5.5dvh,44px)] flex-1 rounded-2xl border border-white/15 bg-black/20 text-sm font-bold text-white/80 transition hover:bg-black/30 disabled:opacity-40"
         >
           移除累加
         </button>
@@ -198,7 +198,7 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
           onClick={handleReset}
           disabled={history.length === 0}
           aria-label="歸零"
-          className="min-h-[44px] flex-1 rounded-2xl border border-white/15 bg-black/20 text-sm font-bold text-white/80 transition hover:bg-black/30 disabled:opacity-40"
+          className="min-h-[clamp(40px,5.5dvh,44px)] flex-1 rounded-2xl border border-white/15 bg-black/20 text-sm font-bold text-white/80 transition hover:bg-black/30 disabled:opacity-40"
         >
           重置
         </button>
@@ -208,14 +208,14 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
       <button
         onClick={handleSubmit}
         disabled={total <= 0 || submitting}
-        className="min-h-[56px] rounded-3xl bg-white text-base font-black text-sky-900 shadow-xl shadow-black/30 transition hover:bg-sky-50 active:scale-95 disabled:bg-white/10 disabled:text-white/45 disabled:shadow-none"
+        className="min-h-[clamp(48px,6.8dvh,56px)] rounded-3xl bg-white text-base font-black text-sky-900 shadow-xl shadow-black/30 transition hover:bg-sky-50 active:scale-95 disabled:bg-white/10 disabled:text-white/45 disabled:shadow-none"
       >
         {submitting ? '記錄中...' : submitLabel}
       </button>
 
       {/* Overflow dialog */}
       {overflow.open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur">
+        <div className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center bg-black/60 p-4 backdrop-blur">
           <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#071326] p-5 shadow-xl">
             <h2 className="mb-1 text-center text-base font-black text-sky-50">
               你真的一次喝那麼多？💧

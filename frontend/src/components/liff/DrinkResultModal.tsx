@@ -102,12 +102,12 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
     : { background: 'linear-gradient(160deg,#0ea5e9,#2563eb 55%,#1e3a8a)' };
 
   return (
-    <div className="absolute inset-0 z-[80] flex items-center justify-center bg-[#03060e]/70 p-[18px] backdrop-blur-md">
-      <div className="w-full max-w-[340px] overflow-hidden rounded-[28px] border border-white/[.09] bg-[#0a1424] shadow-[0_30px_70px_-20px_rgba(0,0,0,.85)] [animation:wb-pop_.5s_cubic-bezier(.22,1.4,.4,1)]">
+    <div className="fixed inset-0 z-[80] flex h-[100dvh] items-center justify-center overflow-hidden bg-[#03060e]/70 p-[18px] backdrop-blur-md">
+      <div className="flex max-h-[calc(100dvh-36px)] w-full max-w-[340px] flex-col overflow-hidden rounded-[28px] border border-white/[.09] bg-[#0a1424] shadow-[0_30px_70px_-20px_rgba(0,0,0,.85)] [animation:wb-pop_.5s_cubic-bezier(.22,1.4,.4,1)]">
 
         {/* Banner */}
         {banner ? (
-          <div className={`relative h-[188px] overflow-hidden bg-gradient-to-br ${banner.gradient}`}>
+          <div className={`relative h-[min(188px,24dvh)] min-h-[142px] flex-none overflow-hidden bg-gradient-to-br ${banner.gradient}`}>
             <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave absolute -bottom-1.5 left-0 h-[46px] w-[200%] opacity-30">
               <path d="M0 20 q37.5 -15 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V40 H0 Z" fill="rgba(255,255,255,.5)" />
             </svg>
@@ -131,7 +131,7 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
             )}
           </div>
         ) : (
-          <div className="relative h-[188px] overflow-hidden p-[26px_22px]" style={bannerStyle}>
+          <div className="relative h-[min(188px,24dvh)] min-h-[142px] flex-none overflow-hidden p-[26px_22px]" style={bannerStyle}>
             <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave absolute bottom-0 left-0 h-10 w-[200%] opacity-35">
               <path d="M0 20 q37.5 -15 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V40 H0 Z" fill="rgba(255,255,255,.5)" />
             </svg>
@@ -141,7 +141,7 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
         )}
 
         {/* Stats */}
-        <div className="px-[22px] pb-2 pt-5 text-center">
+        <div className="wb-scroll min-h-0 flex-1 overflow-y-auto px-[22px] pb-2 pt-5 text-center">
           <p className="font-['Archivo'] text-[52px] font-black leading-none tracking-normal text-white">
             {Math.round(member.todayMl)} <span className="text-xl font-black text-sky-300">ml</span>
           </p>
@@ -168,7 +168,7 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-3 px-[22px] pb-[22px] pt-2">
+        <div className="flex flex-none flex-col gap-3 px-[22px] pb-[22px] pt-2">
           <button
             onClick={handleShare}
             disabled={sharing}
@@ -181,13 +181,7 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
             <p className="text-center text-xs leading-relaxed text-rose-300">{shareError}</p>
           )}
 
-          <div className="mt-1 flex items-center justify-between">
-            <button
-              type="button"
-              className="rounded-full border border-white/10 px-3 py-1.5 text-[11px] text-[#5e7796]"
-            >
-              預覽下一種橫幅 ›
-            </button>
+          <div className="mt-1 flex items-center justify-center">
             <button
               onClick={onClose}
               aria-label="忍痛放棄分享"

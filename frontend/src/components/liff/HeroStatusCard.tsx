@@ -91,8 +91,8 @@ export default function HeroStatusCard({ heroState, onQuickLog, todayMl = 0, ran
   const testId = kind === 'streak_risk' ? 'hero-streak-risk' : `hero-${kind}`;
 
   return (
-    <div data-testid={testId} className="overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(180deg,#0a1a32_0%,#070f20_100%)] shadow-2xl shadow-black/30">
-      <div className={`relative overflow-hidden transition-[height] duration-500 ${expanded ? 'h-[150px]' : 'h-[284px]'}`}>
+    <div data-testid={testId} className="min-h-0 overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(180deg,#0a1a32_0%,#070f20_100%)] shadow-2xl shadow-black/30">
+      <div className={`relative overflow-hidden transition-[height] duration-500 ${expanded ? 'h-[clamp(118px,18dvh,150px)]' : 'h-[clamp(218px,34dvh,284px)]'}`}>
       <div className="absolute inset-x-0 bottom-0 transition-all duration-700" style={{ height: `${fillPct}%`, background: config.fill }}>
         <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave absolute -top-5 left-0 h-10 w-[200%]">
           <path d="M0 20 q37.5 -15 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V40 H0 Z" fill="rgba(255,255,255,.18)" />
@@ -131,9 +131,9 @@ export default function HeroStatusCard({ heroState, onQuickLog, todayMl = 0, ran
       </div>
       <div
         className="overflow-hidden transition-[max-height,background] duration-500"
-        style={{ maxHeight: expanded ? 900 : 0, background: config.fill }}
+        style={{ maxHeight: expanded ? 'calc(100dvh - 140px)' : 0, background: config.fill }}
       >
-        <div className={`p-5 pt-3 transition duration-500 ${expanded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}>
+        <div className={`wb-scroll max-h-[calc(100dvh-150px)] overflow-y-auto p-5 pt-3 transition duration-500 ${expanded ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}>
           <div className="mb-3 flex justify-center">
             <div className="h-1 w-11 rounded-full bg-white/40" />
           </div>

@@ -1022,7 +1022,7 @@ export async function ensureIdentity(
   const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(group.groupId);
   const memberRef = groupRef.collection('members').doc(user.userId);
 
-  const isNewUser = await db.runTransaction(async (transaction) => {
+  const { isNewUser, memberJoinedExistingGroup } = await db.runTransaction(async (transaction) => {
     const [userSnap, groupSnap, memberSnap] = await Promise.all([
       transaction.get(userRef),
       transaction.get(groupRef),
@@ -1033,7 +1033,6 @@ export async function ensureIdentity(
     const existingUser = userSnap.exists ? (userSnap.data() as WaterUserDoc) : null;
     const existingMember = memberSnap.exists ? (memberSnap.data() as WaterMemberDoc) : null;
     const resetPatch = existingMember ? resetDayIfNeeded(existingMember, todayStr) : {};
-    const nextMemberCount = (existingGroup?.memberCount ?? 0) + (memberSnap.exists ? 0 : 1);
     const nextGroupIds = normalizeGroupIdList([...(existingUser?.groupIds ?? []), group.groupId]);
 
     transaction.set(
@@ -1055,17 +1054,24 @@ export async function ensureIdentity(
       { merge: true }
     );
 
-    transaction.set(
-      groupRef,
-      {
-        groupName: group.groupName ?? existingGroup?.groupName ?? '',
-        memberCount: nextMemberCount,
-        activeSince: existingGroup?.activeSince ?? now,
-        createdAt: existingGroup?.createdAt ?? now,
-        updatedAt: now,
-      } satisfies WaterGroupDoc,
-      { merge: true }
-    );
+    // Create the group doc only when it is missing (rare, once per group). The
+    // shared group doc must NOT be written on the hot path: returning members
+    // skip it entirely, and the memberCount bump for a brand-new member joining
+    // an existing group is applied OUTSIDE this transaction via an atomic
+    // increment, so a flash crowd joining at once never contends on one counter.
+    if (!groupSnap.exists) {
+      transaction.set(
+        groupRef,
+        {
+          groupName: group.groupName ?? existingGroup?.groupName ?? '',
+          memberCount: memberSnap.exists ? (existingGroup?.memberCount ?? 0) : 1,
+          activeSince: now,
+          createdAt: now,
+          updatedAt: now,
+        } satisfies WaterGroupDoc,
+        { merge: true }
+      );
+    }
 
     if (!existingMember) {
       transaction.set(memberRef, buildMemberDoc(user, todayStr, now));
@@ -1083,8 +1089,21 @@ export async function ensureIdentity(
       );
     }
 
-    return !userSnap.exists;
+    return {
+      isNewUser: !userSnap.exists,
+      memberJoinedExistingGroup: groupSnap.exists && !memberSnap.exists,
+    };
   });
+
+  // Atomic, contention-free member-count bump for a new member of an existing
+  // group. memberCount is a display-only stat (leaderboards count member docs
+  // directly), so an increment is both safe and never blocks concurrent joins.
+  if (memberJoinedExistingGroup) {
+    await groupRef.set(
+      { memberCount: admin.firestore.FieldValue.increment(1), updatedAt: now },
+      { merge: true }
+    );
+  }
 
   await ensureUserHistoryReady(db, user.userId);
 
@@ -1117,73 +1136,87 @@ export async function logDrink(
   const membersRef = groupRef.collection('members');
   const recordsRef = groupRef.collection('records');
 
-  return db.runTransaction(async (transaction) => {
-    const now = admin.firestore.Timestamp.now();
-    const [userSnap, userTodayRecordsSnap, groupSnap, memberSnap, membersSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
-      transaction.get(userRef),
-      transaction.get(buildUserRecordsQuery(userRecordsRef, todayStr, todayStr)),
-      transaction.get(groupRef),
+  // ── Phase A: non-transactional pre-read ────────────────────────────────────
+  // Group-wide state (leaderboard, group totals, sequence) is read OUTSIDE the
+  // write transaction. Reading the whole members/records set inside the per-drink
+  // transaction is what made concurrent drinks in one group abort with lock
+  // timeouts — every drink overlapped every other drink's read/write set. These
+  // values feed display/event fields only; the authoritative per-user aggregates
+  // are written transactionally in Phase B, and leaderboards are always recomputed
+  // from records on read, so a slightly stale snapshot here cannot corrupt data.
+  const [membersSnap, weekRecordsSnap, todayRecordsSnap, groupSnap, userTodayRecordsSnap] = await Promise.all([
+    membersRef.get(),
+    buildRecentRecordsQuery(recordsRef, weekStart, todayStr).get(),
+    buildRecentRecordsQuery(recordsRef, todayStr, todayStr).get(),
+    groupRef.get(),
+    buildUserRecordsQuery(userRecordsRef, todayStr, todayStr).get(),
+  ]);
+
+  const groupDoc = toWaterGroupDoc(groupSnap);
+  const weekRecords = weekRecordsSnap.docs.map(toWaterRecordDoc);
+  const todayRecords = todayRecordsSnap.docs.map(toWaterRecordDoc);
+  const weekTotals = mapByUser(weekRecords);
+  const todayTotals = mapByUser(todayRecords);
+  const userTodayRecords = userTodayRecordsSnap.docs.map(toWaterUserRecordDoc);
+  const groupTodayRecordCount = todayRecordsSnap.docs.length;
+
+  const normalizedMembers = membersSnap.docs.map((doc) => {
+    const raw = toWaterMemberDoc(doc);
+    const resetPatch = resetDayIfNeeded(raw, todayStr);
+    const todayMl = todayTotals.get(doc.id) ?? resetPatch.todayMl ?? raw.todayMl;
+    return normalizeMemberDoc(raw, {
+      ...resetPatch,
+      todayMl,
+      weekMl: weekTotals.get(doc.id) ?? 0,
+      lineUserId: raw.lineUserId || doc.id,
+    });
+  });
+
+  const currentMember = normalizedMembers.find((member) => member.lineUserId === user.userId);
+  if (!currentMember) {
+    throw new Error(`Water member ${user.userId} not found`);
+  }
+
+  const beforeRows = computeLeaderboardRows(normalizedMembers);
+  const beforeMe = buildMeRow(beforeRows, user.userId);
+  const todayUserRecords = todayRecords.filter((record) => record.lineUserId === user.userId);
+  const newTodayDrinkCount = todayUserRecords.length + 1;
+  const nextWeekMl = (weekTotals.get(user.userId) ?? 0) + input.ml;
+  const nextUserTodayDrinkCount = userTodayRecords.length + 1;
+
+  // ── Phase B: per-user write transaction ────────────────────────────────────
+  // Touches only this user's documents (member, user, the two record mirrors), so
+  // concurrent drinks by *different* users never conflict, and only same-user
+  // concurrent drinks serialize — which is both correct and rare.
+  const { now, recordDoc, updatedMember, newPersistentAchievements } = await db.runTransaction(async (transaction) => {
+    const txNow = admin.firestore.Timestamp.now();
+    const [memberSnap, userSnap] = await Promise.all([
       transaction.get(memberRef),
-      transaction.get(membersRef),
-      transaction.get(buildRecentRecordsQuery(recordsRef, weekStart, todayStr)),
-      transaction.get(buildRecentRecordsQuery(recordsRef, todayStr, todayStr)),
+      transaction.get(userRef),
     ]);
-    const userDoc = userSnap.data() as WaterUserDoc | undefined;
-    const groupDoc = toWaterGroupDoc(groupSnap as Parameters<typeof toWaterGroupDoc>[0]);
 
     if (!memberSnap.exists) {
       throw new Error(`Water member ${user.userId} not found`);
     }
+    const userDoc = userSnap.data() as WaterUserDoc | undefined;
     if (!userDoc) {
       throw new Error(`Water user ${user.userId} not found`);
     }
 
-    const weekRecords = weekRecordsSnap.docs.map(toWaterRecordDoc);
-    const todayRecords = todayRecordsSnap.docs.map(toWaterRecordDoc);
-    const weekTotals = mapByUser(weekRecords);
-    const todayTotals = mapByUser(todayRecords);
-    const userTodayRecords = userTodayRecordsSnap.docs.map(toWaterUserRecordDoc);
+    // Authoritative member accumulation read-modify-write (handles day rollover).
+    const memberRaw = toWaterMemberDoc(memberSnap as FirebaseFirestore.QueryDocumentSnapshot);
+    const normalizedCurrent = normalizeMemberDoc(memberRaw, { lineUserId: memberRaw.lineUserId || user.userId });
+    const memberResetPatch = resetDayIfNeeded(memberRaw, todayStr);
+    const memberTodayBase = memberResetPatch.todayMl ?? memberRaw.todayMl;
+    const nextStreak = computeStreakAfterDrink(normalizedCurrent, todayStr);
 
-    const normalizedMembers = membersSnap.docs.map((doc) => {
-      const raw = toWaterMemberDoc(doc);
-      const resetPatch = resetDayIfNeeded(raw, todayStr);
-      const todayMl = todayTotals.get(doc.id) ?? resetPatch.todayMl ?? raw.todayMl;
-      const normalized = normalizeMemberDoc(raw, {
-        ...resetPatch,
-        todayMl,
-        weekMl: weekTotals.get(doc.id) ?? 0,
-        lineUserId: raw.lineUserId || doc.id,
-      });
+    const txNewPersistent: AchievementId[] = [];
+    let nextAchievements = [...normalizedCurrent.achievements];
+    nextAchievements = maybeUnlockPersistentAchievement(nextAchievements, txNewPersistent, 'first_drink', newTodayDrinkCount === 1);
+    nextAchievements = maybeUnlockPersistentAchievement(nextAchievements, txNewPersistent, 'hydration_master', newTodayDrinkCount >= 5);
+    nextAchievements = maybeUnlockPersistentAchievement(nextAchievements, txNewPersistent, '7_day_streak', nextStreak >= 7);
+    nextAchievements = maybeUnlockPersistentAchievement(nextAchievements, txNewPersistent, '30_day_streak', nextStreak >= 30);
 
-      if (Object.keys(resetPatch).length > 0 || raw.weekMl !== normalized.weekMl || raw.todayMl !== normalized.todayMl) {
-        transaction.set(
-          doc.ref,
-          {
-            ...resetPatch,
-            todayMl: normalized.todayMl,
-            weekMl: normalized.weekMl,
-            updatedAt: now,
-          },
-          { merge: true }
-        );
-      }
-
-      return normalized;
-    });
-
-    const currentMember = normalizedMembers.find((member) => member.lineUserId === user.userId);
-    if (!currentMember) {
-      throw new Error(`Water member ${user.userId} not found`);
-    }
-
-    const beforeRows = computeLeaderboardRows(normalizedMembers);
-    const beforeMe = buildMeRow(beforeRows, user.userId);
-
-    const todayUserRecords = todayRecords.filter((record) => record.lineUserId === user.userId);
-    const newTodayDrinkCount = todayUserRecords.length + 1;
-    const nextWeekMl = (weekTotals.get(user.userId) ?? 0) + input.ml;
-    const nextStreak = computeStreakAfterDrink(currentMember, todayStr);
-    const nextUserTodayDrinkCount = userTodayRecords.length + 1;
     const nextUserStreak = computeStreakAfterDrink({
       lineUserId: user.userId,
       displayName: user.displayName,
@@ -1199,71 +1232,24 @@ export async function logDrink(
       updatedAt: userDoc.lastSeenAt,
     }, todayStr);
 
-    const newPersistentAchievements: AchievementId[] = [];
-    let nextAchievements = [...currentMember.achievements];
-    nextAchievements = maybeUnlockPersistentAchievement(
-      nextAchievements,
-      newPersistentAchievements,
-      'first_drink',
-      newTodayDrinkCount === 1
-    );
-    nextAchievements = maybeUnlockPersistentAchievement(
-      nextAchievements,
-      newPersistentAchievements,
-      'hydration_master',
-      newTodayDrinkCount >= 5
-    );
-    nextAchievements = maybeUnlockPersistentAchievement(
-      nextAchievements,
-      newPersistentAchievements,
-      '7_day_streak',
-      nextStreak >= 7
-    );
-    nextAchievements = maybeUnlockPersistentAchievement(
-      nextAchievements,
-      newPersistentAchievements,
-      '30_day_streak',
-      nextStreak >= 30
-    );
-
     const userUnlocked: AchievementId[] = [];
     let nextUserAchievements = [...(userDoc.achievements ?? [])];
-    nextUserAchievements = maybeUnlockPersistentAchievement(
-      nextUserAchievements,
-      userUnlocked,
-      'first_drink',
-      (userDoc.totalMl ?? 0) === 0
-    );
-    nextUserAchievements = maybeUnlockPersistentAchievement(
-      nextUserAchievements,
-      userUnlocked,
-      'hydration_master',
-      nextUserTodayDrinkCount >= 5
-    );
-    nextUserAchievements = maybeUnlockPersistentAchievement(
-      nextUserAchievements,
-      userUnlocked,
-      '7_day_streak',
-      nextUserStreak >= 7
-    );
-    nextUserAchievements = maybeUnlockPersistentAchievement(
-      nextUserAchievements,
-      userUnlocked,
-      '30_day_streak',
-      nextUserStreak >= 30
-    );
+    nextUserAchievements = maybeUnlockPersistentAchievement(nextUserAchievements, userUnlocked, 'first_drink', (userDoc.totalMl ?? 0) === 0);
+    nextUserAchievements = maybeUnlockPersistentAchievement(nextUserAchievements, userUnlocked, 'hydration_master', nextUserTodayDrinkCount >= 5);
+    nextUserAchievements = maybeUnlockPersistentAchievement(nextUserAchievements, userUnlocked, '7_day_streak', nextUserStreak >= 7);
+    nextUserAchievements = maybeUnlockPersistentAchievement(nextUserAchievements, userUnlocked, '30_day_streak', nextUserStreak >= 30);
 
-    const updatedMember = normalizeMemberDoc(currentMember, {
+    const txUpdatedMember = normalizeMemberDoc(normalizedCurrent, {
       displayName: user.displayName,
       pictureUrl: user.pictureUrl,
-      todayMl: currentMember.todayMl + input.ml,
+      todayMl: memberTodayBase + input.ml,
       todayDate: todayStr,
       weekMl: nextWeekMl,
-      totalMl: currentMember.totalMl + input.ml,
+      totalMl: memberRaw.totalMl + input.ml,
       streak: nextStreak,
       achievements: nextAchievements,
-      lastDrinkAt: now,
-      updatedAt: now,
+      lastDrinkAt: txNow,
+      updatedAt: txNow,
     });
 
     transaction.set(
@@ -1272,129 +1258,132 @@ export async function logDrink(
         lineUserId: user.userId,
         displayName: user.displayName,
         pictureUrl: user.pictureUrl,
-        todayMl: updatedMember.todayMl,
+        todayMl: txUpdatedMember.todayMl,
         todayDate: todayStr,
-        weekMl: updatedMember.weekMl,
-        totalMl: updatedMember.totalMl,
-        streak: updatedMember.streak,
-        achievements: updatedMember.achievements,
-        lastDrinkAt: now,
-        updatedAt: now,
+        weekMl: txUpdatedMember.weekMl,
+        totalMl: txUpdatedMember.totalMl,
+        streak: txUpdatedMember.streak,
+        achievements: txUpdatedMember.achievements,
+        lastDrinkAt: txNow,
+        updatedAt: txNow,
       },
       { merge: true }
     );
 
     const recordRef = recordsRef.doc();
-    const recordDoc: WaterRecordDoc = {
+    const txRecordDoc: WaterRecordDoc = {
       id: recordRef.id,
       lineUserId: user.userId,
       displayName: user.displayName,
       ml: input.ml,
       drinkType: input.drinkType,
       date: todayStr,
-      timestamp: now,
-      createdAt: now,
+      timestamp: txNow,
+      createdAt: txNow,
     };
-    transaction.set(recordRef, recordDoc);
-    transaction.set(userRecordsRef.doc(recordDoc.id), {
-      ...recordDoc,
+    transaction.set(recordRef, txRecordDoc);
+    transaction.set(userRecordsRef.doc(txRecordDoc.id), {
+      ...txRecordDoc,
       groupId,
       groupName: input.groupName ?? groupDoc?.groupName ?? '',
     } satisfies WaterUserRecordDoc);
     transaction.set(userRef, {
       displayName: user.displayName,
       pictureUrl: user.pictureUrl,
-      lastSeenAt: now,
+      lastSeenAt: txNow,
       lastGroupId: groupId,
       groupIds: normalizeGroupIdList([...(userDoc.groupIds ?? []), groupId]),
       totalMl: (userDoc.totalMl ?? 0) + input.ml,
       streak: nextUserStreak,
       achievements: nextUserAchievements,
-      lastDrinkAt: now,
+      lastDrinkAt: txNow,
       aggregateVersion: WATER_USER_AGGREGATE_VERSION,
     } satisfies Partial<WaterUserDoc>, { merge: true });
 
-    const afterMembers = normalizedMembers.map((member) =>
-      member.lineUserId === user.userId ? updatedMember : member
-    );
-    const afterRows = computeLeaderboardRows(afterMembers);
-    const afterMe = buildMeRow(afterRows, user.userId);
-    const eventAchievements: AchievementId[] = [];
-
-    if (afterMe.rank < beforeMe.rank || (beforeMe.rank === 1 && afterMe.rank === 1)) {
-      eventAchievements.push('now_im_best');
-    }
-
-    if (afterMe.rank === afterRows.length && afterRows.length >= 2) {
-      eventAchievements.push('now_im_worst');
-    }
-
-    // ─── BE-5: New gamification fields ────────────────────────────────────────
-
-    const baseline = getPerMemberBaseline(groupDoc);
-
-    // comboCount: records by this user in the past 90 min + 1 (this drink)
-    const ninetyMinAgoMs = now.toMillis() - 90 * 60 * 1000;
-    const comboCount =
-      todayUserRecords.filter((r) => r.timestamp.toMillis() >= ninetyMinAgoMs).length + 1;
-
-    // group totals before and after this drink
-    const beforeGroupTodayMl = normalizedMembers.reduce((sum, m) => sum + m.todayMl, 0);
-    const groupTodayMl = afterMembers.reduce((sum, m) => sum + m.todayMl, 0);
-    const groupGoalMl = afterMembers.length * baseline;
-
-    // groupDrinkSequence: position of this drink in today's group log
-    const groupDrinkSequence = todayRecordsSnap.docs.length + 1;
-
-    // groupGoalJustReached: first time today that the group crossed the goal
-    const groupGoalJustReached =
-      beforeGroupTodayMl < groupGoalMl &&
-      groupTodayMl >= groupGoalMl &&
-      (groupDoc?.lastGoalReachedDate ?? '') !== todayStr;
-
-    if (groupGoalJustReached) {
-      transaction.set(groupRef, { lastGoalReachedDate: todayStr, updatedAt: now }, { merge: true });
-    }
-
-    // belowDisplayName: the member ranked just below me after this drink
-    const belowDisplayName = afterRows[afterMe.rank]?.displayName ?? null;
-
-    // ─── BE-8: M6 daily first logger ──────────────────────────────────────────
-
-    const isDailyFirst =
-      groupDrinkSequence === 1 && (groupDoc?.firstLoggerDate ?? '') !== todayStr;
-
-    if (isDailyFirst) {
-      transaction.set(
-        groupRef,
-        {
-          firstLoggerDate: todayStr,
-          firstLoggerUserId: user.userId,
-          firstLoggerDisplayName: user.displayName,
-          updatedAt: now,
-        },
-        { merge: true }
-      );
-      eventAchievements.push('daily_first');
-    }
-
-    return {
-      record: serializeWaterRecord(recordDoc),
-      member: serializeWaterMember(updatedMember),
-      rankBefore: beforeMe.rank,
-      rankAfter: afterMe.rank,
-      surpassedCount: Math.max(0, beforeMe.rank - afterMe.rank),
-      eventAchievements,
-      newPersistentAchievements,
-      comboCount,
-      groupTodayMl,
-      groupGoalMl,
-      groupGoalJustReached,
-      groupDrinkSequence,
-      belowDisplayName,
-      isDailyFirst,
-    };
+    return { now: txNow, recordDoc: txRecordDoc, updatedMember: txUpdatedMember, newPersistentAchievements: txNewPersistent };
   });
+
+  // ── Phase C: leaderboard / group deltas from the pre-read snapshot ──────────
+  const afterMembers = normalizedMembers.map((member) =>
+    member.lineUserId === user.userId ? updatedMember : member
+  );
+  const afterRows = computeLeaderboardRows(afterMembers);
+  const afterMe = buildMeRow(afterRows, user.userId);
+  const eventAchievements: AchievementId[] = [];
+
+  if (afterMe.rank < beforeMe.rank || (beforeMe.rank === 1 && afterMe.rank === 1)) {
+    eventAchievements.push('now_im_best');
+  }
+  if (afterMe.rank === afterRows.length && afterRows.length >= 2) {
+    eventAchievements.push('now_im_worst');
+  }
+
+  const baseline = getPerMemberBaseline(groupDoc);
+  const ninetyMinAgoMs = now.toMillis() - 90 * 60 * 1000;
+  const comboCount = todayUserRecords.filter((r) => r.timestamp.toMillis() >= ninetyMinAgoMs).length + 1;
+
+  const beforeGroupTodayMl = normalizedMembers.reduce((sum, m) => sum + m.todayMl, 0);
+  const groupTodayMl = afterMembers.reduce((sum, m) => sum + m.todayMl, 0);
+  const groupGoalMl = afterMembers.length * baseline;
+  const groupDrinkSequence = groupTodayRecordCount + 1;
+  const belowDisplayName = afterRows[afterMe.rank]?.displayName ?? null;
+
+  // ── Phase D: rare, de-duplicated group-flag writes (isolated transaction) ───
+  // Only the day's first drink and the goal-crossing drink ever touch the shared
+  // group doc. The de-dup read inside this transaction guarantees exactly one
+  // winner even when several drinks race, without serialising every drink.
+  const goalCandidate = beforeGroupTodayMl < groupGoalMl && groupTodayMl >= groupGoalMl;
+  const firstCandidate = groupDrinkSequence === 1;
+  let groupGoalJustReached = false;
+  let isDailyFirst = false;
+
+  if (goalCandidate || firstCandidate) {
+    ({ groupGoalJustReached, isDailyFirst } = await db.runTransaction(async (transaction) => {
+      const flagNow = admin.firestore.Timestamp.now();
+      const gSnap = await transaction.get(groupRef);
+      const g = toWaterGroupDoc(gSnap);
+      const patch: Partial<WaterGroupDoc> = {};
+      let reached = false;
+      let first = false;
+
+      if (firstCandidate && (g?.firstLoggerDate ?? '') !== todayStr) {
+        first = true;
+        patch.firstLoggerDate = todayStr;
+        patch.firstLoggerUserId = user.userId;
+        patch.firstLoggerDisplayName = user.displayName;
+      }
+      if (goalCandidate && (g?.lastGoalReachedDate ?? '') !== todayStr) {
+        reached = true;
+        patch.lastGoalReachedDate = todayStr;
+      }
+      if (Object.keys(patch).length > 0) {
+        patch.updatedAt = flagNow;
+        transaction.set(groupRef, patch, { merge: true });
+      }
+      return { groupGoalJustReached: reached, isDailyFirst: first };
+    }));
+  }
+
+  if (isDailyFirst) {
+    eventAchievements.push('daily_first');
+  }
+
+  return {
+    record: serializeWaterRecord(recordDoc),
+    member: serializeWaterMember(updatedMember),
+    rankBefore: beforeMe.rank,
+    rankAfter: afterMe.rank,
+    surpassedCount: Math.max(0, beforeMe.rank - afterMe.rank),
+    eventAchievements,
+    newPersistentAchievements,
+    comboCount,
+    groupTodayMl,
+    groupGoalMl,
+    groupGoalJustReached,
+    groupDrinkSequence,
+    belowDisplayName,
+    isDailyFirst,
+  };
 }
 
 // ─── BE-1: Group goal ────────────────────────────────────────────────────────

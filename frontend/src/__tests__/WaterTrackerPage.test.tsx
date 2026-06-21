@@ -181,6 +181,15 @@ describe('WaterTrackerPage — initial load', () => {
       expect(mlTexts.length).toBeGreaterThan(0);
     });
   });
+
+  it('opens the expanded leaderboard panel', async () => {
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: '展開今日排行' }));
+
+    expect(screen.getByText('Today · ml')).toBeInTheDocument();
+  });
 });
 
 describe('WaterTrackerPage — drink flow', () => {
@@ -225,6 +234,7 @@ describe('WaterTrackerPage — drink flow', () => {
       expect(screen.getByRole('button', { name: /分享成就到群組/ })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /忍痛放棄/ })).toBeInTheDocument();
     });
+    expect(screen.queryByText(/預覽下一種/)).not.toBeInTheDocument();
   });
 
   it('modal closes on dismiss', async () => {

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLiff } from '../../contexts/useLiff';
 import { waterApi } from '../../lib/liffApi';
@@ -70,6 +71,42 @@ function GroupSelector(props: {
   );
 }
 
+function CenteredPanel(props: {
+  title: string;
+  eyebrow?: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const { title, eyebrow, onClose, children } = props;
+
+  return (
+    <>
+      <div className="absolute inset-0 z-[75] bg-[#03060e]/70 backdrop-blur-md" onClick={onClose} />
+      <section className="absolute inset-0 z-[76] flex h-[100dvh] items-center justify-center p-[14px]">
+        <div className="flex h-[calc(100dvh-28px)] w-full max-w-md flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0a1424] shadow-[0_28px_70px_-24px_rgba(0,0,0,.9)] [animation:wb-pop_.45s_cubic-bezier(.22,1.25,.4,1)]">
+          <div className="flex flex-none items-center justify-between gap-4 border-b border-white/[.06] px-[18px] py-[14px]">
+            <div className="min-w-0">
+              {eyebrow && <p className="font-['Archivo'] text-[10px] font-black uppercase tracking-[.18em] text-sky-300">{eyebrow}</p>}
+              <h2 className="truncate text-[17px] font-black text-sky-50">{title}</h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-white/10 bg-white/[.06] text-sm font-black text-slate-300 transition hover:bg-white/[.1]"
+              aria-label="關閉"
+            >
+              ×
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 p-[14px]">
+            {children}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
 export default function WaterTrackerPage() {
   const { ready, loading: liffLoading, error: liffError, profile, idToken, groupId: liveGroupId, authRedirecting } = useLiff();
   const { search } = useLocation();
@@ -98,6 +135,7 @@ export default function WaterTrackerPage() {
   const [heroExpanded, setHeroExpanded] = useState(false);
   const [suggestedAmount, setSuggestedAmount] = useState<number | undefined>(undefined);
   const [suggestionKey, setSuggestionKey] = useState(0);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -257,15 +295,15 @@ export default function WaterTrackerPage() {
   const activeCount = today.members.filter((item) => item.todayMl > 0).length;
 
   return (
-    <div ref={screenRef} className={`wb-scroll relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#081428_0%,#050b18_45%,#04080f_100%)] text-sky-50 ${heroExpanded ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
-      <div className={`overflow-hidden transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-[210px] opacity-100'}`}>
+    <div ref={screenRef} className="relative flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#081428_0%,#050b18_45%,#04080f_100%)] text-sky-50">
+      <div className={`flex-none overflow-hidden transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-[178px] opacity-100'}`}>
         <header className="px-[14px] pt-[14px]">
           <LivePulse pulse={today.pulse} compact onOpenHistory={() => setHistoryOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
 
-          <div className="mt-[10px] overflow-hidden rounded-[18px] border border-white/[.06] bg-white/[.035] p-[14px_16px]">
-            <div className="mb-[11px] flex items-start justify-between gap-[14px]">
+          <div className="mt-[10px] overflow-hidden rounded-[18px] border border-white/[.06] bg-white/[.035] p-[12px_14px]">
+            <div className="mb-[9px] flex items-start justify-between gap-[14px]">
               <div className="min-w-0">
-                <p className="text-lg font-black leading-tight text-sky-50">{today.groupName || '喝水戰隊'}</p>
+                <p className="text-[17px] font-black leading-tight text-sky-50">{today.groupName || '喝水戰隊'}</p>
                 <p className="mt-1 text-xs font-medium text-slate-500">
                   {today.memberCount} 位成員 · 今日 {activeCount} 人已喝
                 </p>
@@ -285,7 +323,7 @@ export default function WaterTrackerPage() {
         </header>
       </div>
 
-        <main className="px-[14px] pb-24 pt-3">
+        <main className={`flex min-h-0 flex-1 flex-col px-[14px] pb-[14px] pt-3 transition duration-500 ${heroExpanded ? 'justify-center' : ''}`}>
           <HeroStatusCard
             heroState={heroState}
             onQuickLog={handleHeroAction}
@@ -305,26 +343,44 @@ export default function WaterTrackerPage() {
             )}
           </HeroStatusCard>
 
-          <section className={`mt-4 overflow-hidden rounded-[22px] border border-white/[.06] bg-white/[.03] p-[16px_14px_14px] transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-[640px] opacity-100'}`}>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-black text-white">今日排行</h2>
-              <span className="font-['Archivo'] text-[11px] tracking-wide text-slate-500">TODAY · ml</span>
+          <section className={`mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-white/[.06] bg-white/[.03] p-[14px_12px_12px] transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-[45dvh] opacity-100'}`}>
+            <div className="mb-3 flex flex-none items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setLeaderboardOpen(true)}
+                className="min-w-0 text-left"
+                aria-label="展開今日排行"
+              >
+                <h2 className="text-sm font-black text-white">今日排行</h2>
+                <p className="mt-0.5 text-[11px] text-slate-500">點擊展開完整清單</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLeaderboardOpen(true)}
+                className="rounded-full border border-white/10 bg-white/[.06] px-3 py-1.5 font-['Archivo'] text-[10px] font-black tracking-wide text-sky-200 transition hover:bg-white/[.1]"
+              >
+                EXPAND
+              </button>
             </div>
             <Leaderboard
               members={today.members}
               myUserId={member.lineUserId}
               myLastDrinkAt={member.lastDrinkAt}
+              scrollable
+              focusMyRank
+              className="min-h-0 flex-1"
             />
           </section>
         </main>
 
-        <div className={`absolute bottom-0 left-0 right-0 z-[35] bg-[linear-gradient(180deg,transparent,#04080f_38%)] p-[14px_16px_24px] transition duration-500 ${heroExpanded ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+        <div className={`absolute bottom-[14px] right-[14px] z-[35] transition duration-500 ${heroExpanded ? 'translate-y-3 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
           <ShareButton
             member={member}
             surpassedCount={drinkResult?.surpassedCount}
             achievements={drinkResult ? [...drinkResult.eventAchievements, ...drinkResult.newPersistentAchievements] : []}
             idToken={idToken}
             entryGroupId={sessionData.activeGroup.entryGroupId}
+            compact
           />
         </div>
 
@@ -337,27 +393,30 @@ export default function WaterTrackerPage() {
         />
       )}
 
+      {leaderboardOpen && (
+        <CenteredPanel title="今日排行" eyebrow="Today · ml" onClose={() => setLeaderboardOpen(false)}>
+          <Leaderboard
+            members={today.members}
+            myUserId={member.lineUserId}
+            myLastDrinkAt={member.lastDrinkAt}
+            scrollable
+            focusMyRank
+            className="h-full"
+          />
+        </CenteredPanel>
+      )}
+
       {historyOpen && (
-        <>
-          <div className="absolute inset-0 z-[75] bg-[#03060e]/60 backdrop-blur" onClick={() => setHistoryOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 z-[76] flex max-h-[74%] flex-col rounded-t-[26px] border-t border-white/10 bg-[#0a1424] p-[8px_18px_24px]">
-            <div className="mx-auto mb-[14px] mt-2 h-[5px] w-[42px] rounded-[3px] bg-white/[.18]" />
-            <div className="mb-[14px] flex items-center justify-between">
-              <span className="text-[17px] font-black text-sky-50">今日喝水紀錄</span>
-              <button type="button" onClick={() => setHistoryOpen(false)} className="text-sm text-slate-500">關閉</button>
-            </div>
-            <div className="wb-scroll overflow-y-auto">
-              <LivePulse pulse={today.pulse} />
-            </div>
+        <CenteredPanel title="今日喝水紀錄" eyebrow="Live pulse" onClose={() => setHistoryOpen(false)}>
+          <div className="wb-scroll h-full overflow-y-auto">
+            <LivePulse pulse={today.pulse} />
           </div>
-        </>
+        </CenteredPanel>
       )}
 
       {profileOpen && (
-        <>
-          <div className="absolute inset-0 z-[75] bg-[#03060e]/60 backdrop-blur" onClick={() => setProfileOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 z-[76] rounded-t-[26px] border-t border-white/10 bg-[#0a1424] p-[8px_18px_26px]">
-            <div className="mx-auto mb-4 mt-2 h-[5px] w-[42px] rounded-[3px] bg-white/[.18]" />
+        <CenteredPanel title="個人資料" eyebrow="Profile" onClose={() => setProfileOpen(false)}>
+          <div className="flex h-full flex-col justify-center">
             <div className="mb-[18px] flex items-center gap-[14px]">
               <div className="flex h-[58px] w-[58px] items-center justify-center rounded-full bg-[linear-gradient(140deg,#38bdf8,#2563eb)] text-[22px] font-black text-[#03060e]">你</div>
               <div>
@@ -381,7 +440,7 @@ export default function WaterTrackerPage() {
             </div>
             <div className="mt-[14px] text-center text-[11px] text-slate-600">成就 · 週統計 · 設定都收納在這裡</div>
           </div>
-        </>
+        </CenteredPanel>
       )}
     </div>
   );

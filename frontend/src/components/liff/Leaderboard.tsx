@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FirestoreTimestamp, LeaderboardRow } from '../../lib/liffApi';
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
@@ -16,10 +16,29 @@ interface Props {
   members: LeaderboardRow[];
   myUserId: string;
   myLastDrinkAt?: FirestoreTimestamp | null;
+  className?: string;
+  scrollable?: boolean;
+  focusMyRank?: boolean;
 }
 
-export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props) {
+export default function Leaderboard({ members, myUserId, myLastDrinkAt, className = '', scrollable = false, focusMyRank = false }: Props) {
   const [now] = useState(() => Date.now());
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const myRowRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!focusMyRank) return;
+    const scroller = scrollerRef.current;
+    const row = myRowRef.current;
+    if (!scroller || !row) return;
+
+    const top = Math.max(0, row.offsetTop - (scroller.clientHeight / 2) + (row.clientHeight / 2));
+    if (typeof scroller.scrollTo === 'function') {
+      scroller.scrollTo({ top, behavior: 'smooth' });
+    } else {
+      scroller.scrollTop = top;
+    }
+  }, [focusMyRank, members, myUserId]);
 
   if (members.length === 0) {
     return <p className="py-4 text-center text-sm text-slate-400">尚無成員資料</p>;
@@ -29,7 +48,8 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props)
   const myLastMs = myLastDrinkAt ? tsToMs(myLastDrinkAt) : 0;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div ref={scrollerRef} className={`${scrollable ? 'wb-scroll overflow-y-auto pr-1' : ''} ${className}`}>
+      <div className="flex flex-col gap-2">
       {members.map(row => {
         const isMe = row.lineUserId === myUserId;
         const medalBg = RANK_COLORS[row.rank];
@@ -44,6 +64,7 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props)
         return (
           <div
             key={row.lineUserId}
+            ref={isMe ? myRowRef : undefined}
             data-testid={isActive ? 'row-active' : undefined}
             className={`flex items-center gap-[11px] rounded-[15px] px-[11px] py-[9px] transition-colors ${
               isMe ? 'border border-sky-300/40 bg-sky-400/15' : 'border border-white/5 bg-white/[.025]'
@@ -87,6 +108,7 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props)
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

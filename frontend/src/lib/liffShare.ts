@@ -67,7 +67,6 @@ export async function shareLineMessage(message: LineFlexMessage): Promise<ShareR
   if (import.meta.env.VITE_USE_MOCK_API === 'true' && getActiveLiffMockPresetId() === 'share_unavailable') {
     throw new Error('Mock preset share_unavailable: LINE 分享功能不可用');
   }
-
   const errors: string[] = [];
 
   if (isInLineClient() && typeof liff.sendMessages === 'function') {

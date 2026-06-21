@@ -14,6 +14,11 @@ const WATER_USER_AGGREGATE_VERSION = 1;
 // game is opened to more groups and people.
 const FIRESTORE_BATCH_LIMIT = 499;
 
+// Retry budget for the drink write transactions. Firestore's default is 5; a
+// slightly higher cap lets brief same-document bursts (rapid taps, flash crowds)
+// resolve instead of surfacing an ABORTED/lock-timeout error to the user.
+const DRINK_TX_MAX_ATTEMPTS = 8;
+
 // Upper bound for a single drink log. Without it a malformed/abusive client can
 // poison the leaderboard and group aggregates with an arbitrarily large value.
 export const MAX_DRINK_ML = Number(process.env['WATER_MAX_DRINK_ML']) || 5000;
@@ -1125,8 +1130,6 @@ export async function logDrink(
   user: LiffUser,
   input: { ml: number; drinkType: DrinkType; groupName?: string }
 ): Promise<LogDrinkResponse> {
-  await ensureIdentity(db, { groupId, groupName: input.groupName }, user);
-
   const todayStr = getTaipeiDateString();
   const weekStart = getWeekStartDateString(todayStr);
   const userRef = db.collection(WATER_USERS_COLLECTION).doc(user.userId);
@@ -1135,6 +1138,17 @@ export async function logDrink(
   const memberRef = groupRef.collection('members').doc(user.userId);
   const membersRef = groupRef.collection('members');
   const recordsRef = groupRef.collection('records');
+
+  // Bootstrap identity only when this member is new to the group. Re-running the
+  // full ensureIdentity on every drink added a second transaction on the hot path
+  // and pulled the shared group doc into its read set, which drove concurrent
+  // drinks into lock-timeout aborts. The drink transaction (Phase B) itself
+  // persists displayName/pictureUrl/groupIds/lastSeen, so returning members can
+  // safely skip the bootstrap.
+  const [memberPreSnap, userPreSnap] = await Promise.all([memberRef.get(), userRef.get()]);
+  if (!memberPreSnap.exists || !userPreSnap.exists) {
+    await ensureIdentity(db, { groupId, groupName: input.groupName }, user);
+  }
 
   // ── Phase A: non-transactional pre-read ────────────────────────────────────
   // Group-wide state (leaderboard, group totals, sequence) is read OUTSIDE the
@@ -1301,7 +1315,7 @@ export async function logDrink(
     } satisfies Partial<WaterUserDoc>, { merge: true });
 
     return { now: txNow, recordDoc: txRecordDoc, updatedMember: txUpdatedMember, newPersistentAchievements: txNewPersistent };
-  });
+  }, { maxAttempts: DRINK_TX_MAX_ATTEMPTS });
 
   // ── Phase C: leaderboard / group deltas from the pre-read snapshot ──────────
   const afterMembers = normalizedMembers.map((member) =>
@@ -1361,7 +1375,7 @@ export async function logDrink(
         transaction.set(groupRef, patch, { merge: true });
       }
       return { groupGoalJustReached: reached, isDailyFirst: first };
-    }));
+    }, { maxAttempts: DRINK_TX_MAX_ATTEMPTS }));
   }
 
   if (isDailyFirst) {

@@ -10,6 +10,7 @@
     "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:emulator": "firebase emulators:exec --only firestore --project demo-wippy \"jest water.emulator --runInBand\"",
     "dump:run": "ts-node src/scripts/dumpRun.ts"
   },
   "jest": {

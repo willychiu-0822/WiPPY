@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { DrinkType } from '../../lib/liffApi';
 
 const DRINK_OPTIONS: Array<{ type: DrinkType; label: string; emoji: string }> = [
@@ -23,14 +23,16 @@ interface OverflowDialog {
 interface Props {
   onSubmit: (ml: number, drinkType: DrinkType) => Promise<void>;
   submitting?: boolean;
+  initialAmount?: number;
+  onSubmitted?: () => void;
 }
 
-export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
+export default function DrinkLogger({ onSubmit, submitting = false, initialAmount, onSubmitted }: Props) {
   const [drinkType, setDrinkType] = useState<DrinkType>('water');
-  const [history, setHistory] = useState<number[]>([]);
+  const [history, setHistory] = useState<number[]>(() => initialAmount && initialAmount > 0 ? [initialAmount] : []);
   const [customInput, setCustomInput] = useState('');
   const [overflow, setOverflow] = useState<OverflowDialog>({ open: false, handled: false, feedbackMsg: null });
-  const prevTotal = useRef(0);
+  const prevTotal = useRef(initialAmount && initialAmount > 0 ? initialAmount : 0);
 
   const total = history.reduce((s, n) => s + n, 0);
 
@@ -95,6 +97,7 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
     try {
       await onSubmit(ml, type);
       handleReset();
+      onSubmitted?.();
     } catch {
       // parent handles error display; keep the entered values so user can retry
     }
@@ -109,15 +112,15 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
     <div className="flex flex-col gap-4">
 
       {/* Drink type selector */}
-      <div className="flex gap-2 justify-center flex-wrap">
+      <div className="flex flex-wrap justify-center gap-2">
         {DRINK_OPTIONS.map(opt => (
           <button
             key={opt.type}
             onClick={() => setDrinkType(opt.type)}
-            className={`min-h-[44px] px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+            className={`min-h-[44px] flex-1 rounded-2xl px-2 py-2 text-sm font-black transition ${
               drinkType === opt.type
-                ? 'bg-sky-500 text-white shadow-sm'
-                : 'bg-sky-50 text-sky-600 hover:bg-sky-100'
+                ? 'bg-sky-500 bg-white text-sky-900 shadow-lg shadow-black/20'
+                : 'border border-white/20 bg-white/10 text-white hover:bg-white/20'
             }`}
           >
             {opt.emoji} {opt.label}
@@ -129,13 +132,13 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
       <div className="text-center">
         <div
           data-testid="running-total"
-          className="text-5xl font-bold text-sky-700"
+          className="font-['Archivo'] text-6xl font-black leading-none tracking-normal text-white drop-shadow-lg"
         >
           {Math.round(total)}
+          <span className="ml-1 text-2xl font-black text-white/60">ml</span>
         </div>
-        <div className="text-sky-400 text-sm">ml</div>
         {detailRow && (
-          <div className="text-xs text-sky-300 mt-1 font-mono">{detailRow}</div>
+          <div className="mt-2 font-['Archivo'] text-xs font-bold text-white/80">{detailRow}</div>
         )}
       </div>
 
@@ -145,7 +148,7 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
           <button
             key={amt}
             onClick={() => addAmount(amt)}
-            className="min-h-[52px] bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-bold rounded-xl text-sm transition-all"
+            className="min-h-[54px] rounded-2xl border border-white/25 bg-white/10 font-['Archivo'] text-lg font-black text-white transition hover:bg-white/20 active:scale-95"
           >
             +{amt}
           </button>
@@ -164,12 +167,12 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
           }}
           onKeyDown={handleCustomKeyDown}
           placeholder="自訂 ml"
-          className="flex-1 min-h-[44px] border border-sky-200 rounded-xl px-3 text-sm text-sky-700 placeholder-sky-300 outline-none focus:border-sky-400"
+          className="min-h-[48px] flex-1 rounded-2xl border border-white/25 bg-black/20 px-4 text-sm text-white outline-none placeholder:text-white/45 focus:border-sky-300"
         />
         <button
           onClick={handleCustomAdd}
           disabled={!customInput || parseInt(customInput, 10) <= 0}
-          className="min-h-[44px] px-4 bg-sky-100 hover:bg-sky-200 text-sky-600 font-semibold rounded-xl text-sm disabled:opacity-40 transition-colors"
+          className="min-h-[48px] rounded-2xl bg-white px-5 text-sm font-black text-sky-900 transition hover:bg-sky-50 disabled:opacity-40"
         >
           加入
         </button>
@@ -177,7 +180,7 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
 
       {/* Overflow feedback */}
       {overflow.feedbackMsg && (
-        <p className="text-center text-sm text-orange-500">{overflow.feedbackMsg}</p>
+        <p className="text-center text-sm text-orange-200">{overflow.feedbackMsg}</p>
       )}
 
       {/* Backspace / Reset */}
@@ -185,16 +188,18 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
         <button
           onClick={handleBackspace}
           disabled={history.length === 0}
-          className="flex-1 min-h-[44px] bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-xl text-sm disabled:opacity-40 transition-colors"
+          aria-label="← 退格"
+          className="min-h-[44px] flex-1 rounded-2xl border border-white/15 bg-black/20 text-sm font-bold text-white/80 transition hover:bg-black/30 disabled:opacity-40"
         >
-          ← 退格
+          移除累加
         </button>
         <button
           onClick={handleReset}
           disabled={history.length === 0}
-          className="flex-1 min-h-[44px] bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-xl text-sm disabled:opacity-40 transition-colors"
+          aria-label="歸零"
+          className="min-h-[44px] flex-1 rounded-2xl border border-white/15 bg-black/20 text-sm font-bold text-white/80 transition hover:bg-black/30 disabled:opacity-40"
         >
-          歸零
+          重置
         </button>
       </div>
 
@@ -202,37 +207,37 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
       <button
         onClick={handleSubmit}
         disabled={total <= 0 || submitting}
-        className="min-h-[52px] bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-bold rounded-2xl text-base disabled:opacity-40 transition-all shadow-sm"
+        className="min-h-[56px] rounded-3xl bg-white text-base font-black text-sky-900 shadow-xl shadow-black/30 transition hover:bg-sky-50 active:scale-95 disabled:bg-white/10 disabled:text-white/45 disabled:shadow-none"
       >
         {submitting ? '記錄中...' : submitLabel}
       </button>
 
       {/* Overflow dialog */}
       {overflow.open && (
-        <div className="fixed inset-0 bg-black/40 flex items-end justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-5 w-full max-w-sm shadow-xl">
-            <h2 className="text-base font-bold text-gray-800 mb-1 text-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur">
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#071326] p-5 shadow-xl">
+            <h2 className="mb-1 text-center text-base font-black text-sky-50">
               你真的一次喝那麼多？💧
             </h2>
-            <p className="text-xs text-gray-400 text-center mb-4">
+            <p className="mb-4 text-center text-xs text-slate-500">
               總量已超過 {OVERFLOW_THRESHOLD} ml
             </p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => handleOverflow('awesome')}
-                className="min-h-[48px] bg-sky-500 text-white font-semibold rounded-xl text-sm"
+                className="min-h-[48px] rounded-2xl bg-sky-400 text-sm font-black text-[#03060e]"
               >
                 對阿我很棒 💪
               </button>
               <button
                 onClick={() => handleOverflow('cumulative')}
-                className="min-h-[48px] bg-sky-50 text-sky-600 font-semibold rounded-xl text-sm"
+                className="min-h-[48px] rounded-2xl bg-white/10 text-sm font-bold text-sky-100"
               >
                 累計一起記
               </button>
               <button
                 onClick={() => handleOverflow('mistake')}
-                className="min-h-[48px] bg-gray-100 text-gray-500 font-semibold rounded-xl text-sm"
+                className="min-h-[48px] rounded-2xl bg-white/5 text-sm font-bold text-slate-400"
               >
                 喔我輸錯了
               </button>

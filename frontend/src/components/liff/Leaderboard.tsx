@@ -18,14 +18,14 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props)
   const [now] = useState(() => Date.now());
 
   if (members.length === 0) {
-    return <p className="text-center text-sky-400 text-sm py-4">尚無成員資料</p>;
+    return <p className="py-4 text-center text-sm text-slate-400">尚無成員資料</p>;
   }
 
   const myRank = members.find(m => m.lineUserId === myUserId)?.rank ?? null;
   const myLastMs = myLastDrinkAt ? tsToMs(myLastDrinkAt) : 0;
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       {members.map(row => {
         const isMe = row.lineUserId === myUserId;
         const medal = row.rank <= 3 ? MEDALS[row.rank - 1] : null;
@@ -41,39 +41,41 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props)
           <div
             key={row.lineUserId}
             data-testid={isActive ? 'row-active' : undefined}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-              isMe ? 'bg-sky-100 border border-sky-300' : 'bg-white'
+            className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition-colors ${
+              isMe ? 'border border-sky-300/40 bg-sky-400/15' : 'border border-white/5 bg-white/[.025]'
             }`}
           >
-            <span className="w-6 text-center text-base leading-none">
-              {medal ?? <span className="text-sky-300 text-xs font-bold">{row.rank}</span>}
+            <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-xl text-center text-sm font-black leading-none ${
+              row.rank <= 3 ? 'bg-amber-300 text-[#03060e]' : 'text-slate-500'
+            }`}>
+              {medal ?? row.rank}
             </span>
 
-            <div className={`w-9 h-9 rounded-full overflow-hidden flex-shrink-0 ${
-              isActive ? 'ring-2 ring-sky-400' : 'bg-sky-200'
+            <div className={`h-10 w-10 flex-shrink-0 overflow-hidden rounded-full ${
+              isActive ? 'ring-2 ring-sky-300 ring-offset-2 ring-offset-[#071326]' : 'bg-sky-300/20'
             }`}>
               {row.pictureUrl ? (
                 <img src={row.pictureUrl} alt={row.displayName} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-sky-500 text-sm font-bold bg-sky-200">
+                <div className="flex h-full w-full items-center justify-center bg-sky-300 text-sm font-black text-[#03060e]">
                   {row.displayName.charAt(0)}
                 </div>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-semibold truncate ${isMe ? 'text-sky-700' : 'text-gray-700'}`}>
+              <p className={`truncate text-sm font-black ${isMe ? 'text-sky-50' : 'text-slate-300'}`}>
                 {row.displayName}
-                {isMe && <span className="ml-1 text-xs text-sky-500">(我)</span>}
-                {isOvertaker && <span className="ml-1 text-xs text-indigo-400">↑ 剛追上</span>}
+                {isMe && <span className="ml-1 text-xs text-sky-300">(我)</span>}
+                {isOvertaker && <span className="ml-1 text-xs text-violet-300">剛剛超車</span>}
               </p>
               {row.streak > 0 && (
-                <p className="text-xs text-orange-400">🔥 {row.streak} 天</p>
+                <p className="text-xs font-bold text-orange-300">連線 {row.streak} 天</p>
               )}
             </div>
 
             <div className="text-right flex-shrink-0">
-              <p className={`text-sm font-bold ${isMe ? 'text-sky-600' : 'text-gray-600'}`}>
+              <p className={`font-['Archivo'] text-sm font-black ${isMe ? 'text-sky-300' : 'text-sky-100'}`}>
                 {Math.round(row.todayMl)} ml
               </p>
             </div>

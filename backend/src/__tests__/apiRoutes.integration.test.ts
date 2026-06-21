@@ -326,6 +326,7 @@ describe('backend API route integration safety net', () => {
 
   it('enables water competition for an owned group and auto-sends the entry URL', async () => {
     process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
+    process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
     const { Client } = require('@line/bot-sdk');
     const mockPushMessage = jest.fn().mockResolvedValue({ messageId: 'line_msg_2' });
     Client.mockImplementation(() => ({ pushMessage: mockPushMessage }));

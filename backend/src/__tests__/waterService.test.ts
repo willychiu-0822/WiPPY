@@ -1098,6 +1098,24 @@ describe('water group activation and session resolution', () => {
       enabledAt: expect.any(Timestamp),
     }));
   });
+
+  it('enables a brand-new water group without writing undefined enabledAt during ensureGroup', async () => {
+    const db = new FakeFirestore();
+
+    await expect(setWaterGroupEnabled(db as never, GROUP_A, { enabled: true, groupName: '測試用' }))
+      .resolves.toEqual({
+        groupId: GROUP_A,
+        groupName: '測試用',
+        isEnabled: true,
+      });
+
+    expect(db.read(`waterGroups/${GROUP_A}`)).toEqual(expect.objectContaining({
+      groupName: '測試用',
+      isEnabled: true,
+      enabledAt: expect.any(Timestamp),
+    }));
+  });
+
   it('allows access only to groups that the user is already bound to', async () => {
     const db = new FakeFirestore();
     seedGroup(db, GROUP_A, '測試用');

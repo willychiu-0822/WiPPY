@@ -786,18 +786,20 @@ export async function ensureGroup(db: Firestore, groupId: string, groupName?: st
   const snapshot = await groupRef.get();
   const group = toWaterGroupDoc(snapshot);
 
-  await groupRef.set(
-    {
-      groupName: groupName ?? group?.groupName ?? '',
-      memberCount: group?.memberCount ?? 0,
-      activeSince: group?.activeSince ?? now,
-      createdAt: group?.createdAt ?? now,
-      updatedAt: now,
-      isEnabled: group?.isEnabled ?? false,
-      enabledAt: group?.enabledAt,
-    } satisfies WaterGroupDoc,
-    { merge: true }
-  );
+  const patch: Partial<WaterGroupDoc> = {
+    groupName: groupName ?? group?.groupName ?? '',
+    memberCount: group?.memberCount ?? 0,
+    activeSince: group?.activeSince ?? now,
+    createdAt: group?.createdAt ?? now,
+    updatedAt: now,
+    isEnabled: group?.isEnabled ?? false,
+  };
+
+  if (group?.enabledAt) {
+    patch.enabledAt = group.enabledAt;
+  }
+
+  await groupRef.set(patch, { merge: true });
 }
 
 function normalizeGroupIdList(groupIds: Array<string | null | undefined>): string[] {

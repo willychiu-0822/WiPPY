@@ -12,16 +12,18 @@ export default function GroupGoalBar({ group, compact = false }: Props) {
 
   return (
     <div data-testid="group-goal-bar" className={compact ? '' : 'rounded-3xl border border-white/10 bg-white/[.035] p-4'}>
-      <div className="mb-2 flex items-center justify-between">
-        <p className={compact ? 'text-[10px] font-black uppercase tracking-[.16em] text-sky-300' : 'text-sm font-black text-sky-100'}>
-          {group.goalReached ? 'Group Goal Clear' : 'Group Tide'}
-        </p>
-        <p className="font-['Archivo'] text-xs font-black text-sky-50">
-          <span className="text-sky-300">{(group.todayMl / 1000).toFixed(1)}L</span>
-          <span className="text-slate-500"> / {(group.goalMl / 1000).toFixed(1)}L · {pct}%</span>
-        </p>
-      </div>
-      <div className="relative h-3 overflow-hidden rounded-full border border-white/5 bg-[#081222]">
+      {!compact && (
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-sm font-black text-sky-100">
+            {group.goalReached ? 'Group Goal Clear' : 'Group Tide'}
+          </p>
+          <p className="font-['Archivo'] text-xs font-black text-sky-50">
+            <span className="text-sky-300">{(group.todayMl / 1000).toFixed(1)}L</span>
+            <span className="text-slate-500"> / {(group.goalMl / 1000).toFixed(1)}L · {pct}%</span>
+          </p>
+        </div>
+      )}
+      <div className={`${compact ? 'h-[14px] rounded-lg' : 'h-3 rounded-full'} relative overflow-hidden border border-white/5 bg-[#081222]`}>
         <div
           className={`relative h-full rounded-full transition-all duration-700 ${
             group.goalReached ? 'bg-gradient-to-r from-emerald-400 to-cyan-300' : 'bg-gradient-to-r from-sky-500 to-cyan-300'

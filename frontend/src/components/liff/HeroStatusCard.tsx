@@ -5,6 +5,7 @@ interface Props {
   heroState: HeroState;
   onQuickLog: (ml: number) => void;
   todayMl?: number;
+  rankLabel?: string;
   expanded?: boolean;
   children?: ReactNode;
 }
@@ -42,7 +43,7 @@ const CONFIG = {
   },
 } as const;
 
-export default function HeroStatusCard({ heroState, onQuickLog, todayMl = 0, expanded = false, children }: Props) {
+export default function HeroStatusCard({ heroState, onQuickLog, todayMl = 0, rankLabel = '', expanded = false, children }: Props) {
   const { kind } = heroState;
 
   let config: (typeof CONFIG)[keyof typeof CONFIG] = CONFIG.normal;
@@ -108,7 +109,7 @@ export default function HeroStatusCard({ heroState, onQuickLog, todayMl = 0, exp
           <span className="rounded-full px-3 py-1.5 font-['Archivo'] text-[10px] font-black uppercase tracking-[.15em] text-[#03060e]" style={{ backgroundColor: config.accent }}>
             {config.kicker}
           </span>
-          <span className="font-['Archivo'] text-sm font-black text-white">LIVE</span>
+          <span className="font-['Archivo'] text-[13px] font-black tracking-wide text-white">{rankLabel}</span>
         </div>
 
         <div>

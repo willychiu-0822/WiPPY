@@ -276,11 +276,19 @@ describe('WaterTrackerPage — drink error handling', () => {
   });
 });
 
-describe('WaterTrackerPage — non-group guard', () => {
-  it('shows friendly message when not in a group context', async () => {
+describe('WaterTrackerPage — unreliable group context', () => {
+  it('still starts a session (backend resolves the group) when context has no groupId', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    (waterApi.session as ReturnType<typeof vi.fn>).mockClear();
+
     mockUseLiff.groupId = null;
     render(<Wrapper />);
-    await waitFor(() => expect(screen.getByText('請在群組內開啟')).toBeInTheDocument());
+
+    // No "open me in a group" dead-end — the tracker loads and the session call
+    // is made with an empty groupId so the backend can resolve a stable group.
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+    expect(waterApi.session).toHaveBeenCalledWith('', undefined, 'mock-id-token');
+
     mockUseLiff.groupId = 'Ctest1'; // restore
   });
 });

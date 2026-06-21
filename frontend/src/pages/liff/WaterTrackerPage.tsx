@@ -37,13 +37,15 @@ export default function WaterTrackerPage() {
   const [drinkResult, setDrinkResult] = useState<DrinkResponse | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // POST /session on mount (once liff is ready)
+  // POST /session on mount (once liff is ready). We intentionally do NOT gate on
+  // groupId: liff.getContext().groupId is unreliable (it can return an ephemeral
+  // value), so we let the backend resolve a stable group from the user instead.
   useEffect(() => {
-    if (!ready || !groupId) return;
+    if (!ready) return;
     setSessionLoading(true);
 
     waterApi
-      .session(groupId, undefined, idToken ?? undefined)
+      .session(groupId ?? '', undefined, idToken ?? undefined)
       .then(data => {
         setSessionData(data);
         setSessionError(null);
@@ -54,10 +56,9 @@ export default function WaterTrackerPage() {
 
   const handleDrink = useCallback(
     async (ml: number, drinkType: DrinkType) => {
-      if (!groupId) return;
       setSubmitting(true);
       try {
-        const res = await waterApi.drink(groupId, ml, drinkType, idToken ?? undefined);
+        const res = await waterApi.drink(groupId ?? '', ml, drinkType, idToken ?? undefined);
         setDrinkResult(res);
 
         setDrinkError(null);
@@ -119,16 +120,6 @@ export default function WaterTrackerPage() {
         <p className="text-sky-500 text-4xl">💧</p>
         <p className="text-gray-600">LIFF 初始化失敗</p>
         <p className="text-xs text-gray-400">{liffError}</p>
-      </div>
-    );
-  }
-
-  if (ready && !groupId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3 p-6 text-center">
-        <p className="text-sky-500 text-4xl">💧</p>
-        <p className="text-gray-700 font-semibold">請在群組內開啟</p>
-        <p className="text-sm text-gray-400">這個工具需要在 LINE 群組中使用</p>
       </div>
     );
   }

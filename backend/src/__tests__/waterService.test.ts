@@ -12,6 +12,7 @@ import {
   logDrink,
   resolveWaterSession,
   resetMemberTodayWater,
+  resetDailyWater,
   resetDayIfNeeded,
   setWaterGroupEnabled,
   WaterGroupAccessError,
@@ -1128,5 +1129,108 @@ describe('water group activation and session resolution', () => {
     await expect(assertUserCanAccessWaterGroup(db as never, 'U1', GROUP_B)).rejects.toMatchObject({
       code: 'water_group_forbidden',
     } satisfies Partial<WaterGroupAccessError>);
+  });
+});
+
+describe('resetDailyWater scaling', () => {
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-20T01:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('resets every stale member across many groups using chunked commits (>500 ops)', async () => {
+    const db = new FakeFirestore();
+    const totalMembers = 600; // exceeds Firestore's 500-op batch limit
+
+    for (let i = 0; i < totalMembers; i += 1) {
+      const groupId = `C${String(i % 3).padStart(32, '0')}`;
+      seedMember(db, groupId, `U${i}`, {
+        todayMl: 1200,
+        todayDate: '2026-06-19', // yesterday → needs reset
+      });
+    }
+
+    const batchSpy = jest.spyOn(db, 'batch');
+    const resetCount = await resetDailyWater(db as never);
+
+    expect(resetCount).toBe(totalMembers);
+    // Must split into multiple commits to respect the 499-op batch limit;
+    // a single batch would throw INVALID_ARGUMENT in real Firestore.
+    expect(batchSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+
+    for (let i = 0; i < totalMembers; i += 1) {
+      const groupId = `C${String(i % 3).padStart(32, '0')}`;
+      const member = db.read(`waterGroups/${groupId}/members/U${i}`);
+      expect(member).toMatchObject({ todayMl: 0, todayDate: '2026-06-20' });
+    }
+  });
+
+  it('only writes members that actually need a reset', async () => {
+    const db = new FakeFirestore();
+    seedMember(db, 'C123', 'fresh', { todayMl: 500, todayDate: '2026-06-20' }); // already today
+    seedMember(db, 'C123', 'stale', { todayMl: 500, todayDate: '2026-06-19' }); // needs reset
+    // A non-water member doc must be ignored entirely.
+    db.seed('users/U1/members/M1', { todayMl: 999, todayDate: '2026-06-19' });
+
+    const resetCount = await resetDailyWater(db as never);
+
+    expect(resetCount).toBe(1);
+    expect(db.read('waterGroups/C123/members/fresh')).toMatchObject({ todayMl: 500 });
+    expect(db.read('waterGroups/C123/members/stale')).toMatchObject({ todayMl: 0, todayDate: '2026-06-20' });
+    expect(db.read('users/U1/members/M1')).toMatchObject({ todayMl: 999 });
+  });
+});
+
+describe('logDrink aggregation under repeated load', () => {
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-20T01:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('keeps member totals, group total and ranks consistent across many drinks', async () => {
+    const db = new FakeFirestore();
+    const groupId = 'C123';
+    const users = ['U1', 'U2', 'U3', 'U4', 'U5'];
+    const drinksPerUser = 10;
+    const ml = 150;
+
+    for (let round = 0; round < drinksPerUser; round += 1) {
+      for (const userId of users) {
+        await logDrink(
+          db as never,
+          groupId,
+          { userId, displayName: userId, pictureUrl: '' },
+          { ml, drinkType: 'water', groupName: '讀書會' }
+        );
+      }
+    }
+
+    const board = await getTodayLeaderboard(db as never, groupId, 'U1');
+    const expectedPerUser = drinksPerUser * ml;
+
+    expect(board.memberCount).toBe(users.length);
+    for (const row of board.members) {
+      expect(row.todayMl).toBe(expectedPerUser);
+    }
+    // Group total must equal the exact sum of every logged drink — no drift.
+    expect(board.group.todayMl).toBe(users.length * expectedPerUser);
+
+    // Ranks are a contiguous 1..N with no duplicates even on ties.
+    const ranks = board.members.map((row) => row.rank).sort((a, b) => a - b);
+    expect(ranks).toEqual(users.map((_, index) => index + 1));
+
+    // Stored member docs agree with the recomputed leaderboard (source of truth).
+    for (const userId of users) {
+      expect(db.read(`waterGroups/${groupId}/members/${userId}`)).toMatchObject({
+        todayMl: expectedPerUser,
+        totalMl: expectedPerUser,
+      });
+    }
   });
 });

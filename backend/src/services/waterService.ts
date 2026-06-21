@@ -9,6 +9,32 @@ const WATER_GROUPS_COLLECTION = 'waterGroups';
 const WATER_USER_RECORDS_COLLECTION = 'records';
 const WATER_USER_AGGREGATE_VERSION = 1;
 
+// Firestore caps a WriteBatch at 500 operations. Stay under it so large groups
+// (or users with long histories) never blow up a single commit once the water
+// game is opened to more groups and people.
+const FIRESTORE_BATCH_LIMIT = 499;
+
+// Upper bound for a single drink log. Without it a malformed/abusive client can
+// poison the leaderboard and group aggregates with an arbitrarily large value.
+export const MAX_DRINK_ML = Number(process.env['WATER_MAX_DRINK_ML']) || 5000;
+
+type BatchWrite = (batch: FirebaseFirestore.WriteBatch) => void;
+
+// Commit the given writes in chunks that respect Firestore's 500-op batch limit.
+async function commitInChunks(db: Firestore, writes: BatchWrite[]): Promise<number> {
+  let committed = 0;
+  for (let i = 0; i < writes.length; i += FIRESTORE_BATCH_LIMIT) {
+    const slice = writes.slice(i, i + FIRESTORE_BATCH_LIMIT);
+    const batch = db.batch();
+    for (const apply of slice) {
+      apply(batch);
+    }
+    await batch.commit();
+    committed += 1;
+  }
+  return committed;
+}
+
 export type DrinkType = 'water' | 'tea' | 'coffee' | 'juice' | 'other';
 
 export type AchievementId =
@@ -670,7 +696,7 @@ async function ensureUserHistoryReady(db: Firestore, userId: string): Promise<vo
 
   const groupRecordSnap = await db.collectionGroup('records').where('lineUserId', '==', userId).get();
   const userRecordsRef = userRef.collection(WATER_USER_RECORDS_COLLECTION);
-  const batch = db.batch();
+  const writes: BatchWrite[] = [];
   const mirroredRecords: WaterUserRecordDoc[] = [];
 
   for (const doc of groupRecordSnap.docs) {
@@ -689,19 +715,19 @@ async function ensureUserHistoryReady(db: Firestore, userId: string): Promise<vo
       groupName: '',
     };
     mirroredRecords.push(userRecord);
-    batch.set(userRecordsRef.doc(record.id), userRecord, { merge: true });
+    writes.push((batch) => batch.set(userRecordsRef.doc(record.id), userRecord, { merge: true }));
   }
 
   const summary = summarizeUserHistory(mirroredRecords, getTaipeiDateString());
-  batch.set(userRef, {
+  writes.push((batch) => batch.set(userRef, {
     totalMl: summary.totalMl,
     streak: summary.streak,
     achievements: summary.achievements,
     lastDrinkAt: summary.lastDrinkAt,
     aggregateVersion: WATER_USER_AGGREGATE_VERSION,
-  } satisfies Partial<WaterUserDoc>, { merge: true });
+  } satisfies Partial<WaterUserDoc>, { merge: true }));
 
-  await batch.commit();
+  await commitInChunks(db, writes);
 }
 
 async function refreshMembersForToday(db: Firestore, groupId: string, todayStr: string): Promise<NormalizedMember[]> {
@@ -716,9 +742,8 @@ async function refreshMembersForToday(db: Firestore, groupId: string, todayStr: 
   const records = recordsSnap.docs.map(toWaterRecordDoc);
   const weekTotals = mapByUser(records);
   const todayTotals = mapByUser(records.filter((record) => record.date === todayStr));
-  const batch = db.batch();
   const now = admin.firestore.Timestamp.now();
-  let hasWrites = false;
+  const writes: BatchWrite[] = [];
 
   const members = membersSnap.docs.map((doc) => {
     const raw = toWaterMemberDoc(doc);
@@ -737,7 +762,7 @@ async function refreshMembersForToday(db: Firestore, groupId: string, todayStr: 
     const shouldApplyReset = Object.keys(resetPatch).length > 0;
 
     if (shouldApplyReset || shouldUpdateWeekMl || shouldUpdateTodayMl || raw.displayName !== normalized.displayName || raw.pictureUrl !== normalized.pictureUrl) {
-      batch.set(
+      writes.push((batch) => batch.set(
         doc.ref,
         {
           ...resetPatch,
@@ -746,16 +771,13 @@ async function refreshMembersForToday(db: Firestore, groupId: string, todayStr: 
           updatedAt: now,
         },
         { merge: true }
-      );
-      hasWrites = true;
+      ));
     }
 
     return normalized;
   });
 
-  if (hasWrites) {
-    await batch.commit();
-  }
+  await commitInChunks(db, writes);
 
   return members;
 }
@@ -1668,9 +1690,8 @@ export function getRandomTaunt(randomIndex: number = Math.floor(Math.random() * 
 export async function resetDailyWater(db: Firestore): Promise<number> {
   const todayStr = getTaipeiDateString();
   const snapshot = await db.collectionGroup('members').get();
-  const batch = db.batch();
   const now = admin.firestore.Timestamp.now();
-  let updatedCount = 0;
+  const writes: BatchWrite[] = [];
 
   for (const doc of snapshot.docs) {
     const parentDoc = doc.ref.parent.parent;
@@ -1685,20 +1706,17 @@ export async function resetDailyWater(db: Firestore): Promise<number> {
       continue;
     }
 
-    batch.set(
+    writes.push((batch) => batch.set(
       doc.ref,
       {
         ...patch,
         updatedAt: now,
       },
       { merge: true }
-    );
-    updatedCount += 1;
+    ));
   }
 
-  if (updatedCount > 0) {
-    await batch.commit();
-  }
+  await commitInChunks(db, writes);
 
-  return updatedCount;
+  return writes.length;
 }

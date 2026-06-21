@@ -291,12 +291,10 @@ export default function WaterTrackerPage() {
             <span className="font-['Archivo'] text-[11px] font-bold tracking-widest text-slate-400">5G&nbsp;&nbsp;100%</span>
           </div>
 
-          <button type="button" onClick={() => setHistoryOpen(true)} className="block w-full text-left">
-            <LivePulse pulse={today.pulse} compact />
-          </button>
+          <LivePulse pulse={today.pulse} compact onOpenHistory={() => setHistoryOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
 
           <div className={`mt-[10px] overflow-hidden rounded-[18px] border border-white/[.06] bg-white/[.035] transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-60 p-[14px_16px] opacity-100'}`}>
-            <div className="flex items-start justify-between gap-3">
+            <div className="mb-[11px] flex items-start justify-between gap-[14px]">
               <div className="min-w-0">
                 <p className="text-lg font-black leading-tight text-sky-50">{today.groupName || '喝水戰隊'}</p>
                 <p className="mt-1 text-xs font-medium text-slate-500">
@@ -304,27 +302,27 @@ export default function WaterTrackerPage() {
                 </p>
                 <span className="sr-only">{today.memberCount} 位成員</span>
               </div>
-              {profile && (
-                <button type="button" onClick={() => setProfileOpen(true)} className="flex flex-none flex-col items-end gap-1">
-                  {profile.pictureUrl ? (
-                    <img src={profile.pictureUrl} alt={profile.displayName} className="h-10 w-10 rounded-full border border-sky-300/40 object-cover" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-sky-300/40 bg-sky-400/20 text-sm font-black text-sky-200">
-                      {profile.displayName.charAt(0)}
-                    </div>
-                  )}
-                  <span className="max-w-20 truncate text-[11px] font-bold text-slate-400">{profile.displayName}</span>
-                </button>
-              )}
+              <div className="flex-none text-right">
+                <div className="font-['Archivo'] text-[10px] font-bold uppercase tracking-[.15em] text-[#7fdcff]">Group Tide</div>
+                <div className="mt-0.5 font-['Archivo'] text-[15px] font-black text-[#eaf6ff]">
+                  <span className="text-[#38bdf8]">{(today.group.todayMl / 1000).toFixed(1)}L</span>
+                  <span className="text-[#5e7796]"> / {(today.group.goalMl / 1000).toFixed(1)}L</span>
+                  <span className="text-[13px] font-bold text-[#9fb6d2]"> · {today.group.goalMl > 0 ? Math.min(100, Math.round((today.group.todayMl / today.group.goalMl) * 100)) : 0}%</span>
+                </div>
+              </div>
             </div>
-            <div className="mt-3">
-              <GroupGoalBar group={today.group} compact />
-            </div>
+            <GroupGoalBar group={today.group} compact />
           </div>
         </header>
 
         <main className="px-[14px] pb-24 pt-3">
-          <HeroStatusCard heroState={heroState} onQuickLog={handleHeroAction} todayMl={today.me.todayMl} expanded={heroExpanded}>
+          <HeroStatusCard
+            heroState={heroState}
+            onQuickLog={handleHeroAction}
+            todayMl={today.me.todayMl}
+            rankLabel={`第 ${today.me.rank} 名`}
+            expanded={heroExpanded}
+          >
             <DrinkLogger
               key={suggestionKey}
               onSubmit={handleDrink}

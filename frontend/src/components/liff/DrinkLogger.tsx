@@ -117,13 +117,14 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
           <button
             key={opt.type}
             onClick={() => setDrinkType(opt.type)}
+            aria-label={`${opt.emoji} ${opt.label}`}
             className={`min-h-[44px] flex-1 rounded-2xl px-2 py-2 text-sm font-black transition ${
               drinkType === opt.type
                 ? 'bg-sky-500 bg-white text-sky-900 shadow-lg shadow-black/20'
                 : 'border border-white/20 bg-white/10 text-white hover:bg-white/20'
             }`}
           >
-            {opt.emoji} {opt.label}
+            {opt.label}
           </button>
         ))}
       </div>

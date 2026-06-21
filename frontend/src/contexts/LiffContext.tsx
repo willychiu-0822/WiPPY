@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { LiffContext, type LiffProfile } from './liff-context';
+import { getActiveLiffMockPresetId } from '../lib/liffDev';
+import { DEFAULT_GROUP_ID } from '../lib/liffMockPresets';
 
 // ─── Dev fallback ─────────────────────────────────────────────────────────────
 
@@ -16,27 +18,23 @@ const DEV_PROFILE: LiffProfile = {
   statusMessage: '',
 };
 
-const DEV_CONTEXT = {
-  type: 'group' as const,
-  groupId: 'Cdev1',
-  utouId: undefined,
-  roomId: undefined,
-  availability: {
-    shareTargetPicker: { permission: true, minVer: '10.3.0' },
-    multipleLiffTransition: { permission: true },
-    subwindow: { permission: false, minVer: '10.3.0' },
-    scanCode: { permission: false, minVer: '10.3.0' },
-    scanCodeV2: { permission: false },
-    getAdvertisingId: { permission: false },
-    addToHomeScreen: { permission: false },
-    bluetoothLeFunction: { permission: false, minVer: '10.3.0' },
-    skipChannelVerificationScreen: { permission: false },
-    videoPush: { permission: false },
-    mediaPush: { permission: false },
-    pictureInPicture: { permission: false },
-    liffToLiff: { permission: false },
-  },
+const DEV_AVAILABILITY = {
+  shareTargetPicker: { permission: true, minVer: '10.3.0' },
+  multipleLiffTransition: { permission: true },
+  subwindow: { permission: false, minVer: '10.3.0' },
+  scanCode: { permission: false, minVer: '10.3.0' },
+  scanCodeV2: { permission: false },
+  getAdvertisingId: { permission: false },
+  addToHomeScreen: { permission: false },
+  bluetoothLeFunction: { permission: false, minVer: '10.3.0' },
+  skipChannelVerificationScreen: { permission: false },
+  videoPush: { permission: false },
+  mediaPush: { permission: false },
+  pictureInPicture: { permission: false },
+  liffToLiff: { permission: false },
 };
+
+let liffMockInstalled = false;
 
 type DecodedIdToken = ReturnType<Liff['getDecodedIDToken']>;
 
@@ -73,6 +71,34 @@ function buildProfileFromDecodedToken(decodedIdToken: DecodedIdToken): LiffProfi
   };
 }
 
+function buildDevContext(): ReturnType<Liff['getContext']> {
+  if (getActiveLiffMockPresetId() === 'no_group') {
+    return {
+      type: 'none',
+      availability: DEV_AVAILABILITY,
+    } as unknown as ReturnType<Liff['getContext']>;
+  }
+
+  return {
+    type: 'group',
+    groupId: DEFAULT_GROUP_ID,
+    utouId: undefined,
+    roomId: undefined,
+    availability: DEV_AVAILABILITY,
+  } as unknown as ReturnType<Liff['getContext']>;
+}
+
+async function installLiffMockPlugin() {
+  if (liffMockInstalled) return;
+  try {
+    const { LiffMockPlugin } = await import('@line/liff-mock');
+    liff.use(new LiffMockPlugin());
+    liffMockInstalled = true;
+  } catch {
+    liffMockInstalled = true;
+  }
+}
+
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function LiffProvider({ children }: { children: ReactNode }) {
@@ -92,10 +118,20 @@ export function LiffProvider({ children }: { children: ReactNode }) {
     async function init() {
       // Dev fallback: non-LINE browser in dev mode
       if (DEV_FALLBACK) {
+        const devContext = buildDevContext();
+        const devGroupId = devContext?.type === 'group'
+          ? (devContext as { groupId?: string }).groupId ?? null
+          : null;
+
         try {
-          await liff.init({ liffId: import.meta.env.VITE_LIFF_ID || 'dev' });
+          await installLiffMockPlugin();
+          const initOptions = {
+            liffId: import.meta.env.VITE_LIFF_ID || 'dev',
+            mock: true,
+          } as Parameters<Liff['init']>[0] & { mock: boolean };
+          await liff.init(initOptions);
         } catch {
-          // expected to fail outside LINE — proceed with dev stub
+          // Expected to fail in some non-LINE browsers; proceed with the local dev stub.
         }
 
         if (cancelled) return;
@@ -104,9 +140,9 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           loading: false,
           error: null,
           profile: DEV_PROFILE,
-          context: DEV_CONTEXT as unknown as ReturnType<Liff['getContext']>,
+          context: devContext,
           idToken: 'dev-mock-id-token',
-          groupId: 'Cdev1',
+          groupId: devGroupId,
         });
         return;
       }

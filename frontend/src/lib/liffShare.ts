@@ -1,6 +1,7 @@
 import liff from '@line/liff';
 import type { AchievementId, WaterMember } from './liffApi';
 import { getErrorMessage } from './apiError';
+import { getActiveLiffMockPresetId } from './liffDev';
 
 type LineFlexMessage = {
   type: 'flex';
@@ -63,6 +64,9 @@ function isInLineClient(): boolean {
 }
 
 export async function shareLineMessage(message: LineFlexMessage): Promise<ShareResult> {
+  if (import.meta.env.VITE_USE_MOCK_API === 'true' && getActiveLiffMockPresetId() === 'share_unavailable') {
+    throw new Error('Mock preset share_unavailable: LINE 分享功能不可用');
+  }
   const errors: string[] = [];
 
   if (isInLineClient() && typeof liff.sendMessages === 'function') {

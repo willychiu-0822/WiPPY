@@ -13,3 +13,9 @@ When the PR/CICD process changes, update these shared command files first.
 Both Codex and Claude Code must use `docs/agent-commands/wippy-prepare-pr.md` before opening a PR.
 
 That shared command includes the Testing Impact Gate. Do not create a PR from either agent until required new or updated tests are added, existing coverage is identified, or the PR body documents why no automated test is appropriate.
+
+## LIFF Development
+
+Both Codex and Claude Code must use `docs/agent-commands/wippy-liff-dev.md` for LIFF feature work, LIFF bug fixes, water tracker UAT, mock preset changes, and LINE App debugging.
+
+The PM-facing UAT guide is `docs/liff-dev-uat.md`.

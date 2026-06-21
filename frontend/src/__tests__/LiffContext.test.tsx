@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const liffMock = vi.hoisted(() => ({
+  use: vi.fn(),
   init: vi.fn(),
   isLoggedIn: vi.fn(),
   login: vi.fn(),
@@ -95,5 +96,30 @@ describe('LiffProvider', () => {
 
     expect(screen.getByTestId('ready')).toHaveTextContent('false');
     expect(screen.getByTestId('error')).toHaveTextContent('FORBIDDEN: Environment unsupported');
+  });
+
+  it('uses dev fallback profile and group context when VITE_LIFF_DEV is true', async () => {
+    vi.stubEnv('VITE_LIFF_DEV', 'true');
+
+    await renderStateProbe();
+
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    expect(screen.getByTestId('ready')).toHaveTextContent('true');
+    expect(screen.getByTestId('profile-name')).toHaveTextContent('Dev User');
+    expect(screen.getByTestId('group-id')).toHaveTextContent('Cdev1');
+    expect(screen.getByTestId('id-token')).toHaveTextContent('dev-mock-id-token');
+  });
+
+  it('sets no group when the no_group mock preset is active', async () => {
+    vi.stubEnv('VITE_LIFF_DEV', 'true');
+    window.history.replaceState(null, '', '/liff/water?mockPreset=no_group');
+
+    await renderStateProbe();
+
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    expect(screen.getByTestId('ready')).toHaveTextContent('true');
+    expect(screen.getByTestId('group-id')).toHaveTextContent('');
   });
 });

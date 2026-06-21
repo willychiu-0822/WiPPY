@@ -12,6 +12,7 @@ import ActivityDetailPage from './pages/ActivityDetailPage';
 import Layout from './components/Layout';
 import { LiffProvider } from './contexts/LiffContext';
 import WaterTrackerPage from './pages/liff/WaterTrackerPage';
+import LiffDevPlaygroundPage from './pages/liff/LiffDevPlaygroundPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -31,6 +32,7 @@ export default function App() {
     <Routes>
       {/* LIFF routes — independent of Firebase Auth */}
       <Route path="/liff/water" element={<LiffProvider><WaterTrackerPage /></LiffProvider>} />
+      <Route path="/dev/liff-playground" element={<LiffProvider><LiffDevPlaygroundPage /></LiffProvider>} />
 
       <Route path="/login" element={user ? <Navigate to="/groups" replace /> : <LoginPage />} />
       <Route path="/onboarding/*" element={

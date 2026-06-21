@@ -1,0 +1,4 @@
+interface:
+  display_name: "WiPPY LIFF Dev"
+  short_description: "Develop, debug, test, and UAT WiPPY LIFF flows with shared presets."
+  default_prompt: "Use $wippy-liff-dev to develop, debug, or UAT the WiPPY LIFF flow with the right mock preset and tests."

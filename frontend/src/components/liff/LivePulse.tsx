@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { PulseItem } from '../../lib/liffApi';
 import { relativeTimeFromTs } from '../../lib/waterLogic';
 
@@ -8,6 +9,8 @@ interface Props {
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 
 export default function LivePulse({ pulse }: Props) {
+  const [now] = useState(() => Date.now());
+
   if (pulse.length === 0) {
     return (
       <div data-testid="pulse-empty" className="bg-white rounded-2xl p-4 shadow-sm text-center">
@@ -15,8 +18,6 @@ export default function LivePulse({ pulse }: Props) {
       </div>
     );
   }
-
-  const now = Date.now();
 
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm">

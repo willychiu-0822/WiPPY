@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { FirestoreTimestamp, LeaderboardRow } from '../../lib/liffApi';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -14,11 +15,12 @@ interface Props {
 }
 
 export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props) {
+  const [now] = useState(() => Date.now());
+
   if (members.length === 0) {
     return <p className="text-center text-sky-400 text-sm py-4">尚無成員資料</p>;
   }
 
-  const now = Date.now();
   const myRank = members.find(m => m.lineUserId === myUserId)?.rank ?? null;
   const myLastMs = myLastDrinkAt ? tsToMs(myLastDrinkAt) : 0;
 

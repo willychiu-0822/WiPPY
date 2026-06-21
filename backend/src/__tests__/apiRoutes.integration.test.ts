@@ -16,6 +16,8 @@ const mockIsCloudTasksEnabled = jest.fn();
 const mockEnqueueHarnessRun = jest.fn();
 const mockCreateLLMProvider = jest.fn();
 const mockExecuteHarness = jest.fn();
+const mockListWaterMembersForAdmin = jest.fn();
+const mockResetMemberTodayWater = jest.fn();
 
 jest.mock('firebase-admin', () => ({
   apps: [],
@@ -78,6 +80,12 @@ jest.mock('../services/llmProvider', () => ({
 
 jest.mock('../services/harnessOrchestrator', () => ({
   executeHarness: (...args: unknown[]) => mockExecuteHarness(...args),
+}));
+
+jest.mock('../services/waterService', () => ({
+  listWaterMembersForAdmin: (...args: unknown[]) => mockListWaterMembersForAdmin(...args),
+  resetMemberTodayWater: (...args: unknown[]) => mockResetMemberTodayWater(...args),
+  TAUNT_MESSAGES: [],
 }));
 
 import { createApp } from '../app';
@@ -229,6 +237,64 @@ describe('backend API route integration safety net', () => {
 
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ error: 'Group not found' });
+  });
+
+  it('returns owned group water members for backend admin operations', async () => {
+    mockGetDb.mockReturnValue({
+      collection: jest.fn(() => ({
+        doc: jest.fn(() => ({
+          get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }),
+        })),
+      })),
+    });
+    mockListWaterMembersForAdmin.mockResolvedValue([
+      { lineUserId: 'U1', displayName: 'Amy', pictureUrl: '', todayMl: 0, weekMl: 200, totalMl: 500, streak: 2, rank: 1, lastDrinkAt: null },
+    ]);
+
+    const res = await request(server, 'GET', '/api/groups/group_a/water-members');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      groupName: 'VIP group',
+      members: [expect.objectContaining({ lineUserId: 'U1', rank: 1 })],
+    });
+    expect(mockListWaterMembersForAdmin).toHaveBeenCalled();
+  });
+
+  it('resets an owned group member water total for today', async () => {
+    mockGetDb.mockReturnValue({
+      collection: jest.fn(() => ({
+        doc: jest.fn(() => ({
+          get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }),
+        })),
+      })),
+    });
+    mockResetMemberTodayWater.mockResolvedValue({
+      member: {
+        lineUserId: 'U1',
+        displayName: 'Amy',
+        pictureUrl: '',
+        todayMl: 0,
+        weekMl: 200,
+        totalMl: 500,
+        streak: 2,
+        achievements: [],
+        lastDrinkAt: null,
+      },
+      removedMl: 300,
+      removedRecordCount: 2,
+    });
+
+    const res = await request(server, 'POST', '/api/groups/group_a/water-members/U1/reset-today');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      groupName: 'VIP group',
+      member: expect.objectContaining({ lineUserId: 'U1', todayMl: 0 }),
+      removedMl: 300,
+      removedRecordCount: 2,
+    });
+    expect(mockResetMemberTodayWater).toHaveBeenCalled();
   });
 
   it('covers activity list, create, update, approve, and request-revision route contracts', async () => {

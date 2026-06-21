@@ -3,10 +3,23 @@ import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
 import { authMiddleware } from '../../middleware/auth';
 import { getLineClient } from '../../line';
+import { listWaterMembersForAdmin, resetMemberTodayWater } from '../../services/waterService';
 
 const router = express.Router();
 
 const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
+
+async function loadOwnedGroupOr404(req: Request, res: Response) {
+  const groupId = req.params['groupId'] as string;
+  const groupSnap = await getDb().collection('groups').doc(groupId).get();
+
+  if (!groupSnap.exists || groupSnap.data()!['userId'] !== req.userId) {
+    res.status(404).json({ error: 'Group not found' });
+    return null;
+  }
+
+  return groupSnap;
+}
 
 // GET /api/groups
 // Returns all active groups for the authenticated user, sorted by lastMessageAt DESC
@@ -42,15 +55,13 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 // Returns recent messages for a group (up to 50, newest first)
 router.get('/:groupId/messages', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = req.params['groupId'] as string;
     const db = getDb();
-
-    // Verify group belongs to this user
-    const groupSnap = await db.collection('groups').doc(groupId).get();
-    if (!groupSnap.exists || groupSnap.data()!['userId'] !== req.userId) {
-      res.status(404).json({ error: 'Group not found' });
+    const groupSnap = await loadOwnedGroupOr404(req, res);
+    if (!groupSnap) {
       return;
     }
+
+    const groupId = req.params['groupId'] as string;
 
     const limit = Math.min(Number(req.query['limit'] as string) || 20, 50);
 
@@ -88,11 +99,8 @@ router.post('/:groupId/messages', authMiddleware, async (req: Request, res: Resp
     }
 
     const db = getDb();
-
-    // Verify group belongs to this user
-    const groupSnap = await db.collection('groups').doc(groupId).get();
-    if (!groupSnap.exists || groupSnap.data()!['userId'] !== req.userId) {
-      res.status(404).json({ error: 'Group not found' });
+    const groupSnap = await loadOwnedGroupOr404(req, res);
+    if (!groupSnap) {
       return;
     }
 
@@ -131,6 +139,51 @@ router.post('/:groupId/messages', authMiddleware, async (req: Request, res: Resp
   } catch (err) {
     console.error(JSON.stringify({ event: 'send_message_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+router.get('/:groupId/water-members', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const groupSnap = await loadOwnedGroupOr404(req, res);
+    if (!groupSnap) {
+      return;
+    }
+
+    const groupId = req.params['groupId'] as string;
+    const members = await listWaterMembersForAdmin(getDb(), groupId);
+
+    res.json({
+      groupName: groupSnap.data()!['name'],
+      members,
+    });
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'get_group_water_members_error', error: String(err) }));
+    res.status(500).json({ error: 'Failed to fetch water members' });
+  }
+});
+
+router.post('/:groupId/water-members/:lineUserId/reset-today', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const groupSnap = await loadOwnedGroupOr404(req, res);
+    if (!groupSnap) {
+      return;
+    }
+
+    const groupId = req.params['groupId'] as string;
+    const lineUserId = String(req.params['lineUserId'] ?? '').trim();
+    if (!lineUserId) {
+      res.status(400).json({ error: 'lineUserId is required' });
+      return;
+    }
+
+    const result = await resetMemberTodayWater(getDb(), groupId, lineUserId);
+    res.json({
+      groupName: groupSnap.data()!['name'],
+      ...result,
+    });
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'reset_group_water_member_error', error: String(err) }));
+    res.status(500).json({ error: 'Failed to reset member water today' });
   }
 });
 

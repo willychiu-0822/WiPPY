@@ -109,6 +109,18 @@ export interface WeeklyStatsResponse {
   memberBreakdown: Array<{ lineUserId: string; displayName: string; weekMl: number }>;
 }
 
+export interface WaterAdminMemberSummary {
+  lineUserId: string;
+  displayName: string;
+  pictureUrl: string;
+  todayMl: number;
+  weekMl: number;
+  totalMl: number;
+  streak: number;
+  rank: number;
+  lastDrinkAt: FirestoreTimestampJson | null;
+}
+
 export interface LogDrinkResponse {
   record: WaterRecord;
   member: WaterMember;
@@ -130,6 +142,12 @@ export interface EnsureIdentityResponse {
   isNewUser: boolean;
   user: WaterUser;
   member: WaterMember;
+}
+
+export interface ResetTodayWaterResponse {
+  member: WaterMember;
+  removedMl: number;
+  removedRecordCount: number;
 }
 
 export interface LiffUser {
@@ -263,6 +281,20 @@ function serializeWaterMember(doc: NormalizedMember): WaterMember {
     totalMl: doc.totalMl,
     streak: doc.streak,
     achievements: [...doc.achievements],
+    lastDrinkAt: doc.lastDrinkAt ? timestampToJson(doc.lastDrinkAt) : null,
+  };
+}
+
+function serializeWaterAdminMemberSummary(doc: NormalizedMember, rank: number): WaterAdminMemberSummary {
+  return {
+    lineUserId: doc.lineUserId,
+    displayName: doc.displayName,
+    pictureUrl: doc.pictureUrl,
+    todayMl: doc.todayMl,
+    weekMl: doc.weekMl,
+    totalMl: doc.totalMl,
+    streak: doc.streak,
+    rank,
     lastDrinkAt: doc.lastDrinkAt ? timestampToJson(doc.lastDrinkAt) : null,
   };
 }
@@ -1088,6 +1120,94 @@ export async function getWeeklyStats(db: Firestore, groupId: string): Promise<We
       return left.displayName.localeCompare(right.displayName, 'zh-Hant');
     }),
   };
+}
+
+export async function listWaterMembersForAdmin(
+  db: Firestore,
+  groupId: string
+): Promise<WaterAdminMemberSummary[]> {
+  const todayStr = getTaipeiDateString();
+  const members = await refreshMembersForToday(db, groupId, todayStr);
+  const rows = computeLeaderboardRows(members);
+
+  return rows.map((row) => {
+    const member = members.find((item) => item.lineUserId === row.lineUserId);
+    if (!member) {
+      throw new Error(`Water member ${row.lineUserId} not found in group ${groupId}`);
+    }
+    return serializeWaterAdminMemberSummary(member, row.rank);
+  });
+}
+
+export async function resetMemberTodayWater(
+  db: Firestore,
+  groupId: string,
+  lineUserId: string
+): Promise<ResetTodayWaterResponse> {
+  const todayStr = getTaipeiDateString();
+  const weekStart = getWeekStartDateString(todayStr);
+  const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);
+  const memberRef = groupRef.collection('members').doc(lineUserId);
+  const recordsRef = groupRef.collection('records');
+
+  return db.runTransaction(async (transaction) => {
+    const now = admin.firestore.Timestamp.now();
+    const [memberSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
+      transaction.get(memberRef),
+      transaction.get(buildRecentRecordsQuery(recordsRef, weekStart, todayStr)),
+      transaction.get(buildRecentRecordsQuery(recordsRef, todayStr, todayStr)),
+    ]);
+
+    if (!memberSnap.exists) {
+      throw new Error(`Water member ${lineUserId} not found in group ${groupId}`);
+    }
+
+    const raw = memberSnap.data() as WaterMemberDoc;
+    const weekRecords = weekRecordsSnap.docs.map(toWaterRecordDoc);
+    const todayUserRecords = todayRecordsSnap.docs
+      .map(toWaterRecordDoc)
+      .filter((record) => record.lineUserId === lineUserId);
+
+    const removedMl = todayUserRecords.reduce((sum, record) => sum + record.ml, 0);
+    const removedRecordCount = todayUserRecords.length;
+    const weekMl = Math.max(0, (weekRecords
+      .filter((record) => record.lineUserId === lineUserId)
+      .reduce((sum, record) => sum + record.ml, 0)) - removedMl);
+    const totalMl = Math.max(0, raw.totalMl - removedMl);
+
+    for (const doc of todayRecordsSnap.docs) {
+      const record = toWaterRecordDoc(doc);
+      if (record.lineUserId === lineUserId) {
+        transaction.delete(doc.ref);
+      }
+    }
+
+    const updatedMember = normalizeMemberDoc(raw, {
+      todayMl: 0,
+      todayDate: todayStr,
+      weekMl,
+      totalMl,
+      updatedAt: now,
+    });
+
+    transaction.set(
+      memberRef,
+      {
+        todayMl: updatedMember.todayMl,
+        todayDate: updatedMember.todayDate,
+        weekMl: updatedMember.weekMl,
+        totalMl: updatedMember.totalMl,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+
+    return {
+      member: serializeWaterMember(updatedMember),
+      removedMl,
+      removedRecordCount,
+    };
+  });
 }
 
 export function getRandomTaunt(randomIndex: number = Math.floor(Math.random() * TAUNT_MESSAGES.length)): string {

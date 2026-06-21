@@ -8,6 +8,7 @@ import { listWaterMembersForAdmin, resetMemberTodayWater, setWaterGroupEnabled }
 const router = express.Router();
 
 const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
+const DEFAULT_WATER_LIFF_ID = '2010457997-AsUbpde2';
 const DEFAULT_WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
 
 async function loadOwnedGroupOr404(req: Request, res: Response) {
@@ -26,6 +27,7 @@ function buildWaterEntryUrl(groupId: string): string {
   const liffId = String(
     process.env.LIFF_ID
       ?? process.env.VITE_LIFF_ID
+      ?? DEFAULT_WATER_LIFF_ID
       ?? ''
   ).trim();
   if (liffId) {

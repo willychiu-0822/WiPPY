@@ -6,6 +6,8 @@ import { Firestore, Timestamp } from 'firebase-admin/firestore';
 const TZ = 'Asia/Taipei';
 const WATER_USERS_COLLECTION = 'waterUsers';
 const WATER_GROUPS_COLLECTION = 'waterGroups';
+const WATER_USER_RECORDS_COLLECTION = 'records';
+const WATER_USER_AGGREGATE_VERSION = 1;
 
 export type DrinkType = 'water' | 'tea' | 'coffee' | 'juice' | 'other';
 
@@ -40,6 +42,24 @@ export interface WaterUser {
   firstSeenAt: FirestoreTimestampJson;
   lastSeenAt: FirestoreTimestampJson;
   lastGroupId: string | null;
+  groupIds: string[];
+}
+
+export interface WaterGroupSummary {
+  groupId: string;
+  groupName: string;
+  alreadyBound: boolean;
+  isEntryGroup: boolean;
+}
+
+export interface WaterSessionSelection {
+  status: 'needs_group_selection';
+  user: WaterUser | null;
+  entryGroup: {
+    groupId: string;
+    groupName: string;
+  };
+  availableGroups: WaterGroupSummary[];
 }
 
 export interface WaterMember {
@@ -163,6 +183,12 @@ interface WaterUserDoc {
   firstSeenAt: Timestamp;
   lastSeenAt: Timestamp;
   lastGroupId: string | null;
+  groupIds?: string[];
+  totalMl?: number;
+  streak?: number;
+  achievements?: string[];
+  lastDrinkAt?: Timestamp | null;
+  aggregateVersion?: number;
 }
 
 interface WaterGroupDoc {
@@ -176,6 +202,8 @@ interface WaterGroupDoc {
   firstLoggerDate?: string;          // ★ BE-8 M6 today's first logger date
   firstLoggerUserId?: string;        // ★ BE-8
   firstLoggerDisplayName?: string;   // ★ BE-8
+  isEnabled?: boolean;
+  enabledAt?: Timestamp;
 }
 
 interface WaterMemberDoc {
@@ -204,6 +232,11 @@ interface WaterRecordDoc {
   createdAt: Timestamp;
 }
 
+interface WaterUserRecordDoc extends WaterRecordDoc {
+  groupId: string;
+  groupName: string;
+}
+
 interface MemberResetPatch {
   todayMl?: number;
   todayDate?: string;
@@ -223,6 +256,13 @@ interface NormalizedMember {
   lastDrinkAt: Timestamp | null;
   joinedAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+interface UserHistorySummary {
+  totalMl: number;
+  streak: number;
+  achievements: string[];
+  lastDrinkAt: Timestamp | null;
 }
 
 export const TAUNT_MESSAGES: string[] = [
@@ -268,7 +308,19 @@ function serializeWaterUser(doc: WaterUserDoc): WaterUser {
     firstSeenAt: timestampToJson(doc.firstSeenAt),
     lastSeenAt: timestampToJson(doc.lastSeenAt),
     lastGroupId: doc.lastGroupId,
+    groupIds: [...new Set((doc.groupIds ?? []).filter((groupId): groupId is string => typeof groupId === 'string' && groupId.length > 0))],
   };
+}
+
+export class WaterGroupAccessError extends Error {
+  constructor(
+    public readonly code: 'water_group_not_enabled' | 'water_group_selection_required' | 'water_group_forbidden',
+    message: string,
+    public readonly status = 403
+  ) {
+    super(message);
+    this.name = 'WaterGroupAccessError';
+  }
 }
 
 function serializeWaterMember(doc: NormalizedMember): WaterMember {
@@ -439,6 +491,10 @@ function toWaterRecordDoc(snapshot: FirebaseFirestore.QueryDocumentSnapshot): Wa
   return snapshot.data() as WaterRecordDoc;
 }
 
+function toWaterUserRecordDoc(snapshot: FirebaseFirestore.QueryDocumentSnapshot): WaterUserRecordDoc {
+  return snapshot.data() as WaterUserRecordDoc;
+}
+
 function toWaterMemberDoc(snapshot: FirebaseFirestore.QueryDocumentSnapshot): WaterMemberDoc {
   return snapshot.data() as WaterMemberDoc;
 }
@@ -505,6 +561,147 @@ async function loadWaterUser(db: Firestore, userId: string): Promise<WaterUserDo
   }
 
   return snapshot.data() as WaterUserDoc;
+}
+
+function buildUserRecordsQuery(
+  userRecordsRef: FirebaseFirestore.CollectionReference<FirebaseFirestore.DocumentData>,
+  startDate: string,
+  endDate: string
+) {
+  return userRecordsRef
+    .where('date', '>=', startDate)
+    .where('date', '<=', endDate)
+    .orderBy('date', 'asc')
+    .orderBy('timestamp', 'desc');
+}
+
+function computePersistentAchievementsFromRecords(records: WaterUserRecordDoc[], todayStr: string): string[] {
+  if (records.length === 0) {
+    return [];
+  }
+
+  const byDateCount = new Map<string, number>();
+  for (const record of records) {
+    byDateCount.set(record.date, (byDateCount.get(record.date) ?? 0) + 1);
+  }
+
+  const dates = [...new Set(records.map((record) => record.date))].sort();
+  let maxStreak = 0;
+  let run = 0;
+  let previousDate: string | null = null;
+  for (const date of dates) {
+    if (!previousDate) {
+      run = 1;
+    } else {
+      const diff = differenceInCalendarDays(parseISO(date), parseISO(previousDate));
+      run = diff === 1 ? run + 1 : 1;
+    }
+    previousDate = date;
+    maxStreak = Math.max(maxStreak, run);
+  }
+
+  const achievements: AchievementId[] = ['first_drink'];
+  if ([...byDateCount.values()].some((count) => count >= 5)) {
+    achievements.push('hydration_master');
+  }
+  if (maxStreak >= 7) {
+    achievements.push('7_day_streak');
+  }
+  if (maxStreak >= 30) {
+    achievements.push('30_day_streak');
+  }
+
+  return achievements.filter((id, index, list) => list.indexOf(id) === index);
+}
+
+function summarizeUserHistory(records: WaterUserRecordDoc[], todayStr: string): UserHistorySummary {
+  if (records.length === 0) {
+    return {
+      totalMl: 0,
+      streak: 0,
+      achievements: [],
+      lastDrinkAt: null,
+    };
+  }
+
+  const totalMl = records.reduce((sum, record) => sum + record.ml, 0);
+  const sortedDates = [...new Set(records.map((record) => record.date))].sort((left, right) =>
+    left.localeCompare(right, 'en')
+  );
+  const lastRecord = records.reduce((latest, record) =>
+    !latest || record.timestamp.toMillis() > latest.timestamp.toMillis() ? record : latest
+  , null as WaterUserRecordDoc | null);
+
+  let streak = 0;
+  let cursorDate = lastRecord?.date ?? null;
+  const dateSet = new Set(sortedDates);
+  while (cursorDate && dateSet.has(cursorDate)) {
+    streak += 1;
+    cursorDate = formatDate(subDays(parseISO(cursorDate), 1), 'yyyy-MM-dd');
+  }
+
+  const lastDrinkDate = lastRecord?.date ?? null;
+  if (lastDrinkDate) {
+    const dayDiff = differenceInCalendarDays(parseISO(todayStr), parseISO(lastDrinkDate));
+    if (dayDiff > 1) {
+      streak = 0;
+    }
+  }
+
+  return {
+    totalMl,
+    streak,
+    achievements: computePersistentAchievementsFromRecords(records, todayStr),
+    lastDrinkAt: lastRecord?.timestamp ?? null,
+  };
+}
+
+async function ensureUserHistoryReady(db: Firestore, userId: string): Promise<void> {
+  const userRef = db.collection(WATER_USERS_COLLECTION).doc(userId);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) {
+    return;
+  }
+
+  const userDoc = userSnap.data() as WaterUserDoc;
+  if (userDoc.aggregateVersion === WATER_USER_AGGREGATE_VERSION) {
+    return;
+  }
+
+  const groupRecordSnap = await db.collectionGroup('records').where('lineUserId', '==', userId).get();
+  const userRecordsRef = userRef.collection(WATER_USER_RECORDS_COLLECTION);
+  const batch = db.batch();
+  const mirroredRecords: WaterUserRecordDoc[] = [];
+
+  for (const doc of groupRecordSnap.docs) {
+    if (doc.ref.parent.parent?.parent?.id !== WATER_GROUPS_COLLECTION) {
+      continue;
+    }
+    const record = toWaterRecordDoc(doc);
+    const groupId = doc.ref.parent.parent?.id ?? '';
+    if (!groupId) {
+      continue;
+    }
+
+    const userRecord: WaterUserRecordDoc = {
+      ...record,
+      groupId,
+      groupName: '',
+    };
+    mirroredRecords.push(userRecord);
+    batch.set(userRecordsRef.doc(record.id), userRecord, { merge: true });
+  }
+
+  const summary = summarizeUserHistory(mirroredRecords, getTaipeiDateString());
+  batch.set(userRef, {
+    totalMl: summary.totalMl,
+    streak: summary.streak,
+    achievements: summary.achievements,
+    lastDrinkAt: summary.lastDrinkAt,
+    aggregateVersion: WATER_USER_AGGREGATE_VERSION,
+  } satisfies Partial<WaterUserDoc>, { merge: true });
+
+  await batch.commit();
 }
 
 async function refreshMembersForToday(db: Firestore, groupId: string, todayStr: string): Promise<NormalizedMember[]> {
@@ -583,42 +780,6 @@ export function isValidLineGroupId(groupId?: string | null): boolean {
   return typeof groupId === 'string' && LINE_GROUP_ID_PATTERN.test(groupId.trim());
 }
 
-/**
- * Resolves a stable group id for a request. The client-supplied value is only
- * trusted when it is a real LINE group/room id; otherwise we fall back to the
- * user's last known good group, then to the configured default group. This keeps
- * a user's water records in one place even when liff.getContext() is unreliable.
- */
-export async function resolveGroupId(
-  db: Firestore,
-  userId: string,
-  requestedGroupId?: string | null
-): Promise<string> {
-  const requested = requestedGroupId?.trim();
-  if (isValidLineGroupId(requested)) {
-    return requested!;
-  }
-
-  const userSnap = await db.collection(WATER_USERS_COLLECTION).doc(userId).get();
-  const lastGroupId = userSnap.exists ? (userSnap.data() as WaterUserDoc).lastGroupId : null;
-  if (isValidLineGroupId(lastGroupId)) {
-    return lastGroupId!;
-  }
-
-  const configuredDefault = (process.env['WATER_DEFAULT_GROUP_ID'] ?? '').trim();
-  if (isValidLineGroupId(configuredDefault)) {
-    return configuredDefault;
-  }
-
-  // Last resort: honour whatever was requested so local/dev flows keep working
-  // even without a configured default.
-  if (requested) {
-    return requested;
-  }
-
-  throw new Error(`Unable to resolve a water group for user ${userId}`);
-}
-
 export async function ensureGroup(db: Firestore, groupId: string, groupName?: string): Promise<void> {
   const now = admin.firestore.Timestamp.now();
   const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);
@@ -632,9 +793,193 @@ export async function ensureGroup(db: Firestore, groupId: string, groupName?: st
       activeSince: group?.activeSince ?? now,
       createdAt: group?.createdAt ?? now,
       updatedAt: now,
+      isEnabled: group?.isEnabled ?? false,
+      enabledAt: group?.enabledAt,
     } satisfies WaterGroupDoc,
     { merge: true }
   );
+}
+
+function normalizeGroupIdList(groupIds: Array<string | null | undefined>): string[] {
+  return [...new Set(groupIds
+    .map((groupId) => typeof groupId === 'string' ? groupId.trim() : '')
+    .filter((groupId): groupId is string => groupId.length > 0))];
+}
+
+async function loadWaterUserDocOrNull(db: Firestore, userId: string): Promise<WaterUserDoc | null> {
+  const snapshot = await db.collection(WATER_USERS_COLLECTION).doc(userId).get();
+  if (!snapshot.exists) {
+    return null;
+  }
+
+  return snapshot.data() as WaterUserDoc;
+}
+
+async function loadEnabledWaterGroupOrThrow(
+  db: Firestore,
+  groupId: string,
+  fallbackName?: string
+): Promise<{ groupId: string; groupName: string }> {
+  if (!isValidLineGroupId(groupId)) {
+    throw new WaterGroupAccessError('water_group_not_enabled', '此喝水入口未開通，請聯絡管理員。');
+  }
+
+  const snapshot = await db.collection(WATER_GROUPS_COLLECTION).doc(groupId).get();
+  const group = toWaterGroupDoc(snapshot);
+  if (!group?.isEnabled) {
+    throw new WaterGroupAccessError('water_group_not_enabled', '此喝水入口未開通，請聯絡管理員。');
+  }
+
+  return {
+    groupId,
+    groupName: fallbackName?.trim() || group.groupName || groupId,
+  };
+}
+
+async function listBoundGroupIds(db: Firestore, userId: string, userDoc?: WaterUserDoc | null): Promise<string[]> {
+  const stored = normalizeGroupIdList(userDoc?.groupIds ?? []);
+  if (stored.length > 0) {
+    return stored;
+  }
+
+  const snapshot = await db.collectionGroup('members').where('lineUserId', '==', userId).get();
+  return normalizeGroupIdList(snapshot.docs
+    .map((doc) => doc.ref.parent.parent?.id ?? null));
+}
+
+async function loadSelectableGroups(
+  db: Firestore,
+  groupIds: string[],
+  boundGroupIds: string[],
+  entryGroupId: string
+): Promise<WaterGroupSummary[]> {
+  const uniqueGroupIds = normalizeGroupIdList(groupIds);
+  const boundSet = new Set(normalizeGroupIdList(boundGroupIds));
+  const groups = await Promise.all(uniqueGroupIds.map(async (groupId) => {
+    const snapshot = await db.collection(WATER_GROUPS_COLLECTION).doc(groupId).get();
+    const group = toWaterGroupDoc(snapshot);
+    if (!group?.isEnabled) {
+      return null;
+    }
+
+    return {
+      groupId,
+      groupName: group.groupName || groupId,
+      alreadyBound: boundSet.has(groupId),
+      isEntryGroup: groupId === entryGroupId,
+    } satisfies WaterGroupSummary;
+  }));
+
+  return groups
+    .filter((group): group is WaterGroupSummary => Boolean(group))
+    .sort((left, right) => {
+      if (left.isEntryGroup !== right.isEntryGroup) {
+        return left.isEntryGroup ? -1 : 1;
+      }
+      return left.groupName.localeCompare(right.groupName, 'zh-Hant');
+    });
+}
+
+export async function resolveWaterSession(
+  db: Firestore,
+  userId: string,
+  input: {
+    entryGroupId?: string | null;
+    entryGroupName?: string;
+    selectedGroupId?: string | null;
+  }
+): Promise<{ groupId: string; groupName: string } | WaterSessionSelection> {
+  const entryGroupId = input.entryGroupId?.trim();
+  if (!entryGroupId) {
+    throw new WaterGroupAccessError('water_group_not_enabled', '缺少群組入口資訊，請使用群組專屬 LIFF 連結。');
+  }
+
+  const entryGroup = await loadEnabledWaterGroupOrThrow(db, entryGroupId, input.entryGroupName);
+  const userDoc = await loadWaterUserDocOrNull(db, userId);
+  const boundGroupIds = await listBoundGroupIds(db, userId, userDoc);
+  const selectableGroups = await loadSelectableGroups(
+    db,
+    normalizeGroupIdList([...boundGroupIds, entryGroup.groupId]),
+    boundGroupIds,
+    entryGroup.groupId
+  );
+
+  const selectedGroupId = input.selectedGroupId?.trim();
+  if (selectedGroupId) {
+    const selected = selectableGroups.find((group) => group.groupId === selectedGroupId);
+    if (!selected) {
+      throw new WaterGroupAccessError('water_group_forbidden', '選擇的群組不可用。');
+    }
+    return {
+      groupId: selected.groupId,
+      groupName: selected.groupName,
+    };
+  }
+
+  if (boundGroupIds.length === 0) {
+    return entryGroup;
+  }
+
+  if (boundGroupIds.length === 1) {
+    if (boundGroupIds[0] === entryGroup.groupId) {
+      return entryGroup;
+    }
+
+    return entryGroup;
+  }
+
+  return {
+    status: 'needs_group_selection',
+    user: userDoc ? serializeWaterUser(userDoc) : null,
+    entryGroup,
+    availableGroups: selectableGroups,
+  };
+}
+
+export async function assertUserCanAccessWaterGroup(
+  db: Firestore,
+  userId: string,
+  groupId?: string | null
+): Promise<string> {
+  const requestedGroupId = groupId?.trim();
+  if (!requestedGroupId) {
+    throw new WaterGroupAccessError('water_group_forbidden', '缺少群組資訊。');
+  }
+
+  const group = await loadEnabledWaterGroupOrThrow(db, requestedGroupId);
+  const userDoc = await loadWaterUserDocOrNull(db, userId);
+  const boundGroupIds = await listBoundGroupIds(db, userId, userDoc);
+  if (!boundGroupIds.includes(group.groupId)) {
+    throw new WaterGroupAccessError('water_group_forbidden', '你尚未加入這個喝水群組。');
+  }
+
+  return group.groupId;
+}
+
+export async function setWaterGroupEnabled(
+  db: Firestore,
+  groupId: string,
+  input: { enabled: boolean; groupName?: string }
+): Promise<{ groupId: string; groupName: string; isEnabled: boolean }> {
+  await ensureGroup(db, groupId, input.groupName);
+
+  const now = admin.firestore.Timestamp.now();
+  const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);
+  const snapshot = await groupRef.get();
+  const existing = toWaterGroupDoc(snapshot);
+
+  await groupRef.set({
+    isEnabled: input.enabled,
+    enabledAt: input.enabled ? (existing?.enabledAt ?? now) : existing?.enabledAt,
+    groupName: input.groupName?.trim() || existing?.groupName || '',
+    updatedAt: now,
+  } satisfies Partial<WaterGroupDoc>, { merge: true });
+
+  return {
+    groupId,
+    groupName: input.groupName?.trim() || existing?.groupName || groupId,
+    isEnabled: input.enabled,
+  };
 }
 
 export async function ensureIdentity(
@@ -656,9 +1001,11 @@ export async function ensureIdentity(
     ]);
 
     const existingGroup = toWaterGroupDoc(groupSnap);
+    const existingUser = userSnap.exists ? (userSnap.data() as WaterUserDoc) : null;
     const existingMember = memberSnap.exists ? (memberSnap.data() as WaterMemberDoc) : null;
     const resetPatch = existingMember ? resetDayIfNeeded(existingMember, todayStr) : {};
     const nextMemberCount = (existingGroup?.memberCount ?? 0) + (memberSnap.exists ? 0 : 1);
+    const nextGroupIds = normalizeGroupIdList([...(existingUser?.groupIds ?? []), group.groupId]);
 
     transaction.set(
       userRef,
@@ -666,9 +1013,15 @@ export async function ensureIdentity(
         lineUserId: user.userId,
         displayName: user.displayName,
         pictureUrl: user.pictureUrl,
-        firstSeenAt: userSnap.exists ? (userSnap.data() as WaterUserDoc).firstSeenAt : now,
+        firstSeenAt: existingUser?.firstSeenAt ?? now,
         lastSeenAt: now,
         lastGroupId: group.groupId,
+        groupIds: nextGroupIds,
+        totalMl: existingUser?.totalMl ?? 0,
+        streak: existingUser?.streak ?? 0,
+        achievements: existingUser?.achievements ?? [],
+        lastDrinkAt: existingUser?.lastDrinkAt ?? null,
+        aggregateVersion: existingUser?.aggregateVersion ?? 0,
       } satisfies WaterUserDoc,
       { merge: true }
     );
@@ -704,6 +1057,8 @@ export async function ensureIdentity(
     return !userSnap.exists;
   });
 
+  await ensureUserHistoryReady(db, user.userId);
+
   const [userDoc, memberDoc] = await Promise.all([
     loadWaterUser(db, user.userId),
     loadNormalizedMember(db, group.groupId, user.userId, todayStr),
@@ -726,6 +1081,8 @@ export async function logDrink(
 
   const todayStr = getTaipeiDateString();
   const weekStart = getWeekStartDateString(todayStr);
+  const userRef = db.collection(WATER_USERS_COLLECTION).doc(user.userId);
+  const userRecordsRef = userRef.collection(WATER_USER_RECORDS_COLLECTION);
   const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);
   const memberRef = groupRef.collection('members').doc(user.userId);
   const membersRef = groupRef.collection('members');
@@ -733,23 +1090,30 @@ export async function logDrink(
 
   return db.runTransaction(async (transaction) => {
     const now = admin.firestore.Timestamp.now();
-    const [groupSnap, memberSnap, membersSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
+    const [userSnap, userTodayRecordsSnap, groupSnap, memberSnap, membersSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
+      transaction.get(userRef),
+      transaction.get(buildUserRecordsQuery(userRecordsRef, todayStr, todayStr)),
       transaction.get(groupRef),
       transaction.get(memberRef),
       transaction.get(membersRef),
       transaction.get(buildRecentRecordsQuery(recordsRef, weekStart, todayStr)),
       transaction.get(buildRecentRecordsQuery(recordsRef, todayStr, todayStr)),
     ]);
+    const userDoc = userSnap.data() as WaterUserDoc | undefined;
     const groupDoc = toWaterGroupDoc(groupSnap as Parameters<typeof toWaterGroupDoc>[0]);
 
     if (!memberSnap.exists) {
       throw new Error(`Water member ${user.userId} not found`);
+    }
+    if (!userDoc) {
+      throw new Error(`Water user ${user.userId} not found`);
     }
 
     const weekRecords = weekRecordsSnap.docs.map(toWaterRecordDoc);
     const todayRecords = todayRecordsSnap.docs.map(toWaterRecordDoc);
     const weekTotals = mapByUser(weekRecords);
     const todayTotals = mapByUser(todayRecords);
+    const userTodayRecords = userTodayRecordsSnap.docs.map(toWaterUserRecordDoc);
 
     const normalizedMembers = membersSnap.docs.map((doc) => {
       const raw = toWaterMemberDoc(doc);
@@ -790,6 +1154,21 @@ export async function logDrink(
     const newTodayDrinkCount = todayUserRecords.length + 1;
     const nextWeekMl = (weekTotals.get(user.userId) ?? 0) + input.ml;
     const nextStreak = computeStreakAfterDrink(currentMember, todayStr);
+    const nextUserTodayDrinkCount = userTodayRecords.length + 1;
+    const nextUserStreak = computeStreakAfterDrink({
+      lineUserId: user.userId,
+      displayName: user.displayName,
+      pictureUrl: user.pictureUrl,
+      todayMl: 0,
+      todayDate: todayStr,
+      weekMl: 0,
+      totalMl: userDoc.totalMl ?? 0,
+      streak: userDoc.streak ?? 0,
+      achievements: userDoc.achievements ?? [],
+      lastDrinkAt: userDoc.lastDrinkAt ?? null,
+      joinedAt: userDoc.firstSeenAt,
+      updatedAt: userDoc.lastSeenAt,
+    }, todayStr);
 
     const newPersistentAchievements: AchievementId[] = [];
     let nextAchievements = [...currentMember.achievements];
@@ -816,6 +1195,33 @@ export async function logDrink(
       newPersistentAchievements,
       '30_day_streak',
       nextStreak >= 30
+    );
+
+    const userUnlocked: AchievementId[] = [];
+    let nextUserAchievements = [...(userDoc.achievements ?? [])];
+    nextUserAchievements = maybeUnlockPersistentAchievement(
+      nextUserAchievements,
+      userUnlocked,
+      'first_drink',
+      (userDoc.totalMl ?? 0) === 0
+    );
+    nextUserAchievements = maybeUnlockPersistentAchievement(
+      nextUserAchievements,
+      userUnlocked,
+      'hydration_master',
+      nextUserTodayDrinkCount >= 5
+    );
+    nextUserAchievements = maybeUnlockPersistentAchievement(
+      nextUserAchievements,
+      userUnlocked,
+      '7_day_streak',
+      nextUserStreak >= 7
+    );
+    nextUserAchievements = maybeUnlockPersistentAchievement(
+      nextUserAchievements,
+      userUnlocked,
+      '30_day_streak',
+      nextUserStreak >= 30
     );
 
     const updatedMember = normalizeMemberDoc(currentMember, {
@@ -861,6 +1267,23 @@ export async function logDrink(
       createdAt: now,
     };
     transaction.set(recordRef, recordDoc);
+    transaction.set(userRecordsRef.doc(recordDoc.id), {
+      ...recordDoc,
+      groupId,
+      groupName: input.groupName ?? groupDoc?.groupName ?? '',
+    } satisfies WaterUserRecordDoc);
+    transaction.set(userRef, {
+      displayName: user.displayName,
+      pictureUrl: user.pictureUrl,
+      lastSeenAt: now,
+      lastGroupId: groupId,
+      groupIds: normalizeGroupIdList([...(userDoc.groupIds ?? []), groupId]),
+      totalMl: (userDoc.totalMl ?? 0) + input.ml,
+      streak: nextUserStreak,
+      achievements: nextUserAchievements,
+      lastDrinkAt: now,
+      aggregateVersion: WATER_USER_AGGREGATE_VERSION,
+    } satisfies Partial<WaterUserDoc>, { merge: true });
 
     const afterMembers = normalizedMembers.map((member) =>
       member.lineUserId === user.userId ? updatedMember : member
@@ -1146,13 +1569,17 @@ export async function resetMemberTodayWater(
 ): Promise<ResetTodayWaterResponse> {
   const todayStr = getTaipeiDateString();
   const weekStart = getWeekStartDateString(todayStr);
+  const userRef = db.collection(WATER_USERS_COLLECTION).doc(lineUserId);
+  const userRecordsRef = userRef.collection(WATER_USER_RECORDS_COLLECTION);
   const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);
   const memberRef = groupRef.collection('members').doc(lineUserId);
   const recordsRef = groupRef.collection('records');
 
   return db.runTransaction(async (transaction) => {
     const now = admin.firestore.Timestamp.now();
-    const [memberSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
+    const [userSnap, userRecordsSnap, memberSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
+      transaction.get(userRef),
+      transaction.get(userRecordsRef),
       transaction.get(memberRef),
       transaction.get(buildRecentRecordsQuery(recordsRef, weekStart, todayStr)),
       transaction.get(buildRecentRecordsQuery(recordsRef, todayStr, todayStr)),
@@ -1163,6 +1590,8 @@ export async function resetMemberTodayWater(
     }
 
     const raw = memberSnap.data() as WaterMemberDoc;
+    const userDoc = userSnap.exists ? (userSnap.data() as WaterUserDoc) : null;
+    const userRecords = userRecordsSnap.docs.map(toWaterUserRecordDoc);
     const weekRecords = weekRecordsSnap.docs.map(toWaterRecordDoc);
     const todayUserRecords = todayRecordsSnap.docs
       .map(toWaterRecordDoc)
@@ -1179,9 +1608,24 @@ export async function resetMemberTodayWater(
       const record = toWaterRecordDoc(doc);
       if (record.lineUserId === lineUserId) {
         transaction.delete(doc.ref);
+        transaction.delete(userRecordsRef.doc(record.id));
       }
     }
 
+    if (userDoc) {
+      const removedRecordIds = new Set(todayUserRecords.map((record) => record.id));
+      const remainingUserRecords = userRecords.filter((record) => !removedRecordIds.has(record.id));
+      const userSummary = summarizeUserHistory(remainingUserRecords, todayStr);
+
+      transaction.set(userRef, {
+        totalMl: userSummary.totalMl,
+        streak: userSummary.streak,
+        achievements: userSummary.achievements,
+        lastDrinkAt: userSummary.lastDrinkAt,
+        aggregateVersion: WATER_USER_AGGREGATE_VERSION,
+        lastSeenAt: now,
+      } satisfies Partial<WaterUserDoc>, { merge: true });
+    }
     const updatedMember = normalizeMemberDoc(raw, {
       todayMl: 0,
       todayDate: todayStr,

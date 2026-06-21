@@ -46,6 +46,12 @@ vi.mock('../contexts/LiffContext', () => ({
 
 const { mockSessionData, mockDrinkResponse } = vi.hoisted(() => {
   const sessionData = {
+    status: 'ready' as const,
+    activeGroup: {
+      groupId: 'Ctest1',
+      groupName: '測試群',
+      entryGroupId: 'Ctest1',
+    },
     isNewUser: false,
     user: {
       lineUserId: 'Utest1',
@@ -54,6 +60,7 @@ const { mockSessionData, mockDrinkResponse } = vi.hoisted(() => {
       firstSeenAt: { _seconds: 0, _nanoseconds: 0 },
       lastSeenAt: { _seconds: 0, _nanoseconds: 0 },
       lastGroupId: 'Ctest1',
+      groupIds: ['Ctest1'],
     },
     member: {
       lineUserId: 'Utest1',
@@ -119,7 +126,17 @@ import { LiffProvider } from '../contexts/LiffContext';
 
 function Wrapper() {
   return (
-    <MemoryRouter>
+    <MemoryRouter initialEntries={['/liff/water?wg=Ctest1']}>
+      <LiffProvider>
+        <WaterTrackerPage />
+      </LiffProvider>
+    </MemoryRouter>
+  );
+}
+
+function LegacyWrapper() {
+  return (
+    <MemoryRouter initialEntries={['/liff/water']}>
       <LiffProvider>
         <WaterTrackerPage />
       </LiffProvider>
@@ -168,7 +185,7 @@ describe('WaterTrackerPage — drink flow', () => {
     });
 
     await waitFor(() =>
-      expect(waterApi.drink).toHaveBeenCalledWith('Ctest1', 200, 'water', 'mock-id-token')
+    expect(waterApi.drink).toHaveBeenCalledWith('Ctest1', 200, 'water', 'mock-id-token')
     );
   });
 
@@ -293,11 +310,42 @@ describe('WaterTrackerPage — unreliable group context', () => {
     mockUseLiff.groupId = null;
     render(<Wrapper />);
 
-    // No "open me in a group" dead-end — the tracker loads and the session call
-    // is made with an empty groupId so the backend can resolve a stable group.
+    // Even if LIFF context loses the live groupId, the explicit entry link keeps
+    // the tracker bootable and the backend still knows which group this launch belongs to.
     await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
-    expect(waterApi.session).toHaveBeenCalledWith('', undefined, 'mock-id-token');
+    expect(waterApi.session).toHaveBeenCalledWith('Ctest1', undefined, undefined, 'mock-id-token');
 
     mockUseLiff.groupId = 'Ctest1'; // restore
+  });
+
+  it('shows group selector when backend asks the user to choose among multiple groups', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    vi.mocked(waterApi.session)
+      .mockResolvedValueOnce({
+        status: 'needs_group_selection',
+        user: mockSessionData.user,
+        entryGroup: { groupId: 'Centry', groupName: '入口群組' },
+        availableGroups: [
+          { groupId: 'Centry', groupName: '入口群組', alreadyBound: false, isEntryGroup: true },
+          { groupId: 'Ctest1', groupName: '測試群', alreadyBound: true, isEntryGroup: false },
+        ],
+      } as Awaited<ReturnType<typeof waterApi.session>>)
+      .mockResolvedValueOnce(mockSessionData);
+
+    render(<Wrapper />);
+
+    await waitFor(() => expect(screen.getByText('選擇本次要進入的群組')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /測試群/ }));
+
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+    expect(waterApi.session).toHaveBeenLastCalledWith('Ctest1', undefined, 'Ctest1', 'mock-id-token');
+  });
+
+  it('rejects legacy LIFF URLs that do not carry an explicit entry group id', async () => {
+    render(<LegacyWrapper />);
+
+    await waitFor(() =>
+      expect(screen.getByText('缺少群組入口資訊，請從群組專屬 LIFF 連結進入。')).toBeInTheDocument()
+    );
   });
 });

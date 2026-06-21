@@ -9,9 +9,10 @@ interface Props {
   surpassedCount?: number;
   achievements?: AchievementId[];
   idToken: string | null;
+  entryGroupId?: string | null;
 }
 
-export default function ShareButton({ member, surpassedCount = 0, achievements = [], idToken }: Props) {
+export default function ShareButton({ member, surpassedCount = 0, achievements = [], idToken, entryGroupId }: Props) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
 
@@ -28,6 +29,7 @@ export default function ShareButton({ member, surpassedCount = 0, achievements =
         taunt,
         surpassedCount,
         achievement: achievements[0] ?? null,
+        entryGroupId,
       }));
       if (result === 'cancelled') {
         setShareError('尚未選擇分享對象，訊息未送出');

@@ -31,6 +31,7 @@ export interface WaterUser {
   firstSeenAt: FirestoreTimestamp;
   lastSeenAt: FirestoreTimestamp;
   lastGroupId: string | null;
+  groupIds: string[];
 }
 
 export interface WaterMember {
@@ -104,12 +105,37 @@ export interface TodayResponse {
   pulse: PulseItem[]; // ★ M2
 }
 
-export interface SessionResponse {
+export interface WaterGroupOption {
+  groupId: string;
+  groupName: string;
+  alreadyBound: boolean;
+  isEntryGroup: boolean;
+}
+
+export interface ReadySessionResponse {
+  status: 'ready';
+  activeGroup: {
+    groupId: string;
+    groupName: string;
+    entryGroupId: string;
+  };
   isNewUser: boolean;
   user: WaterUser;
   member: WaterMember;
   today: TodayResponse;
 }
+
+export interface SelectGroupSessionResponse {
+  status: 'needs_group_selection';
+  user: WaterUser | null;
+  entryGroup: {
+    groupId: string;
+    groupName: string;
+  };
+  availableGroups: WaterGroupOption[];
+}
+
+export type SessionResponse = ReadySessionResponse | SelectGroupSessionResponse;
 
 export interface DrinkResponse {
   record: WaterRecord;
@@ -179,10 +205,10 @@ async function liffRequest<T>(
 // ─── Real adapter ─────────────────────────────────────────────────────────────
 
 const realApi: LiffWaterApiAdapter = {
-  session: (groupId: string, groupName?: string, idToken = '') =>
+  session: (entryGroupId: string, entryGroupName?: string, selectedGroupId?: string, idToken = '') =>
     liffRequest<SessionResponse>(
       '/api/water/session',
-      { method: 'POST', body: JSON.stringify({ groupId, groupName }) },
+      { method: 'POST', body: JSON.stringify({ entryGroupId, entryGroupName, selectedGroupId }) },
       idToken
     ),
 

@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { getDb } from '../../firebase';
 import { liffAuthMiddleware } from '../../middleware/liffAuth';
 import {
+  assertUserCanAccessWaterGroup,
   TAUNT_MESSAGES,
   DrinkType,
   ensureIdentity,
@@ -10,7 +11,8 @@ import {
   getGroupPulse,
   getWeeklyStats,
   logDrink,
-  resolveGroupId,
+  resolveWaterSession,
+  WaterGroupAccessError,
 } from '../../services/waterService';
 
 const router = express.Router();
@@ -22,6 +24,10 @@ function formatErrorDetail(err: unknown): string {
 }
 
 function sendServerError(res: Response, error: string, err: unknown): void {
+  if (err instanceof WaterGroupAccessError) {
+    res.status(err.status).json({ error: err.message, code: err.code });
+    return;
+  }
   res.status(500).json({ error, detail: formatErrorDetail(err) });
 }
 
@@ -36,17 +42,36 @@ function getCurrentUser(req: Request) {
 // POST /api/water/session
 router.post('/session', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { groupId: requestedGroupId, groupName } = req.body as { groupId?: string; groupName?: string };
-    const groupId = await resolveGroupId(getDb(), req.liffUserId!, requestedGroupId);
+    const { entryGroupId, entryGroupName, selectedGroupId } = req.body as {
+      entryGroupId?: string;
+      entryGroupName?: string;
+      selectedGroupId?: string;
+    };
+    const resolved = await resolveWaterSession(getDb(), req.liffUserId!, {
+      entryGroupId,
+      entryGroupName,
+      selectedGroupId,
+    });
+
+    if ('status' in resolved) {
+      res.json(resolved);
+      return;
+    }
 
     const identity = await ensureIdentity(
       getDb(),
-      { groupId, groupName: groupName?.trim() || undefined },
+      { groupId: resolved.groupId, groupName: resolved.groupName },
       getCurrentUser(req)
     );
-    const today = await getTodayLeaderboard(getDb(), groupId, req.liffUserId!);
+    const today = await getTodayLeaderboard(getDb(), resolved.groupId, req.liffUserId!);
 
     res.json({
+      status: 'ready',
+      activeGroup: {
+        groupId: resolved.groupId,
+        groupName: today.groupName || resolved.groupName,
+        entryGroupId: entryGroupId?.trim() || resolved.groupId,
+      },
       isNewUser: identity.isNewUser,
       user: identity.user,
       member: identity.member,
@@ -61,7 +86,7 @@ router.post('/session', liffAuthMiddleware, async (req: Request, res: Response) 
 // POST /api/water/drink
 router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { groupId: requestedGroupId, groupName, ml, drinkType } = req.body as {
+    const { groupId, groupName, ml, drinkType } = req.body as {
       groupId?: string;
       groupName?: string;
       ml?: number;
@@ -79,10 +104,10 @@ router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) =>
     }
 
     const safeMl = ml as number;
-    const groupId = await resolveGroupId(getDb(), req.liffUserId!, requestedGroupId);
+    const resolvedGroupId = await assertUserCanAccessWaterGroup(getDb(), req.liffUserId!, groupId);
     const result = await logDrink(
       getDb(),
-      groupId,
+      resolvedGroupId,
       getCurrentUser(req),
       {
         ml: safeMl,
@@ -101,7 +126,7 @@ router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) =>
 // GET /api/water/group/:groupId/today
 router.get('/group/:groupId/today', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
+    const groupId = await assertUserCanAccessWaterGroup(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
 
     await ensureIdentity(getDb(), { groupId }, getCurrentUser(req));
     const leaderboard = await getTodayLeaderboard(getDb(), groupId, req.liffUserId!);
@@ -115,7 +140,7 @@ router.get('/group/:groupId/today', liffAuthMiddleware, async (req: Request, res
 // GET /api/water/group/:groupId/me
 router.get('/group/:groupId/me', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
+    const groupId = await assertUserCanAccessWaterGroup(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
 
     await ensureIdentity(getDb(), { groupId }, getCurrentUser(req));
     const profile = await getMemberProfile(getDb(), groupId, req.liffUserId!);
@@ -129,7 +154,7 @@ router.get('/group/:groupId/me', liffAuthMiddleware, async (req: Request, res: R
 // GET /api/water/group/:groupId/stats
 router.get('/group/:groupId/stats', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
+    const groupId = await assertUserCanAccessWaterGroup(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
 
     const stats = await getWeeklyStats(getDb(), groupId);
     res.json(stats);
@@ -142,7 +167,7 @@ router.get('/group/:groupId/stats', liffAuthMiddleware, async (req: Request, res
 // GET /api/water/group/:groupId/pulse — BE-6 (P1)
 router.get('/group/:groupId/pulse', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
+    const groupId = await assertUserCanAccessWaterGroup(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
     const limit = Math.min(Number(req.query['limit'] ?? 20) || 20, 50);
     const result = await getGroupPulse(getDb(), groupId, limit);
     res.json(result);

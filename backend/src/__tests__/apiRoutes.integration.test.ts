@@ -18,6 +18,7 @@ const mockCreateLLMProvider = jest.fn();
 const mockExecuteHarness = jest.fn();
 const mockListWaterMembersForAdmin = jest.fn();
 const mockResetMemberTodayWater = jest.fn();
+const mockSetWaterGroupEnabled = jest.fn();
 
 jest.mock('firebase-admin', () => ({
   apps: [],
@@ -85,6 +86,7 @@ jest.mock('../services/harnessOrchestrator', () => ({
 jest.mock('../services/waterService', () => ({
   listWaterMembersForAdmin: (...args: unknown[]) => mockListWaterMembersForAdmin(...args),
   resetMemberTodayWater: (...args: unknown[]) => mockResetMemberTodayWater(...args),
+  setWaterGroupEnabled: (...args: unknown[]) => mockSetWaterGroupEnabled(...args),
   TAUNT_MESSAGES: [],
 }));
 
@@ -297,6 +299,66 @@ describe('backend API route integration safety net', () => {
     expect(mockResetMemberTodayWater).toHaveBeenCalled();
   });
 
+  it('returns owned group water config including the dedicated LIFF entry URL', async () => {
+    process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
+    mockGetDb.mockReturnValue({
+      collection: jest.fn((name: string) => ({
+        doc: jest.fn(() => ({
+          get: jest.fn().mockResolvedValue(
+            name === 'groups'
+              ? { exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }
+              : { exists: true, data: () => ({ isEnabled: true }) }
+          ),
+        })),
+      })),
+    });
+
+    const res = await request(server, 'GET', '/api/groups/group_a/water-config');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      groupId: 'group_a',
+      groupName: 'VIP group',
+      enabled: true,
+      entryUrl: 'https://wippy-mvp.web.app/liff/water?wg=group_a',
+    });
+  });
+
+  it('enables water competition for an owned group and auto-sends the entry URL', async () => {
+    process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
+    process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
+    const { Client } = require('@line/bot-sdk');
+    const mockPushMessage = jest.fn().mockResolvedValue({ messageId: 'line_msg_2' });
+    Client.mockImplementation(() => ({ pushMessage: mockPushMessage }));
+    mockGetDb.mockReturnValue({
+      collection: jest.fn(() => ({
+        doc: jest.fn(() => ({
+          get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }),
+        })),
+      })),
+    });
+    mockSetWaterGroupEnabled.mockResolvedValue({
+      groupId: 'group_a',
+      groupName: 'VIP group',
+      isEnabled: true,
+    });
+
+    const res = await request(server, 'POST', '/api/groups/group_a/water-config', { enabled: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(expect.objectContaining({
+      groupId: 'group_a',
+      groupName: 'VIP group',
+      enabled: true,
+      entryUrl: 'https://wippy-mvp.web.app/liff/water?wg=group_a',
+      messageSent: true,
+      messageError: null,
+    }));
+    expect(mockPushMessage).toHaveBeenCalledWith('group_a', expect.objectContaining({
+      type: 'text',
+      text: expect.stringContaining('?wg=group_a'),
+    }));
+  });
   it('covers activity list, create, update, approve, and request-revision route contracts', async () => {
     const db = { tag: 'db' };
     const activity = {

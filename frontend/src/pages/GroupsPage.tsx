@@ -135,7 +135,7 @@ function MessageDrawer({
     if (!waterConfig?.entryUrl) return;
     try {
       await navigator.clipboard.writeText(waterConfig.entryUrl);
-      setConfigFeedback('已複製群組專屬 LIFF 入口連結');
+      setConfigFeedback('已複製群組專屬 LIFF Deep Link');
     } catch {
       setConfigFeedback(waterConfig.entryUrl);
     }
@@ -222,7 +222,7 @@ function MessageDrawer({
               <div>
                 <p className="text-sm font-semibold text-sky-900">喝水競賽入口</p>
                 <p className="text-xs text-sky-700 mt-1">
-                  啟用後系統會自動把帶 `groupId` 的專屬 LIFF 連結發到這個 LINE 群組。舊版沒有 `wg` 的連結不再可用。
+                  啟用後系統會自動把帶 `groupId` 的專屬 LIFF Deep Link 發到這個 LINE 群組。舊版沒有 `wg` 的連結不再可用。
                 </p>
               </div>
               <button
@@ -249,7 +249,7 @@ function MessageDrawer({
                   onClick={handleCopyEntryUrl}
                   className="text-xs text-sky-700 font-medium hover:text-sky-900"
                 >
-                  複製專屬入口連結
+                  複製專屬 LIFF Deep Link
                 </button>
               </div>
             )}

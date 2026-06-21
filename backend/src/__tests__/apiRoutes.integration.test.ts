@@ -325,8 +325,9 @@ describe('backend API route integration safety net', () => {
     });
   });
 
-  it('falls back to the production LIFF URL when water entry env is missing', async () => {
+  it('falls back to the default LIFF deep link when water entry env is missing', async () => {
     delete process.env.LIFF_ID;
+    delete process.env.VITE_LIFF_ID;
     delete process.env.WATER_LIFF_BASE_URL;
     delete process.env.LIFF_BASE_URL;
     delete process.env.FIREBASE_HOSTING_URL;
@@ -350,7 +351,7 @@ describe('backend API route integration safety net', () => {
       groupId: 'group_a',
       groupName: 'VIP group',
       enabled: false,
-      entryUrl: 'https://wippy-mvp.web.app/liff/water?wg=group_a',
+      entryUrl: 'https://liff.line.me/2010457997-AsUbpde2?wg=group_a',
     });
   });
   it('enables water competition for an owned group and auto-sends the entry URL', async () => {

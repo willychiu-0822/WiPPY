@@ -9,6 +9,8 @@ type LineFlexMessage = {
   contents: Record<string, unknown>;
 };
 
+const DEFAULT_WATER_LIFF_ID = '2010457997-AsUbpde2';
+
 const ACHIEVEMENT_LABELS: Record<AchievementId, string> = {
   now_im_best: '現在我最棒 🏆',
   now_im_worst: '現在我最爛 😵',
@@ -20,6 +22,12 @@ const ACHIEVEMENT_LABELS: Record<AchievementId, string> = {
 };
 
 export type ShareResult = 'sent' | 'shared' | 'cancelled';
+
+function buildWaterEntryUri(entryGroupId?: string | null): string {
+  const liffId = String(import.meta.env.VITE_LIFF_ID || DEFAULT_WATER_LIFF_ID).trim();
+  const entrySuffix = entryGroupId ? `?wg=${encodeURIComponent(entryGroupId)}` : '';
+  return `https://liff.line.me/${encodeURIComponent(liffId)}${entrySuffix}`;
+}
 
 export function buildWaterShareMessage(input: {
   member: WaterMember;
@@ -33,9 +41,7 @@ export function buildWaterShareMessage(input: {
 }): LineFlexMessage {
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const liffId = import.meta.env.VITE_LIFF_ID as string;
   const achievementLabel = input.achievement ? ACHIEVEMENT_LABELS[input.achievement] : null;
-  const entrySuffix = input.entryGroupId ? `?wg=${encodeURIComponent(input.entryGroupId)}` : '';
 
   // Build context lines based on gamification state
   const contextLines: Array<Record<string, unknown>> = [];
@@ -66,7 +72,7 @@ export function buildWaterShareMessage(input: {
             : []),
           ...contextLines,
           { type: 'text', text: input.taunt, size: 'sm', color: '#6b7280', wrap: true },
-          { type: 'button', action: { type: 'uri', label: '我也要記錄 💧', uri: `https://liff.line.me/${liffId}${entrySuffix}` }, style: 'primary', color: '#0ea5e9' },
+          { type: 'button', action: { type: 'uri', label: '我也要記錄 💧', uri: buildWaterEntryUri(input.entryGroupId) }, style: 'primary', color: '#0ea5e9' },
         ],
       },
     },

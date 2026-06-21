@@ -99,7 +99,7 @@ jobs:
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
           WORKFLOW_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          LIFF_URL="${{ steps.deploy-target.outputs.FIREBASE_HOSTING_URL }}${{ steps.deploy-target.outputs.LIFF_PATH }}?v=${SHORT_SHA}"
+          LIFF_URL="https://liff.line.me/${{ steps.deploy-target.outputs.LIFF_ID }}?v=${SHORT_SHA}"
           GROUP_ID="${{ steps.deploy-target.outputs.LIFF_DEPLOY_NOTIFY_GROUP_ID }}"
           CLOUD_RUN_URL="${{ steps.deploy-target.outputs.CLOUD_RUN_URL }}"
 

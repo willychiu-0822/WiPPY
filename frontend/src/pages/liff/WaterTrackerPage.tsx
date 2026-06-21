@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useLiff } from '../../contexts/useLiff';
 import { waterApi } from '../../lib/liffApi';
 import type { DrinkType, ReadySessionResponse, SessionResponse, DrinkResponse, WaterGroupOption } from '../../lib/liffApi';
 import { getErrorMessage } from '../../lib/apiError';
+import { getLiffEntryParam, getWaterEntryGroupId, LINE_GROUP_ID_PATTERN } from '../../lib/liffEntry';
 import { selectHeroState } from '../../lib/waterLogic';
 import DrinkLogger from '../../components/liff/DrinkLogger';
 import Leaderboard from '../../components/liff/Leaderboard';
@@ -12,8 +13,6 @@ import DrinkResultModal from '../../components/liff/DrinkResultModal';
 import HeroStatusCard from '../../components/liff/HeroStatusCard';
 import GroupGoalBar from '../../components/liff/GroupGoalBar';
 import LivePulse from '../../components/liff/LivePulse';
-
-const LINE_GROUP_ID_PATTERN = /^[CR][0-9a-f]{32}$/i;
 
 function Skeleton() {
   return (
@@ -73,18 +72,19 @@ function GroupSelector(props: {
 
 export default function WaterTrackerPage() {
   const { ready, loading: liffLoading, error: liffError, profile, idToken, groupId: liveGroupId, authRedirecting } = useLiff();
-  const [searchParams] = useSearchParams();
+  const { search } = useLocation();
+  const screenRef = useRef<HTMLDivElement>(null);
 
   const entryGroupId = useMemo(() => {
-    const explicitGroupId = searchParams.get('wg')?.trim();
+    const explicitGroupId = getWaterEntryGroupId(search);
     if (explicitGroupId) return explicitGroupId;
 
     const fallbackGroupId = liveGroupId?.trim() || '';
     return LINE_GROUP_ID_PATTERN.test(fallbackGroupId) ? fallbackGroupId : '';
-  }, [searchParams, liveGroupId]);
+  }, [search, liveGroupId]);
   const entryGroupName = useMemo(
-    () => searchParams.get('wgName')?.trim() || undefined,
-    [searchParams]
+    () => getLiffEntryParam(search, 'wgName')?.trim() || undefined,
+    [search]
   );
 
   const [sessionData, setSessionData] = useState<ReadySessionResponse | null>(null);
@@ -201,6 +201,11 @@ export default function WaterTrackerPage() {
     setHeroExpanded(true);
   }, []);
 
+  useEffect(() => {
+    if (!heroExpanded) return;
+    screenRef.current?.scrollTo({ top: 0 });
+  }, [heroExpanded, suggestionKey]);
+
   if (liffLoading) return <Skeleton />;
 
   if (liffError) {
@@ -252,11 +257,12 @@ export default function WaterTrackerPage() {
   const activeCount = today.members.filter((item) => item.todayMl > 0).length;
 
   return (
-    <div className={`wb-scroll relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#081428_0%,#050b18_45%,#04080f_100%)] text-sky-50 transition-[padding-top] duration-500 ${heroExpanded ? 'overflow-y-hidden pt-20' : 'overflow-y-auto pt-0'}`}>
+    <div ref={screenRef} className={`wb-scroll relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#081428_0%,#050b18_45%,#04080f_100%)] text-sky-50 ${heroExpanded ? 'overflow-y-hidden' : 'overflow-y-auto'}`}>
+      <div className={`overflow-hidden transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-[210px] opacity-100'}`}>
         <header className="px-[14px] pt-[14px]">
           <LivePulse pulse={today.pulse} compact onOpenHistory={() => setHistoryOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
 
-          <div className={`mt-[10px] overflow-hidden rounded-[18px] border border-white/[.06] bg-white/[.035] transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-60 p-[14px_16px] opacity-100'}`}>
+          <div className="mt-[10px] overflow-hidden rounded-[18px] border border-white/[.06] bg-white/[.035] p-[14px_16px]">
             <div className="mb-[11px] flex items-start justify-between gap-[14px]">
               <div className="min-w-0">
                 <p className="text-lg font-black leading-tight text-sky-50">{today.groupName || '喝水戰隊'}</p>
@@ -277,6 +283,7 @@ export default function WaterTrackerPage() {
             <GroupGoalBar group={today.group} compact />
           </div>
         </header>
+      </div>
 
         <main className="px-[14px] pb-24 pt-3">
           <HeroStatusCard

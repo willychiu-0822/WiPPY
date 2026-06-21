@@ -145,6 +145,16 @@ function LegacyWrapper() {
   );
 }
 
+function LiffStateWrapper() {
+  return (
+    <MemoryRouter initialEntries={['/liff/water?liff.state=%2Fliff%2Fwater%3Fwg%3DC36f826d26cf8adefe4d214993742c230%26wgName%3D%E6%B5%B7%E6%B5%AA%E7%BE%A4']}>
+      <LiffProvider>
+        <WaterTrackerPage />
+      </LiffProvider>
+    </MemoryRouter>
+  );
+}
+
 describe('WaterTrackerPage — initial load', () => {
   it('shows group name after session loads', async () => {
     render(<Wrapper />);
@@ -348,6 +358,25 @@ describe('WaterTrackerPage — unreliable group context', () => {
     render(<LegacyWrapper />);
 
     await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    mockUseLiff.groupId = 'Ctest1';
+  });
+
+  it('uses the group entry from liff.state when LINE returns a legacy deep link', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    (waterApi.session as ReturnType<typeof vi.fn>).mockClear();
+
+    mockUseLiff.groupId = null;
+
+    render(<LiffStateWrapper />);
+
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+    expect(waterApi.session).toHaveBeenCalledWith(
+      'C36f826d26cf8adefe4d214993742c230',
+      '海浪群',
+      undefined,
+      'mock-id-token'
+    );
 
     mockUseLiff.groupId = 'Ctest1';
   });

@@ -570,7 +570,7 @@ describe('backend API route integration safety net', () => {
     process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
     const body = {
       groupId: 'C140df0374a3ba2a5864bcff0cbf8befd',
-      url: 'https://wippy-mvp.web.app/liff/water?v=abc1234',
+      url: 'https://wippy-mvp.web.app/liff/water?wg=C140df0374a3ba2a5864bcff0cbf8befd&v=abc1234',
       version: 'abc1234',
       workflowUrl: 'https://github.com/org/repo/actions/runs/999',
     };
@@ -586,7 +586,7 @@ describe('backend API route integration safety net', () => {
         text: expect.stringContaining('abc1234'),
       })
     );
-    expect(mockPushMessage.mock.calls[0][1].text).toContain('https://wippy-mvp.web.app/liff/water?v=abc1234');
+    expect(mockPushMessage.mock.calls[0][1].text).toContain('https://wippy-mvp.web.app/liff/water?wg=C140df0374a3ba2a5864bcff0cbf8befd&v=abc1234');
   });
 
   it('returns 500 when lineClient.pushMessage throws on deploy-notify', async () => {
@@ -598,7 +598,7 @@ describe('backend API route integration safety net', () => {
     process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
     const body = {
       groupId: 'C1abc',
-      url: 'https://wippy-mvp.web.app/liff/water?v=abc1234',
+      url: 'https://wippy-mvp.web.app/liff/water?wg=C1abc&v=abc1234',
       version: 'abc1234',
     };
 

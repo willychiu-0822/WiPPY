@@ -103,8 +103,8 @@ jobs:
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
           WORKFLOW_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          LIFF_URL="https://liff.line.me/${{ steps.deploy-target.outputs.LIFF_ID }}?v=${SHORT_SHA}"
           GROUP_ID="${{ steps.deploy-target.outputs.LIFF_DEPLOY_NOTIFY_GROUP_ID }}"
+          LIFF_URL="https://liff.line.me/${{ steps.deploy-target.outputs.LIFF_ID }}?wg=${GROUP_ID}&v=${SHORT_SHA}"
           CLOUD_RUN_URL="${{ steps.deploy-target.outputs.CLOUD_RUN_URL }}"
 
           PAYLOAD=$(printf '{"groupId":"%s","url":"%s","version":"%s","workflowUrl":"%s"}' \

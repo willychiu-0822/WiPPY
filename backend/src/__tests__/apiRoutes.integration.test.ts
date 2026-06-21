@@ -357,6 +357,102 @@ describe('backend API route integration safety net', () => {
     });
   });
 
+  async function postDeployNotify(
+    server: http.Server,
+    body: unknown,
+    secret?: string
+  ): Promise<JsonResponse> {
+    const address = server.address() as AddressInfo;
+    const payload = JSON.stringify(body);
+    return new Promise((resolve, reject) => {
+      const req = http.request({
+        host: '127.0.0.1',
+        port: address.port,
+        method: 'POST',
+        path: '/api/internal/deploy-notify',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+          ...(secret ? { 'x-internal-secret': secret } : {}),
+        },
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(data), headers: res.headers }));
+      });
+      req.on('error', reject);
+      req.write(payload);
+      req.end();
+    });
+  }
+
+  it('rejects deploy-notify with wrong or missing secret', async () => {
+    const body = { groupId: 'C1abc', url: 'https://example.com', version: 'abc1234' };
+
+    const missing = await postDeployNotify(server, body);
+    expect(missing.status).toBe(401);
+
+    const wrong = await postDeployNotify(server, body, 'wrong-secret');
+    expect(wrong.status).toBe(401);
+  });
+
+  it('returns 400 when deploy-notify body is missing required fields', async () => {
+    const missing_url = await postDeployNotify(server, { groupId: 'C1', version: 'v1' }, 'test-secret');
+    expect(missing_url.status).toBe(400);
+
+    const missing_version = await postDeployNotify(server, { groupId: 'C1', url: 'https://x' }, 'test-secret');
+    expect(missing_version.status).toBe(400);
+
+    const missing_group = await postDeployNotify(server, { url: 'https://x', version: 'v1' }, 'test-secret');
+    expect(missing_group.status).toBe(400);
+  });
+
+  it('calls lineClient.pushMessage and returns ok on successful deploy-notify', async () => {
+    const { Client } = require('@line/bot-sdk');
+    const mockPushMessage = jest.fn().mockResolvedValue({ messageId: 'msg_1' });
+    Client.mockImplementation(() => ({ pushMessage: mockPushMessage }));
+
+    process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
+    const body = {
+      groupId: 'C140df0374a3ba2a5864bcff0cbf8befd',
+      url: 'https://wippy-mvp.web.app/liff/water?v=abc1234',
+      version: 'abc1234',
+      workflowUrl: 'https://github.com/org/repo/actions/runs/999',
+    };
+
+    const res = await postDeployNotify(server, body, 'test-secret');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true });
+    expect(mockPushMessage).toHaveBeenCalledWith(
+      'C140df0374a3ba2a5864bcff0cbf8befd',
+      expect.objectContaining({
+        type: 'text',
+        text: expect.stringContaining('abc1234'),
+      })
+    );
+    expect(mockPushMessage.mock.calls[0][1].text).toContain('https://wippy-mvp.web.app/liff/water?v=abc1234');
+  });
+
+  it('returns 500 when lineClient.pushMessage throws on deploy-notify', async () => {
+    const { Client } = require('@line/bot-sdk');
+    Client.mockImplementation(() => ({
+      pushMessage: jest.fn().mockRejectedValue(new Error('LINE API error')),
+    }));
+
+    process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
+    const body = {
+      groupId: 'C1abc',
+      url: 'https://wippy-mvp.web.app/liff/water?v=abc1234',
+      version: 'abc1234',
+    };
+
+    const res = await postDeployNotify(server, body, 'test-secret');
+
+    expect(res.status).toBe(500);
+    expect(res.body.ok).toBe(false);
+  });
+
   it('protects /api/internal/harness/run with the internal secret', async () => {
     mockExecuteHarness.mockResolvedValue(undefined);
 

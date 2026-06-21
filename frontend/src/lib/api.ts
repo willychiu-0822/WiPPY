@@ -88,7 +88,6 @@ export interface WaterGroupConfig {
   messageSent?: boolean;
   messageError?: string | null;
 }
-
 // ─── Groups API ───────────────────────────────────────────────────────────────
 
 export const api = {

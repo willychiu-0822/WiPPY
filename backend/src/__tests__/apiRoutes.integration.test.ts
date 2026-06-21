@@ -358,7 +358,6 @@ describe('backend API route integration safety net', () => {
       text: expect.stringContaining('?wg=group_a'),
     }));
   });
-
   it('covers activity list, create, update, approve, and request-revision route contracts', async () => {
     const db = { tag: 'db' };
     const activity = {

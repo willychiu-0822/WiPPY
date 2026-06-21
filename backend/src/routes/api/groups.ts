@@ -38,7 +38,6 @@ function buildWaterEnableMessage(groupName: string, entryUrl: string): string {
     '舊的未帶群組參數連結已失效。',
   ].join('\n');
 }
-
 // GET /api/groups
 // Returns all active groups for the authenticated user, sorted by lastMessageAt DESC
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
@@ -272,7 +271,6 @@ router.get('/:groupId/water-config', authMiddleware, async (req: Request, res: R
     res.status(500).json({ error: 'Failed to fetch water group config' });
   }
 });
-
 // POST /api/groups/sync
 // Refresh group data from LINE API for all active groups
 router.post('/sync', authMiddleware, async (req: Request, res: Response) => {

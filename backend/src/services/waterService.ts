@@ -1626,7 +1626,6 @@ export async function resetMemberTodayWater(
         lastSeenAt: now,
       } satisfies Partial<WaterUserDoc>, { merge: true });
     }
-
     const updatedMember = normalizeMemberDoc(raw, {
       todayMl: 0,
       todayDate: todayStr,

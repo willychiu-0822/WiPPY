@@ -30,6 +30,7 @@ export default function WaterTrackerPage() {
   const [sessionLoading, setSessionLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [drinkError, setDrinkError] = useState<string | null>(null);
 
   // Post-drink result modal
   const [drinkResult, setDrinkResult] = useState<DrinkResponse | null>(null);
@@ -57,6 +58,8 @@ export default function WaterTrackerPage() {
       try {
         const res = await waterApi.drink(groupId, ml, drinkType, idToken ?? undefined);
         setDrinkResult(res);
+
+        setDrinkError(null);
 
         // Update leaderboard optimistically
         setSessionData(prev => {
@@ -96,6 +99,8 @@ export default function WaterTrackerPage() {
         setShowModal(true);
       } catch (err) {
         console.error('Drink error:', err);
+        setDrinkError('記錄失敗，請再試一次');
+        throw err;
       } finally {
         setSubmitting(false);
       }
@@ -209,6 +214,9 @@ export default function WaterTrackerPage() {
         <section className="bg-white rounded-2xl p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-sky-600 mb-3">記錄喝水</h2>
           <DrinkLogger onSubmit={handleDrink} submitting={submitting} />
+          {drinkError && (
+            <p className="mt-2 text-xs text-red-500 text-center">{drinkError}</p>
+          )}
         </section>
 
         {/* Leaderboard */}

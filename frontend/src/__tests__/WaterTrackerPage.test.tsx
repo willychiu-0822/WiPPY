@@ -201,6 +201,40 @@ describe('WaterTrackerPage — drink flow', () => {
   });
 });
 
+describe('WaterTrackerPage — drink error handling', () => {
+  it('shows error message when waterApi.drink fails', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    vi.mocked(waterApi.drink).mockRejectedValueOnce(new Error('server error'));
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: '+200' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText('記錄失敗，請再試一次')).toBeInTheDocument()
+    );
+  });
+
+  it('does not show result modal when drink fails', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    vi.mocked(waterApi.drink).mockRejectedValueOnce(new Error('server error'));
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: '+200' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
+    });
+
+    await waitFor(() => expect(screen.queryByText('現在我最棒！')).not.toBeInTheDocument());
+  });
+});
+
 describe('WaterTrackerPage — non-group guard', () => {
   it('shows friendly message when not in a group context', async () => {
     mockUseLiff.groupId = null;

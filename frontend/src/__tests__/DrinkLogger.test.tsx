@@ -126,6 +126,16 @@ describe('DrinkLogger — submit', () => {
     });
     await waitFor(() => expect(getTotal()).toHaveTextContent('0'));
   });
+
+  it('retains entered values when onSubmit rejects', async () => {
+    const failing = vi.fn().mockRejectedValue(new Error('network error'));
+    render(<DrinkLogger onSubmit={failing} />);
+    fireEvent.click(screen.getByRole('button', { name: '+200' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
+    });
+    await waitFor(() => expect(getTotal()).toHaveTextContent('200'));
+  });
 });
 
 describe('DrinkLogger — overflow dialog (>2000ml)', () => {

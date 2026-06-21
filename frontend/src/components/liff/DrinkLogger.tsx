@@ -92,8 +92,12 @@ export default function DrinkLogger({ onSubmit, submitting = false }: Props) {
     if (total <= 0 || submitting) return;
     const ml = total;
     const type = drinkType;
-    handleReset();
-    await onSubmit(ml, type);
+    try {
+      await onSubmit(ml, type);
+      handleReset();
+    } catch {
+      // parent handles error display; keep the entered values so user can retry
+    }
   }
 
   const drinkLabel = DRINK_OPTIONS.find(d => d.type === drinkType)?.label ?? '';

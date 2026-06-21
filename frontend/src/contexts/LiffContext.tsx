@@ -106,6 +106,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
     ready: false,
     loading: true,
     error: null as string | null,
+    authRedirecting: false,
     profile: null as LiffProfile | null,
     context: null as ReturnType<Liff['getContext']>,
     idToken: null as string | null,
@@ -139,6 +140,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           ready: true,
           loading: false,
           error: null,
+          authRedirecting: false,
           profile: DEV_PROFILE,
           context: devContext,
           idToken: 'dev-mock-id-token',
@@ -154,7 +156,14 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         });
 
         if (!liff.isLoggedIn()) {
-          liff.login();
+          setState((current) => ({
+            ...current,
+            ready: false,
+            loading: false,
+            error: '需要 LINE 登入才能開啟喝水頁面。若未自動跳轉，請回到 LINE 群組重新開啟專屬連結。',
+            authRedirecting: true,
+          }));
+          liff.login({ redirectUri: window.location.href });
           return;
         }
 
@@ -185,6 +194,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           ready: true,
           loading: false,
           error: null,
+          authRedirecting: false,
           profile,
           context: ctx,
           idToken,
@@ -197,6 +207,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           ready: false,
           loading: false,
           error: formatLiffError(err, 'LIFF init failed'),
+          authRedirecting: false,
         }));
       }
     }

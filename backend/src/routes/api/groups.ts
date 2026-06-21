@@ -23,6 +23,15 @@ async function loadOwnedGroupOr404(req: Request, res: Response) {
 }
 
 function buildWaterEntryUrl(groupId: string): string {
+  const liffId = String(
+    process.env.LIFF_ID
+      ?? process.env.VITE_LIFF_ID
+      ?? ''
+  ).trim();
+  if (liffId) {
+    return `https://liff.line.me/${encodeURIComponent(liffId)}?wg=${encodeURIComponent(groupId)}`;
+  }
+
   const configuredBase = String(process.env.WATER_LIFF_BASE_URL ?? process.env.LIFF_BASE_URL ?? '').trim();
   const hostingBase = String(process.env.FIREBASE_HOSTING_URL ?? '').trim();
   const liffPath = String(process.env.LIFF_PATH ?? '/liff/water').trim();

@@ -31,6 +31,7 @@ async function renderStateProbe() {
         <div data-testid="ready">{String(state.ready)}</div>
         <div data-testid="loading">{String(state.loading)}</div>
         <div data-testid="error">{state.error ?? ''}</div>
+        <div data-testid="auth-redirecting">{String(state.authRedirecting)}</div>
         <div data-testid="profile-name">{state.profile?.displayName ?? ''}</div>
         <div data-testid="profile-user-id">{state.profile?.userId ?? ''}</div>
         <div data-testid="group-id">{state.groupId ?? ''}</div>
@@ -84,6 +85,7 @@ describe('LiffProvider', () => {
     expect(screen.getByTestId('profile-user-id')).toHaveTextContent('Udecoded1');
     expect(screen.getByTestId('group-id')).toHaveTextContent('Ctest1');
     expect(screen.getByTestId('id-token')).toHaveTextContent('mock-id-token');
+    expect(screen.getByTestId('auth-redirecting')).toHaveTextContent('false');
   });
 
   it('surfaces the LIFF error code and message when init fails', async () => {
@@ -96,6 +98,19 @@ describe('LiffProvider', () => {
 
     expect(screen.getByTestId('ready')).toHaveTextContent('false');
     expect(screen.getByTestId('error')).toHaveTextContent('FORBIDDEN: Environment unsupported');
+  });
+
+  it('surfaces a recoverable message instead of staying stuck when LINE login is required', async () => {
+    liffMock.isLoggedIn.mockReturnValue(false);
+
+    await renderStateProbe();
+
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    expect(screen.getByTestId('ready')).toHaveTextContent('false');
+    expect(screen.getByTestId('auth-redirecting')).toHaveTextContent('true');
+    expect(screen.getByTestId('error')).toHaveTextContent('需要 LINE 登入才能開啟喝水頁面');
+    expect(liffMock.login).toHaveBeenCalledWith({ redirectUri: window.location.href });
   });
 
   it('uses dev fallback profile and group context when VITE_LIFF_DEV is true', async () => {

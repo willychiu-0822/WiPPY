@@ -300,6 +300,7 @@ describe('backend API route integration safety net', () => {
   });
 
   it('returns owned group water config including the dedicated LIFF entry URL', async () => {
+    process.env.LIFF_ID = '2010457997-AsUbpde2';
     process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
     mockGetDb.mockReturnValue({
       collection: jest.fn((name: string) => ({
@@ -320,11 +321,12 @@ describe('backend API route integration safety net', () => {
       groupId: 'group_a',
       groupName: 'VIP group',
       enabled: true,
-      entryUrl: 'https://wippy-mvp.web.app/liff/water?wg=group_a',
+      entryUrl: 'https://liff.line.me/2010457997-AsUbpde2?wg=group_a',
     });
   });
 
   it('falls back to the production LIFF URL when water entry env is missing', async () => {
+    delete process.env.LIFF_ID;
     delete process.env.WATER_LIFF_BASE_URL;
     delete process.env.LIFF_BASE_URL;
     delete process.env.FIREBASE_HOSTING_URL;
@@ -352,6 +354,7 @@ describe('backend API route integration safety net', () => {
     });
   });
   it('enables water competition for an owned group and auto-sends the entry URL', async () => {
+    process.env.LIFF_ID = '2010457997-AsUbpde2';
     process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
     process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
     const { Client } = require('@line/bot-sdk');
@@ -377,13 +380,13 @@ describe('backend API route integration safety net', () => {
       groupId: 'group_a',
       groupName: 'VIP group',
       enabled: true,
-      entryUrl: 'https://wippy-mvp.web.app/liff/water?wg=group_a',
+      entryUrl: 'https://liff.line.me/2010457997-AsUbpde2?wg=group_a',
       messageSent: true,
       messageError: null,
     }));
     expect(mockPushMessage).toHaveBeenCalledWith('group_a', expect.objectContaining({
       type: 'text',
-      text: expect.stringContaining('?wg=group_a'),
+      text: expect.stringContaining('https://liff.line.me/2010457997-AsUbpde2?wg=group_a'),
     }));
   });
   it('covers activity list, create, update, approve, and request-revision route contracts', async () => {

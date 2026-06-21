@@ -3,6 +3,7 @@ import {
   TAUNT_MESSAGES,
   ensureIdentity,
   getMemberProfile,
+  getGroupPulse,
   getRandomTaunt,
   getTodayLeaderboard,
   isValidLineGroupId,
@@ -106,28 +107,35 @@ class FakeDocumentReference {
 class FakeQuery {
   private readonly filters: Array<{ fieldPath: string; opStr: WhereOp; value: unknown }>;
   private readonly orders: Array<{ fieldPath: string; directionStr: OrderDirection }>;
+  private readonly maxCount: number | null;
 
   constructor(
     private readonly db: FakeFirestore,
     private readonly path: string,
     private readonly isCollectionGroup: boolean,
     filters: Array<{ fieldPath: string; opStr: WhereOp; value: unknown }> = [],
-    orders: Array<{ fieldPath: string; directionStr: OrderDirection }> = []
+    orders: Array<{ fieldPath: string; directionStr: OrderDirection }> = [],
+    maxCount: number | null = null
   ) {
     this.filters = filters;
     this.orders = orders;
+    this.maxCount = maxCount;
   }
 
   where(fieldPath: string, opStr: WhereOp, value: unknown) {
-    return new FakeQuery(this.db, this.path, this.isCollectionGroup, [...this.filters, { fieldPath, opStr, value }], this.orders);
+    return new FakeQuery(this.db, this.path, this.isCollectionGroup, [...this.filters, { fieldPath, opStr, value }], this.orders, this.maxCount);
   }
 
   orderBy(fieldPath: string, directionStr: OrderDirection = 'asc') {
-    return new FakeQuery(this.db, this.path, this.isCollectionGroup, this.filters, [...this.orders, { fieldPath, directionStr }]);
+    return new FakeQuery(this.db, this.path, this.isCollectionGroup, this.filters, [...this.orders, { fieldPath, directionStr }], this.maxCount);
+  }
+
+  limit(count: number) {
+    return new FakeQuery(this.db, this.path, this.isCollectionGroup, this.filters, this.orders, count);
   }
 
   async get() {
-    const docs = this.db.query(this.path, this.isCollectionGroup)
+    let docs = this.db.query(this.path, this.isCollectionGroup)
       .filter((entry) =>
         this.filters.every((filter) => {
           const value = entry.data[filter.fieldPath] as string | number | Timestamp | null | undefined;
@@ -151,6 +159,10 @@ class FakeQuery {
         return left.path.localeCompare(right.path);
       })
       .map((entry) => new FakeQueryDocumentSnapshot(entry.ref, entry.data));
+
+    if (this.maxCount !== null) {
+      docs = docs.slice(0, this.maxCount);
+    }
 
     return {
       docs,
@@ -644,6 +656,266 @@ describe('waterService', () => {
 
     expect(result.member.todayMl).toBe(500);
     expect(db.read('waterGroups/C123/members/U1')).toEqual(expect.objectContaining({ todayMl: 500 }));
+  });
+});
+
+describe('water gamification (BE-1~BE-5, BE-8)', () => {
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-20T01:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  // BE-1: group goal computation
+  it('BE-1: computes group goal correctly (not yet reached)', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 3);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 600, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 500, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U3', { displayName: 'Cara', todayMl: 400, todayDate: '2026-06-20' });
+
+    const leaderboard = await getTodayLeaderboard(db as never, 'C123', 'U1');
+    expect(leaderboard.group.todayMl).toBe(1500);
+    expect(leaderboard.group.goalMl).toBe(4500); // 3 × 1500
+    expect(leaderboard.group.goalReached).toBe(false);
+    expect(leaderboard.group.perMemberBaselineMl).toBe(1500);
+  });
+
+  it('BE-1: detects group goal reached', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 3);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 2000, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 2000, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U3', { displayName: 'Cara', todayMl: 1000, todayDate: '2026-06-20' });
+
+    const leaderboard = await getTodayLeaderboard(db as never, 'C123', 'U1');
+    expect(leaderboard.group.todayMl).toBe(5000);
+    expect(leaderboard.group.goalMl).toBe(4500);
+    expect(leaderboard.group.goalReached).toBe(true);
+  });
+
+  // BE-2: lastDrinkAt in leaderboard rows
+  it('BE-2: leaderboard rows include lastDrinkAt (null when never drunk)', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 2);
+    const drinkTs = ts('2026-06-20T08:00:00.000Z');
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 500, todayDate: '2026-06-20', lastDrinkAt: drinkTs });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 300, todayDate: '2026-06-20', lastDrinkAt: null });
+
+    const leaderboard = await getTodayLeaderboard(db as never, 'C123', 'U1');
+    const amy = leaderboard.members.find((m) => m.lineUserId === 'U1')!;
+    const ben = leaderboard.members.find((m) => m.lineUserId === 'U2')!;
+
+    expect(amy.lastDrinkAt).not.toBeNull();
+    expect(amy.lastDrinkAt!._seconds).toBe(drinkTs.seconds);
+    expect(ben.lastDrinkAt).toBeNull();
+  });
+
+  // BE-3: me.aboveLastDrinkAt and me.belowDisplayName
+  it('BE-3: me row includes aboveLastDrinkAt and belowDisplayName', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 3);
+    const ts1 = ts('2026-06-20T08:00:00.000Z');
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 900, todayDate: '2026-06-20', lastDrinkAt: ts1 });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 700, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U3', { displayName: 'Cara', todayMl: 500, todayDate: '2026-06-20' });
+
+    // Ben is rank 2; above = Amy (has lastDrinkAt), below = Cara
+    const leaderboard = await getTodayLeaderboard(db as never, 'C123', 'U2');
+    expect(leaderboard.me.rank).toBe(2);
+    expect(leaderboard.me.aboveLastDrinkAt).not.toBeNull();
+    expect(leaderboard.me.aboveLastDrinkAt!._seconds).toBe(ts1.seconds);
+    expect(leaderboard.me.belowDisplayName).toBe('Cara');
+  });
+
+  it('BE-3: first place has null aboveLastDrinkAt, last place has null belowDisplayName', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 2);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 900, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 500, todayDate: '2026-06-20' });
+
+    const first = await getTodayLeaderboard(db as never, 'C123', 'U1');
+    expect(first.me.aboveLastDrinkAt).toBeNull();
+    expect(first.me.belowDisplayName).toBe('Ben');
+
+    const last = await getTodayLeaderboard(db as never, 'C123', 'U2');
+    expect(last.me.aboveDisplayName).toBe('Amy');
+    expect(last.me.belowDisplayName).toBeNull();
+  });
+
+  // BE-4: pulse sorted by newest first
+  it('BE-4: pulse returns today records ordered newest first', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 2);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 700, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 300, todayDate: '2026-06-20' });
+    seedRecord(db, 'C123', 'r1', { lineUserId: 'U1', displayName: 'Amy', ml: 500, date: '2026-06-20', timestamp: ts('2026-06-20T00:30:00.000Z') });
+    seedRecord(db, 'C123', 'r2', { lineUserId: 'U2', displayName: 'Ben', ml: 300, date: '2026-06-20', timestamp: ts('2026-06-20T00:45:00.000Z') });
+    seedRecord(db, 'C123', 'r3', { lineUserId: 'U1', displayName: 'Amy', ml: 200, date: '2026-06-20', timestamp: ts('2026-06-20T01:00:00.000Z') });
+
+    const result = await getGroupPulse(db as never, 'C123', 20);
+    expect(result.pulse).toHaveLength(3);
+    // newest first
+    expect(result.pulse[0].ml).toBe(200);
+    expect(result.pulse[1].ml).toBe(300);
+    expect(result.pulse[2].ml).toBe(500);
+    // rankNow corresponds to current leaderboard (Amy has 700ml → rank 1)
+    expect(result.pulse[0].rankNow).toBe(1); // Amy's record, she's rank 1
+    expect(result.pulse[1].rankNow).toBe(2); // Ben's record, he's rank 2
+  });
+
+  it('BE-4: pulse respects limit and returns empty array for empty group', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+
+    const result = await getGroupPulse(db as never, 'C123', 5);
+    expect(result.pulse).toEqual([]);
+
+    // limit is capped at 50
+    const db2 = new FakeFirestore();
+    seedGroup(db2, 'C123', '讀書會', 1);
+    seedMember(db2, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+    for (let i = 0; i < 60; i++) {
+      seedRecord(db2, 'C123', `r${i}`, { lineUserId: 'U1', displayName: 'Amy', ml: 100, date: '2026-06-20' });
+    }
+    const limited = await getGroupPulse(db2 as never, 'C123', 100);
+    expect(limited.pulse.length).toBeLessThanOrEqual(50);
+  });
+
+  // BE-5: logDrink new fields
+  it('BE-5: comboCount counts records within 90-minute window', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+
+    // first drink — comboCount should be 1 (just this one, no prior in window)
+    const first = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(first.comboCount).toBe(1);
+    expect(first.groupDrinkSequence).toBe(1);
+
+    // second drink — within 90 min window → comboCount should be 2
+    const second = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(second.comboCount).toBe(2);
+    expect(second.groupDrinkSequence).toBe(2);
+  });
+
+  it('BE-5: comboCount ignores records older than 90 minutes', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 200, todayDate: '2026-06-20' });
+    // old record: 91 minutes before "now" (2026-06-20T01:00:00Z)
+    seedRecord(db, 'C123', 'old', {
+      lineUserId: 'U1',
+      displayName: 'Amy',
+      ml: 200,
+      date: '2026-06-20',
+      timestamp: ts('2026-06-19T23:29:00.000Z'), // 91 min before
+    });
+
+    const result = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(result.comboCount).toBe(1);
+  });
+
+  it('BE-5: groupGoalJustReached fires once per day and not again', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 2);
+    // Both members at 700ml; goal = 2 × 1500 = 3000. Adding 200 each to get to 3000.
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 1400, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 1400, todayDate: '2026-06-20' });
+    // Seed 1400 ml worth of records for each (so normalized totals match)
+    seedRecord(db, 'C123', 'r1u1', { lineUserId: 'U1', ml: 1400, date: '2026-06-20', timestamp: ts('2026-06-20T00:00:00.000Z') });
+    seedRecord(db, 'C123', 'r1u2', { lineUserId: 'U2', ml: 1400, date: '2026-06-20', timestamp: ts('2026-06-20T00:00:00.000Z') });
+
+    // U1 drinks 200 → total = 1600+1400 = 3000 = goalMl → justReached!
+    const first = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(first.groupGoalJustReached).toBe(true);
+    expect(first.groupGoalMl).toBe(3000);
+
+    // U2 drinks again → goal was already reached today, so groupGoalJustReached = false
+    const second = await logDrink(db as never, 'C123', { userId: 'U2', displayName: 'Ben', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(second.groupGoalJustReached).toBe(false);
+  });
+
+  it('BE-5: groupTodayMl and belowDisplayName are computed from afterMembers', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 3);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 600, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 400, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U3', { displayName: 'Cara', todayMl: 200, todayDate: '2026-06-20' });
+    seedRecord(db, 'C123', 'ru1', { lineUserId: 'U1', ml: 600, date: '2026-06-20', timestamp: ts('2026-06-20T00:00:00.000Z') });
+    seedRecord(db, 'C123', 'ru2', { lineUserId: 'U2', ml: 400, date: '2026-06-20', timestamp: ts('2026-06-20T00:00:00.000Z') });
+    seedRecord(db, 'C123', 'ru3', { lineUserId: 'U3', ml: 200, date: '2026-06-20', timestamp: ts('2026-06-20T00:00:00.000Z') });
+
+    // Ben logs 300ml → becomes rank 1 (900ml), Amy stays rank 2 (600), Cara rank 3
+    const result = await logDrink(db as never, 'C123', { userId: 'U2', displayName: 'Ben', pictureUrl: '' }, { ml: 300, drinkType: 'water' });
+    expect(result.groupTodayMl).toBe(600 + 700 + 200); // 1500
+    expect(result.rankAfter).toBe(1);
+    expect(result.belowDisplayName).toBe('Amy'); // rank 2 after Ben's jump to 1
+  });
+
+  // BE-8: M6 daily first logger
+  it('BE-8: isDailyFirst is true for group first drink and sets group fields', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 2);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 0, todayDate: '2026-06-20' });
+
+    const first = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(first.isDailyFirst).toBe(true);
+    expect(first.eventAchievements).toContain('daily_first');
+    const groupDoc = db.read('waterGroups/C123');
+    expect(groupDoc?.['firstLoggerDate']).toBe('2026-06-20');
+    expect(groupDoc?.['firstLoggerDisplayName']).toBe('Amy');
+
+    // Second drink same day from different user → isDailyFirst = false
+    const second = await logDrink(db as never, 'C123', { userId: 'U2', displayName: 'Ben', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(second.isDailyFirst).toBe(false);
+    expect(second.eventAchievements).not.toContain('daily_first');
+  });
+
+  it('BE-8: isDailyFirst resets each day', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+
+    // Today's first drink
+    const today = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(today.isDailyFirst).toBe(true);
+
+    // Next day
+    jest.setSystemTime(new Date('2026-06-21T01:00:00.000Z'));
+    const nextDay = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(nextDay.isDailyFirst).toBe(true);
+  });
+
+  it('BE-8: daily_first is event-only — not written to member.achievements', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+
+    const result = await logDrink(db as never, 'C123', { userId: 'U1', displayName: 'Amy', pictureUrl: '' }, { ml: 200, drinkType: 'water' });
+    expect(result.isDailyFirst).toBe(true);
+    expect(result.member.achievements).not.toContain('daily_first');
+    expect(result.newPersistentAchievements).not.toContain('daily_first');
+    expect(result.eventAchievements).toContain('daily_first');
+  });
+
+  it('BE-8: firstLoggerDisplayName returned from getTodayLeaderboard group field', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 2);
+    db.seed('waterGroups/C123', {
+      ...(db.read('waterGroups/C123') ?? {}),
+      firstLoggerDate: '2026-06-20',
+      firstLoggerDisplayName: 'Amy',
+    });
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 200, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 0, todayDate: '2026-06-20' });
+
+    const leaderboard = await getTodayLeaderboard(db as never, 'C123', 'U1');
+    expect(leaderboard.group.firstLoggerDisplayName).toBe('Amy');
   });
 });
 

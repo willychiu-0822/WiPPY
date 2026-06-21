@@ -7,6 +7,7 @@ import {
   ensureIdentity,
   getMemberProfile,
   getTodayLeaderboard,
+  getGroupPulse,
   getWeeklyStats,
   logDrink,
   resolveGroupId,
@@ -135,6 +136,19 @@ router.get('/group/:groupId/stats', liffAuthMiddleware, async (req: Request, res
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_stats_error', error: String(err) }));
     sendServerError(res, 'Failed to fetch weekly stats', err);
+  }
+});
+
+// GET /api/water/group/:groupId/pulse — BE-6 (P1)
+router.get('/group/:groupId/pulse', liffAuthMiddleware, async (req: Request, res: Response) => {
+  try {
+    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
+    const limit = Math.min(Number(req.query['limit'] ?? 20) || 20, 50);
+    const result = await getGroupPulse(getDb(), groupId, limit);
+    res.json(result);
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'water_pulse_error', error: String(err) }));
+    sendServerError(res, 'Failed to fetch pulse', err);
   }
 });
 

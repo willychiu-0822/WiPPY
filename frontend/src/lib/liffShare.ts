@@ -16,6 +16,7 @@ const ACHIEVEMENT_LABELS: Record<AchievementId, string> = {
   hydration_master: '喝水狂人 🚰',
   '7_day_streak': '七日連線 🔥',
   '30_day_streak': '三十日連線 🏅',
+  daily_first: '今日開局者 ☀️',
 };
 
 export type ShareResult = 'sent' | 'shared' | 'cancelled';
@@ -25,11 +26,25 @@ export function buildWaterShareMessage(input: {
   taunt: string;
   surpassedCount?: number;
   achievement?: AchievementId | null;
+  isDailyFirst?: boolean;
+  belowDisplayName?: string | null;
+  groupGoalJustReached?: boolean;
 }): LineFlexMessage {
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const liffId = import.meta.env.VITE_LIFF_ID as string;
   const achievementLabel = input.achievement ? ACHIEVEMENT_LABELS[input.achievement] : null;
+
+  // Build context lines based on gamification state
+  const contextLines: Array<Record<string, unknown>> = [];
+
+  if (input.isDailyFirst) {
+    contextLines.push({ type: 'text', text: '☀️ 我是今天群組第一個喝水的人！', size: 'sm', color: '#f59e0b', weight: 'bold' });
+  } else if (input.groupGoalJustReached) {
+    contextLines.push({ type: 'text', text: '🎯 我幫群組達成今日目標！', size: 'sm', color: '#10b981', weight: 'bold' });
+  } else if (input.belowDisplayName) {
+    contextLines.push({ type: 'text', text: `快來追我，${input.belowDisplayName}！`, size: 'sm', color: '#6366f1' });
+  }
 
   return {
     type: 'flex',
@@ -47,6 +62,7 @@ export function buildWaterShareMessage(input: {
           ...(input.surpassedCount && input.surpassedCount > 0
             ? [{ type: 'text', text: `超越了 ${input.surpassedCount} 人 🚀`, size: 'sm', color: '#6366f1' }]
             : []),
+          ...contextLines,
           { type: 'text', text: input.taunt, size: 'sm', color: '#6b7280', wrap: true },
           { type: 'button', action: { type: 'uri', label: '我也要記錄 💧', uri: `https://liff.line.me/${liffId}` }, style: 'primary', color: '#0ea5e9' },
         ],

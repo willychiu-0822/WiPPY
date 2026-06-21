@@ -9,6 +9,12 @@ export const LIFF_MOCK_PRESET_IDS = [
   'share_unavailable',
   'api_401',
   'api_500',
+  // ★ M1~M6 gamification presets
+  'overtaken',
+  'streak_risk',
+  'group_near_goal',
+  'combo',
+  'cold_start',
 ] as const;
 
 export type LiffMockPresetId = typeof LIFF_MOCK_PRESET_IDS[number];

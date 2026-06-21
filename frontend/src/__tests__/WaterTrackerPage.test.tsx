@@ -15,6 +15,7 @@ const liffMock = vi.hoisted(() => ({
   isInClient: vi.fn(() => true),
   sendMessages: vi.fn().mockResolvedValue(undefined),
   shareTargetPicker: vi.fn().mockResolvedValue({ status: 'success' }),
+  closeWindow: vi.fn(),
   login: vi.fn(),
 }));
 
@@ -286,6 +287,20 @@ describe('WaterTrackerPage — drink flow', () => {
     });
 
     await waitFor(() => expect(liffMock.sendMessages).toHaveBeenCalled());
+    expect(screen.getByText('分享成功，戰報已送出')).toBeInTheDocument();
+    expect(screen.getByText('現在我最棒！')).toBeInTheDocument();
+  });
+
+  it('closes the LIFF window after sharing from the home floating button', async () => {
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '分享我的戰報到群組' }));
+    });
+
+    await waitFor(() => expect(screen.getByText('分享成功，正在回到聊天室')).toBeInTheDocument());
+    await waitFor(() => expect(liffMock.closeWindow).toHaveBeenCalled(), { timeout: 1500 });
   });
 });
 

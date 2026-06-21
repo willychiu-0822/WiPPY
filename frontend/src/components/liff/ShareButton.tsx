@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { AchievementId, WaterMember } from '../../lib/liffApi';
 import { waterApi } from '../../lib/liffApi';
 import { getErrorMessage } from '../../lib/apiError';
-import { buildWaterShareMessage, shareLineMessage } from '../../lib/liffShare';
+import { buildWaterShareMessage, closeLineWindow, shareLineMessage } from '../../lib/liffShare';
 
 interface Props {
   member: WaterMember;
@@ -16,10 +16,12 @@ interface Props {
 export default function ShareButton({ member, surpassedCount = 0, achievements = [], idToken, entryGroupId, compact = false }: Props) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [shareSuccess, setShareSuccess] = useState<string | null>(null);
 
   async function handleShare() {
     if (sharing) return;
     setShareError(null);
+    setShareSuccess(null);
 
     setSharing(true);
     try {
@@ -34,6 +36,14 @@ export default function ShareButton({ member, surpassedCount = 0, achievements =
       }));
       if (result === 'cancelled') {
         setShareError('尚未選擇分享對象，訊息未送出');
+        return;
+      }
+
+      setShareSuccess(compact ? '分享成功，正在回到聊天室' : '分享成功');
+      if (compact) {
+        window.setTimeout(() => {
+          closeLineWindow();
+        }, 800);
       }
     } catch (err) {
       console.error('Share failed:', err);
@@ -54,8 +64,11 @@ export default function ShareButton({ member, surpassedCount = 0, achievements =
           : 'flex min-h-[54px] w-full items-center justify-center gap-[9px] rounded-[18px] bg-gradient-to-r from-[#06c755] to-[#22c55e] text-base font-black text-white shadow-xl shadow-emerald-950/40 transition hover:brightness-110 active:scale-95 disabled:opacity-40'}
       >
         {!sharing && <span className={`${compact ? 'h-2 w-2 rounded-full' : 'h-[9px] w-[9px] rounded-sm'} inline-block bg-white`} />}
-        {sharing ? '分享中...' : compact ? '分享戰報' : '分享我的戰報到群組'}
+        {sharing ? '分享中...' : shareSuccess ? '分享成功' : compact ? '分享戰報' : '分享我的戰報到群組'}
       </button>
+      {shareSuccess && (
+        <p className={`${compact ? 'rounded-full bg-[#03060e]/80 px-3 py-1 text-right' : 'text-center'} text-xs text-emerald-200`}>{shareSuccess}</p>
+      )}
       {shareError && (
         <p className={`${compact ? 'rounded-full bg-[#03060e]/80 px-3 py-1 text-right' : 'text-center'} text-xs text-rose-300`}>{shareError}</p>
       )}

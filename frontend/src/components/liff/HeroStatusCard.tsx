@@ -91,7 +91,7 @@ export default function HeroStatusCard({ heroState, onQuickLog, todayMl = 0, ran
   const testId = kind === 'streak_risk' ? 'hero-streak-risk' : `hero-${kind}`;
 
   return (
-    <div data-testid={testId} className="min-h-0 overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(180deg,#0a1a32_0%,#070f20_100%)] shadow-2xl shadow-black/30">
+    <div data-testid={testId} className="min-h-0 overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30" style={{ background: config.fill }}>
       <div className={`relative overflow-hidden transition-[height] duration-500 ${expanded ? 'h-[clamp(118px,18dvh,150px)]' : 'h-[clamp(218px,34dvh,284px)]'}`}>
       <div className="absolute inset-x-0 bottom-0 transition-all duration-700" style={{ height: `${fillPct}%`, background: config.fill }}>
         <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave absolute -top-5 left-0 h-10 w-[200%]">

@@ -1,4 +1,5 @@
 import liff from '@line/liff';
+import { getResponseErrorMessage } from './apiError';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_API === 'true';
@@ -138,8 +139,7 @@ async function liffRequest<T>(
   }
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error((body as { error?: string }).error || `HTTP ${res.status}`);
+    throw new Error(await getResponseErrorMessage(res));
   }
   return res.json() as Promise<T>;
 }

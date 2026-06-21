@@ -5,17 +5,21 @@ import type { ReactNode } from 'react';
 
 // ─── Mock @line/liff ─────────────────────────────────────────────────────────
 
+const liffMock = vi.hoisted(() => ({
+  init: vi.fn().mockResolvedValue(undefined),
+  isLoggedIn: vi.fn(() => true),
+  getIDToken: vi.fn(() => 'mock-id-token'),
+  getProfile: vi.fn().mockResolvedValue({ userId: 'Utest1', displayName: 'Test User', pictureUrl: '' }),
+  getContext: vi.fn(() => ({ type: 'group', groupId: 'Ctest1' })),
+  isApiAvailable: vi.fn(() => false),
+  isInClient: vi.fn(() => true),
+  sendMessages: vi.fn().mockResolvedValue(undefined),
+  shareTargetPicker: vi.fn().mockResolvedValue({ status: 'success' }),
+  login: vi.fn(),
+}));
+
 vi.mock('@line/liff', () => ({
-  default: {
-    init: vi.fn().mockResolvedValue(undefined),
-    isLoggedIn: vi.fn(() => true),
-    getIDToken: vi.fn(() => 'mock-id-token'),
-    getProfile: vi.fn().mockResolvedValue({ userId: 'Utest1', displayName: 'Test User', pictureUrl: '' }),
-    getContext: vi.fn(() => ({ type: 'group', groupId: 'Ctest1' })),
-    isApiAvailable: vi.fn(() => false),
-    shareTargetPicker: vi.fn().mockResolvedValue({ status: 'success' }),
-    login: vi.fn(),
-  },
+  default: liffMock,
 }));
 
 // ─── Mock useLiff directly — avoids LIFF init + .env.local DEV_FALLBACK ──────
@@ -199,6 +203,43 @@ describe('WaterTrackerPage — drink flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /忍痛放棄/ }));
     await waitFor(() => expect(screen.queryByText('現在我最棒！')).not.toBeInTheDocument());
   });
+
+  it('shows share errors in the result modal', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    vi.mocked(waterApi.taunts).mockRejectedValueOnce(new Error('taunts down'));
+
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: '+200' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
+    });
+
+    await waitFor(() => expect(screen.getByText('現在我最棒！')).toBeInTheDocument());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /分享成就到群組/ }));
+    });
+
+    await waitFor(() => expect(screen.getByText('分享失敗：taunts down')).toBeInTheDocument());
+  });
+
+  it('shares to the current LINE group from the result modal', async () => {
+    render(<Wrapper />);
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: '+200' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '記錄 200 ml 水' }));
+    });
+
+    await waitFor(() => expect(screen.getByText('現在我最棒！')).toBeInTheDocument());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /分享成就到群組/ }));
+    });
+
+    await waitFor(() => expect(liffMock.sendMessages).toHaveBeenCalled());
+  });
 });
 
 describe('WaterTrackerPage — drink error handling', () => {
@@ -215,7 +256,7 @@ describe('WaterTrackerPage — drink error handling', () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText('記錄失敗，請再試一次')).toBeInTheDocument()
+      expect(screen.getByText('記錄失敗：server error')).toBeInTheDocument()
     );
   });
 

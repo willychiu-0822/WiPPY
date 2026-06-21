@@ -1,4 +1,5 @@
 import { auth } from '../firebase';
+import { getResponseErrorMessage } from './apiError';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
@@ -19,8 +20,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error((body as { error?: string }).error || `HTTP ${res.status}`);
+    throw new Error(await getResponseErrorMessage(res));
   }
   return res.json() as Promise<T>;
 }

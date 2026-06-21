@@ -54,6 +54,7 @@ export interface LeaderboardRow {
   streak: number;
   gapToAbove: number | null;
   leadOverSecond: number | null;
+  lastDrinkAt: FirestoreTimestamp | null; // ★ BE-2
 }
 
 export type AchievementId =
@@ -62,7 +63,8 @@ export type AchievementId =
   | '30_day_streak'
   | 'hydration_master'
   | 'now_im_best'
-  | 'now_im_worst';
+  | 'now_im_worst'
+  | 'daily_first'; // ★ M6 event-only
 
 export interface MeInfo {
   lineUserId: string;
@@ -71,6 +73,26 @@ export interface MeInfo {
   gapToAbove: number | null;
   leadOverSecond: number | null;
   aboveDisplayName: string | null;
+  aboveLastDrinkAt: FirestoreTimestamp | null; // ★ BE-3
+  belowDisplayName: string | null;             // ★ BE-3
+}
+
+export interface GroupGoal {                    // ★ M3
+  todayMl: number;
+  goalMl: number;
+  goalReached: boolean;
+  perMemberBaselineMl: number;
+  firstLoggerDisplayName: string | null;       // ★ M6
+}
+
+export interface PulseItem {                    // ★ M2
+  lineUserId: string;
+  displayName: string;
+  pictureUrl: string;
+  ml: number;
+  drinkType: DrinkType;
+  timestamp: FirestoreTimestamp;
+  rankNow: number;
 }
 
 export interface TodayResponse {
@@ -78,6 +100,8 @@ export interface TodayResponse {
   memberCount: number;
   members: LeaderboardRow[];
   me: MeInfo;
+  group: GroupGoal;   // ★ M3
+  pulse: PulseItem[]; // ★ M2
 }
 
 export interface SessionResponse {
@@ -95,6 +119,13 @@ export interface DrinkResponse {
   surpassedCount: number;
   eventAchievements: AchievementId[];
   newPersistentAchievements: AchievementId[];
+  comboCount: number;              // ★ M4
+  groupTodayMl: number;            // ★ M4
+  groupGoalMl: number;             // ★ M4
+  groupGoalJustReached: boolean;   // ★ M4/M3
+  groupDrinkSequence: number;      // ★ M4
+  belowDisplayName: string | null; // ★ M5
+  isDailyFirst: boolean;           // ★ M6
 }
 
 export interface MyProfileResponse {
@@ -173,6 +204,9 @@ const realApi: LiffWaterApiAdapter = {
 
   taunts: (idToken = '') =>
     liffRequest<TauntsResponse>('/api/water/taunts', {}, idToken),
+
+  pulse: (groupId: string, idToken = '') =>
+    liffRequest<{ pulse: PulseItem[] }>(`/api/water/group/${groupId}/pulse`, {}, idToken),
 };
 
 // ─── Exported waterApi ────────────────────────────────────────────────────────

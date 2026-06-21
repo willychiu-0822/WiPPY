@@ -9,6 +9,7 @@ frontend/dist/
 # Environment variables
 .env
 frontend/.env
+frontend/.env.liff-dev
 backend/.env
 *.env.local
 
@@ -35,6 +36,7 @@ gcp-key*.json
 
 # Claude Code local settings
 .claude/settings.local.json
+.codex/config.toml
 
 # Backend compiled output
 backend/dist/

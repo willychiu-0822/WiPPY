@@ -28,6 +28,7 @@ const mockUseLiff = vi.hoisted(() => ({
   ready: true,
   loading: false,
   error: null as string | null,
+  authRedirecting: false,
   profile: { userId: 'Utest1', displayName: 'Test User', pictureUrl: '' },
   context: { type: 'group' as const, groupId: 'Ctest1' },
   idToken: 'mock-id-token',
@@ -341,11 +342,25 @@ describe('WaterTrackerPage — unreliable group context', () => {
     expect(waterApi.session).toHaveBeenLastCalledWith('Ctest1', undefined, 'Ctest1', 'mock-id-token');
   });
 
-  it('rejects legacy LIFF URLs that do not carry an explicit entry group id', async () => {
+  it('falls back to the live LIFF group context when the URL has no explicit wg param', async () => {
+    mockUseLiff.groupId = 'C1234567890abcdef1234567890abcdef';
+
+    render(<LegacyWrapper />);
+
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+
+    mockUseLiff.groupId = 'Ctest1';
+  });
+
+  it('still rejects entry when neither wg param nor a valid live LINE group id is available', async () => {
+    mockUseLiff.groupId = null;
+
     render(<LegacyWrapper />);
 
     await waitFor(() =>
       expect(screen.getByText('缺少群組入口資訊，請從群組專屬 LIFF 連結進入。')).toBeInTheDocument()
     );
+
+    mockUseLiff.groupId = 'Ctest1';
   });
 });

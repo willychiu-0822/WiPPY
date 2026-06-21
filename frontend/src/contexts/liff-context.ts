@@ -12,6 +12,7 @@ export interface LiffContextType {
   ready: boolean;
   loading: boolean;
   error: string | null;
+  authRedirecting: boolean;
   profile: LiffProfile | null;
   context: ReturnType<Liff['getContext']>;
   idToken: string | null;
@@ -22,6 +23,7 @@ export const LiffContext = createContext<LiffContextType>({
   ready: false,
   loading: true,
   error: null,
+  authRedirecting: false,
   profile: null,
   context: null,
   idToken: null,

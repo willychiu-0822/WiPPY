@@ -14,6 +14,8 @@ import HeroStatusCard from '../../components/liff/HeroStatusCard';
 import GroupGoalBar from '../../components/liff/GroupGoalBar';
 import LivePulse from '../../components/liff/LivePulse';
 
+const LINE_GROUP_ID_PATTERN = /^[CR][0-9a-f]{32}$/i;
+
 function Skeleton() {
   return (
     <div className="animate-pulse flex flex-col gap-4 p-4">
@@ -69,13 +71,16 @@ function GroupSelector(props: {
 }
 
 export default function WaterTrackerPage() {
-  const { ready, loading: liffLoading, error: liffError, profile, idToken } = useLiff();
+  const { ready, loading: liffLoading, error: liffError, profile, idToken, groupId: liveGroupId, authRedirecting } = useLiff();
   const [searchParams] = useSearchParams();
 
-  const entryGroupId = useMemo(
-    () => searchParams.get('wg')?.trim() || '',
-    [searchParams]
-  );
+  const entryGroupId = useMemo(() => {
+    const explicitGroupId = searchParams.get('wg')?.trim();
+    if (explicitGroupId) return explicitGroupId;
+
+    const fallbackGroupId = liveGroupId?.trim() || '';
+    return LINE_GROUP_ID_PATTERN.test(fallbackGroupId) ? fallbackGroupId : '';
+  }, [searchParams, liveGroupId]);
   const entryGroupName = useMemo(
     () => searchParams.get('wgName')?.trim() || undefined,
     [searchParams]
@@ -190,7 +195,7 @@ export default function WaterTrackerPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-3 p-6 text-center">
         <p className="text-sky-500 text-4xl">💧</p>
-        <p className="text-gray-600">LIFF 初始化失敗</p>
+        <p className="text-gray-600">{authRedirecting ? '等待 LINE 登入中' : 'LIFF 初始化失敗'}</p>
         <p className="text-xs text-gray-400">{liffError}</p>
       </div>
     );

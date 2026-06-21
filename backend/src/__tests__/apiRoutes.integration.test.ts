@@ -351,7 +351,6 @@ describe('backend API route integration safety net', () => {
       entryUrl: 'https://wippy-mvp.web.app/liff/water?wg=group_a',
     });
   });
-
   it('enables water competition for an owned group and auto-sends the entry URL', async () => {
     process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
     process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';

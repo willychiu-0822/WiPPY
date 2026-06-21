@@ -1098,7 +1098,6 @@ describe('water group activation and session resolution', () => {
       enabledAt: expect.any(Timestamp),
     }));
   });
-
   it('allows access only to groups that the user is already bound to', async () => {
     const db = new FakeFirestore();
     seedGroup(db, GROUP_A, '測試用');

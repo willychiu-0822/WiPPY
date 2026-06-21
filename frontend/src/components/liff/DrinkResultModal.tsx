@@ -96,21 +96,30 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
     }
   }
 
+  const bannerStyle = banner
+    ? undefined
+    : { background: 'linear-gradient(160deg,#0ea5e9,#2563eb 55%,#1e3a8a)' };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/40">
-      <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div className="absolute inset-0 z-[80] flex items-center justify-center bg-[#03060e]/70 p-[18px] backdrop-blur-md">
+      <div className="w-full max-w-[340px] overflow-hidden rounded-[28px] border border-white/[.09] bg-[#0a1424] shadow-[0_30px_70px_-20px_rgba(0,0,0,.85)] [animation:wb-pop_.5s_cubic-bezier(.22,1.4,.4,1)]">
 
         {/* Banner */}
         {banner ? (
-          <div className={`bg-gradient-to-br ${banner.gradient} p-7 text-center relative overflow-hidden`}>
-            <div className="absolute top-3 left-4 text-white/60 text-xl select-none">✨</div>
-            <div className="absolute top-4 right-5 text-white/60 text-lg select-none">⭐</div>
-            <div className="absolute bottom-3 left-8 text-white/50 text-sm select-none">✨</div>
-            <div className="absolute bottom-4 right-6 text-white/60 text-xl select-none">⭐</div>
-
-            <div className="text-7xl mb-3 drop-shadow-lg">{banner.emoji}</div>
-            <p className="text-2xl font-black text-white drop-shadow-sm tracking-tight">{banner.label}</p>
-            <p className="text-sm text-white/80 mt-1 font-medium">{banner.sub}</p>
+          <div className={`relative h-[188px] overflow-hidden bg-gradient-to-br ${banner.gradient}`}>
+            <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave absolute -bottom-1.5 left-0 h-[46px] w-[200%] opacity-30">
+              <path d="M0 20 q37.5 -15 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V40 H0 Z" fill="rgba(255,255,255,.5)" />
+            </svg>
+            <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave-fast absolute -bottom-1.5 left-0 h-10 w-[200%] opacity-45">
+              <path d="M0 20 q37.5 -15 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V40 H0 Z" fill="rgba(255,255,255,.5)" />
+            </svg>
+            <div className="wb-rise absolute left-[24%] top-10 h-1.5 w-1.5 rounded-full bg-white/60" />
+            <div className="wb-rise absolute left-[70%] top-[60px] h-1 w-1 rounded-full bg-white/50 [animation-delay:1s]" />
+            <div className="relative z-10 p-[26px_22px] text-left">
+              <span className="inline-block rounded-full border border-white/40 px-2.5 py-1 font-['Archivo'] text-[10px] font-black uppercase tracking-[.2em] text-white/85">{selectResultVariant(drinkResult).toUpperCase()}</span>
+              <p className="mt-3 text-[34px] font-black leading-none tracking-normal text-white drop-shadow-xl">{banner.label}</p>
+              <p className="mt-1.5 text-sm font-semibold text-white/90 drop-shadow">{banner.sub}</p>
+            </div>
 
             {achievements.length > 1 && (
               <div className="flex justify-center gap-2 mt-3">
@@ -121,48 +130,51 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
             )}
           </div>
         ) : (
-          <div className="bg-gradient-to-br from-sky-400 to-cyan-400 p-6 text-center">
-            <div className="text-6xl mb-2">💧</div>
-            <p className="text-xl font-black text-white">記錄成功！</p>
+          <div className="relative h-[188px] overflow-hidden p-[26px_22px]" style={bannerStyle}>
+            <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave absolute bottom-0 left-0 h-10 w-[200%] opacity-35">
+              <path d="M0 20 q37.5 -15 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V40 H0 Z" fill="rgba(255,255,255,.5)" />
+            </svg>
+            <span className="inline-block rounded-full border border-white/40 px-2.5 py-1 font-['Archivo'] text-[10px] font-black uppercase tracking-[.2em] text-white/85">RECORDED</span>
+            <p className="mt-3 text-[34px] font-black leading-none text-white">記錄成功</p>
           </div>
         )}
 
         {/* Stats */}
-        <div className="px-6 py-5 text-center border-b border-gray-100">
-          <p className="text-4xl font-black text-sky-700">
-            {Math.round(member.todayMl)} <span className="text-xl font-semibold text-sky-400">ml</span>
+        <div className="px-[22px] pb-2 pt-5 text-center">
+          <p className="font-['Archivo'] text-[52px] font-black leading-none tracking-normal text-white">
+            {Math.round(member.todayMl)} <span className="text-xl font-black text-sky-300">ml</span>
           </p>
-          <p className="text-sm text-gray-400 mt-1">今日累計</p>
+          <p className="mt-1 text-sm font-bold text-slate-500">今日累計</p>
           {surpassedCount > 0 && (
-            <p className="text-sm text-indigo-500 font-semibold mt-2">🚀 超越了 {surpassedCount} 位成員</p>
+            <p className="mt-3 rounded-full bg-sky-400/10 px-3 py-2 text-sm font-black text-sky-200">超越了 {surpassedCount} 位成員</p>
           )}
           {member.streak > 1 && (
-            <p className="text-sm text-orange-400 font-medium mt-1">🔥 連續 {member.streak} 天</p>
+            <p className="mt-2 text-sm font-bold text-orange-300">連線 {member.streak} 天</p>
           )}
           {groupGoalJustReached && (
-            <p className="text-sm text-emerald-500 font-semibold mt-2">
-              🎯 你幫群組達成 {Math.round(groupGoalMl)} ml 目標！
+            <p className="mt-2 text-sm font-black text-emerald-300">
+              你幫群組達成 {Math.round(groupGoalMl)} ml 目標
             </p>
           )}
-          <p className="text-xs text-gray-300 mt-2">群組今日 {Math.round(groupTodayMl)} ml</p>
+          <p className="mt-2 text-xs text-slate-600">群組今日 {Math.round(groupTodayMl)} ml</p>
         </div>
 
         {/* Actions */}
-        <div className="px-6 py-5 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-[22px] pb-[22px] pt-2">
           <button
             onClick={handleShare}
             disabled={sharing}
-            className="w-full min-h-[56px] bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-600 hover:to-cyan-600 active:scale-95 text-white font-black text-base rounded-2xl shadow-md transition-all disabled:opacity-50"
+            className="min-h-[56px] w-full rounded-[18px] bg-gradient-to-r from-[#06c755] to-[#22c55e] text-base font-black text-white shadow-xl shadow-emerald-950/40 transition hover:brightness-110 active:scale-95 disabled:opacity-50"
           >
-            {sharing ? '分享中...' : '📤 分享成就到群組'}
+            {sharing ? '分享中...' : '分享成就到群組'}
           </button>
           {shareError && (
-            <p className="text-xs text-red-500 text-center leading-relaxed">{shareError}</p>
+            <p className="text-center text-xs leading-relaxed text-rose-300">{shareError}</p>
           )}
 
           <button
             onClick={onClose}
-            className="text-xs text-gray-300 hover:text-gray-400 transition-colors py-1 text-center"
+            className="py-1 text-center text-xs text-slate-600 transition-colors hover:text-slate-400"
           >
             忍痛放棄分享
           </button>

@@ -565,4 +565,34 @@ describe('waterService', () => {
 
     expect(profile.member.weekMl).toBe(800);
   });
+
+  it('rebuilds today total from same-day records when member aggregate is stale', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+    seedRecord(db, 'C123', 'r1', { lineUserId: 'U1', displayName: 'Amy', ml: 300, date: '2026-06-20' });
+    seedRecord(db, 'C123', 'r2', { lineUserId: 'U1', displayName: 'Amy', ml: 200, date: '2026-06-20' });
+
+    const profile = await getMemberProfile(db as never, 'C123', 'U1');
+
+    expect(profile.member.todayMl).toBe(500);
+    expect(db.read('waterGroups/C123/members/U1')).toEqual(expect.objectContaining({ todayMl: 500 }));
+  });
+
+  it('adds new drinks on top of same-day records when member aggregate is stale', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 0, todayDate: '2026-06-20' });
+    seedRecord(db, 'C123', 'r1', { lineUserId: 'U1', displayName: 'Amy', ml: 300, date: '2026-06-20' });
+
+    const result = await logDrink(
+      db as never,
+      'C123',
+      { userId: 'U1', displayName: 'Amy', pictureUrl: '' },
+      { ml: 200, drinkType: 'water' }
+    );
+
+    expect(result.member.todayMl).toBe(500);
+    expect(db.read('waterGroups/C123/members/U1')).toEqual(expect.objectContaining({ todayMl: 500 }));
+  });
 });

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useLiff } from '../../contexts/useLiff';
 import { waterApi } from '../../lib/liffApi';
 import type { DrinkType, SessionResponse, DrinkResponse, AchievementId } from '../../lib/liffApi';
+import { getErrorMessage } from '../../lib/apiError';
 import DailyProgress from '../../components/liff/DailyProgress';
 import DrinkLogger from '../../components/liff/DrinkLogger';
 import Leaderboard from '../../components/liff/Leaderboard';
@@ -47,7 +48,7 @@ export default function WaterTrackerPage() {
         setSessionData(data);
         setSessionError(null);
       })
-      .catch((err: Error) => setSessionError(err.message || 'Session failed'))
+      .catch((err: unknown) => setSessionError(getErrorMessage(err, 'Session failed')))
       .finally(() => setSessionLoading(false));
   }, [ready, groupId, idToken]);
 
@@ -99,7 +100,7 @@ export default function WaterTrackerPage() {
         setShowModal(true);
       } catch (err) {
         console.error('Drink error:', err);
-        setDrinkError('記錄失敗，請再試一次');
+        setDrinkError(`記錄失敗：${getErrorMessage(err)}`);
         throw err;
       } finally {
         setSubmitting(false);

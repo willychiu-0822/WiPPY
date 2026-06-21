@@ -15,6 +15,14 @@ const router = express.Router();
 
 const VALID_DRINK_TYPES: DrinkType[] = ['water', 'tea', 'coffee', 'juice', 'other'];
 
+function formatErrorDetail(err: unknown): string {
+  return err instanceof Error && err.message ? err.message : String(err);
+}
+
+function sendServerError(res: Response, error: string, err: unknown): void {
+  res.status(500).json({ error, detail: formatErrorDetail(err) });
+}
+
 function getCurrentUser(req: Request) {
   return {
     userId: req.liffUserId!,
@@ -47,7 +55,7 @@ router.post('/session', liffAuthMiddleware, async (req: Request, res: Response) 
     });
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_session_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to initialize water session' });
+    sendServerError(res, 'Failed to initialize water session', err);
   }
 });
 
@@ -91,7 +99,7 @@ router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) =>
     res.json(result);
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_drink_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to record drink' });
+    sendServerError(res, 'Failed to record drink', err);
   }
 });
 
@@ -109,7 +117,7 @@ router.get('/group/:groupId/today', liffAuthMiddleware, async (req: Request, res
     res.json(leaderboard);
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_today_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to fetch today leaderboard' });
+    sendServerError(res, 'Failed to fetch today leaderboard', err);
   }
 });
 
@@ -127,7 +135,7 @@ router.get('/group/:groupId/me', liffAuthMiddleware, async (req: Request, res: R
     res.json(profile);
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_me_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to fetch water profile' });
+    sendServerError(res, 'Failed to fetch water profile', err);
   }
 });
 
@@ -144,7 +152,7 @@ router.get('/group/:groupId/stats', liffAuthMiddleware, async (req: Request, res
     res.json(stats);
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_stats_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to fetch weekly stats' });
+    sendServerError(res, 'Failed to fetch weekly stats', err);
   }
 });
 
@@ -154,7 +162,7 @@ router.get('/taunts', liffAuthMiddleware, async (_req: Request, res: Response) =
     res.json({ taunts: TAUNT_MESSAGES });
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_taunts_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to fetch taunts' });
+    sendServerError(res, 'Failed to fetch taunts', err);
   }
 });
 

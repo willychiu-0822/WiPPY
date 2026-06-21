@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import liff from '@line/liff';
 import type { AchievementId, WaterMember } from '../../lib/liffApi';
 import { waterApi } from '../../lib/liffApi';
+import { getErrorMessage } from '../../lib/apiError';
+import { buildWaterShareMessage, shareLineMessage } from '../../lib/liffShare';
 
 // ─── Achievement display config ───────────────────────────────────────────────
 
@@ -29,43 +30,35 @@ interface Props {
 
 export default function DrinkResultModal({ member, achievements, surpassedCount, idToken, groupId: _groupId, onClose }: Props) {
   const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   const primary = achievements[0] ? ACHIEVEMENT_CONFIG[achievements[0]] : null;
 
   async function handleShare() {
+    if (sharing) return;
+    setShareError(null);
     setSharing(true);
     try {
       const { taunts } = await waterApi.taunts(idToken ?? undefined);
       const taunt = taunts[Math.floor(Math.random() * taunts.length)] ?? '';
-      const now = new Date();
-      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const liffId = import.meta.env.VITE_LIFF_ID as string;
+      const result = await shareLineMessage(buildWaterShareMessage({
+        member,
+        taunt,
+        surpassedCount,
+        achievement: achievements[0] ?? null,
+      }));
 
-      await liff.shareTargetPicker([{
-        type: 'flex',
-        altText: `💧 ${timeStr} 喝水打卡！今日已喝 ${Math.round(member.todayMl)} ml`,
-        contents: {
-          type: 'bubble' as const,
-          body: {
-            type: 'box' as const,
-            layout: 'vertical' as const,
-            spacing: 'sm' as const,
-            contents: [
-              { type: 'text' as const, text: `💧 ${timeStr} 喝水打卡`, weight: 'bold' as const, size: 'lg' as const, color: '#0ea5e9' },
-              ...(primary ? [{ type: 'text' as const, text: `${primary.emoji} ${primary.label}`, size: 'sm' as const, color: '#f59e0b' }] : []),
-              { type: 'text' as const, text: `今日已喝 ${Math.round(member.todayMl)} ml`, size: 'md' as const, color: '#374151' },
-              ...(surpassedCount > 0 ? [{ type: 'text' as const, text: `超越了 ${surpassedCount} 人 🚀`, size: 'sm' as const, color: '#6366f1' }] : []),
-              { type: 'text' as const, text: taunt, size: 'sm' as const, color: '#6b7280', wrap: true },
-              { type: 'button' as const, action: { type: 'uri' as const, label: '我也要記錄 💧', uri: `https://liff.line.me/${liffId}` }, style: 'primary' as const, color: '#0ea5e9' },
-            ],
-          },
-        },
-      }]);
+      if (result === 'cancelled') {
+        setShareError('尚未選擇分享對象，訊息未送出');
+        return;
+      }
+
+      onClose();
     } catch (err) {
       console.error('Share failed:', err);
+      setShareError(`分享失敗：${getErrorMessage(err)}`);
     } finally {
       setSharing(false);
-      onClose();
     }
   }
 
@@ -123,6 +116,9 @@ export default function DrinkResultModal({ member, achievements, surpassedCount,
           >
             {sharing ? '分享中...' : '📤 分享成就到群組'}
           </button>
+          {shareError && (
+            <p className="text-xs text-red-500 text-center leading-relaxed">{shareError}</p>
+          )}
 
           <button
             onClick={onClose}

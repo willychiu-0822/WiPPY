@@ -445,7 +445,9 @@ async function refreshMembersForToday(db: Firestore, groupId: string, todayStr: 
     buildRecentRecordsQuery(recordsRef, weekStart, todayStr).get(),
   ]);
 
-  const weekTotals = mapByUser(recordsSnap.docs.map(toWaterRecordDoc));
+  const records = recordsSnap.docs.map(toWaterRecordDoc);
+  const weekTotals = mapByUser(records);
+  const todayTotals = mapByUser(records.filter((record) => record.date === todayStr));
   const batch = db.batch();
   const now = admin.firestore.Timestamp.now();
   let hasWrites = false;
@@ -454,20 +456,24 @@ async function refreshMembersForToday(db: Firestore, groupId: string, todayStr: 
     const raw = toWaterMemberDoc(doc);
     const resetPatch = resetDayIfNeeded(raw, todayStr);
     const weekMl = weekTotals.get(doc.id) ?? 0;
+    const todayMl = todayTotals.get(doc.id) ?? resetPatch.todayMl ?? raw.todayMl;
     const normalized = normalizeMemberDoc(raw, {
       ...resetPatch,
+      todayMl,
       weekMl,
       lineUserId: raw.lineUserId || doc.id,
     });
 
     const shouldUpdateWeekMl = raw.weekMl !== weekMl;
+    const shouldUpdateTodayMl = raw.todayMl !== todayMl;
     const shouldApplyReset = Object.keys(resetPatch).length > 0;
 
-    if (shouldApplyReset || shouldUpdateWeekMl || raw.displayName !== normalized.displayName || raw.pictureUrl !== normalized.pictureUrl) {
+    if (shouldApplyReset || shouldUpdateWeekMl || shouldUpdateTodayMl || raw.displayName !== normalized.displayName || raw.pictureUrl !== normalized.pictureUrl) {
       batch.set(
         doc.ref,
         {
           ...resetPatch,
+          todayMl,
           weekMl,
           updatedAt: now,
         },
@@ -625,21 +631,25 @@ export async function logDrink(
     const weekRecords = weekRecordsSnap.docs.map(toWaterRecordDoc);
     const todayRecords = todayRecordsSnap.docs.map(toWaterRecordDoc);
     const weekTotals = mapByUser(weekRecords);
+    const todayTotals = mapByUser(todayRecords);
 
     const normalizedMembers = membersSnap.docs.map((doc) => {
       const raw = toWaterMemberDoc(doc);
       const resetPatch = resetDayIfNeeded(raw, todayStr);
+      const todayMl = todayTotals.get(doc.id) ?? resetPatch.todayMl ?? raw.todayMl;
       const normalized = normalizeMemberDoc(raw, {
         ...resetPatch,
+        todayMl,
         weekMl: weekTotals.get(doc.id) ?? 0,
         lineUserId: raw.lineUserId || doc.id,
       });
 
-      if (Object.keys(resetPatch).length > 0 || raw.weekMl !== normalized.weekMl) {
+      if (Object.keys(resetPatch).length > 0 || raw.weekMl !== normalized.weekMl || raw.todayMl !== normalized.todayMl) {
         transaction.set(
           doc.ref,
           {
             ...resetPatch,
+            todayMl: normalized.todayMl,
             weekMl: normalized.weekMl,
             updatedAt: now,
           },

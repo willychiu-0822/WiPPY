@@ -5,7 +5,9 @@ import {
   getMemberProfile,
   getRandomTaunt,
   getTodayLeaderboard,
+  listWaterMembersForAdmin,
   logDrink,
+  resetMemberTodayWater,
   resetDayIfNeeded,
 } from '../services/waterService';
 
@@ -171,6 +173,10 @@ class FakeTransaction {
     this.writes.push(() => this.db.write(ref.path, data, options?.merge ?? false));
   }
 
+  delete(ref: FakeDocumentReference) {
+    this.writes.push(() => this.db.delete(ref.path));
+  }
+
   commit() {
     for (const write of this.writes) {
       write();
@@ -235,6 +241,10 @@ class FakeFirestore {
     const existing = this.docs.get(path);
     const nextValue = merge && existing ? { ...existing, ...cloneDoc(data) } : cloneDoc(data);
     this.docs.set(path, nextValue);
+  }
+
+  delete(path: string) {
+    this.docs.delete(path);
   }
 
   query(path: string, isCollectionGroup: boolean) {
@@ -594,5 +604,57 @@ describe('waterService', () => {
 
     expect(result.member.todayMl).toBe(500);
     expect(db.read('waterGroups/C123/members/U1')).toEqual(expect.objectContaining({ todayMl: 500 }));
+  });
+
+  it('lists admin water members with rank ordering', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 2);
+    seedMember(db, 'C123', 'U1', { displayName: 'Amy', todayMl: 700, weekMl: 900, totalMl: 2000, todayDate: '2026-06-20' });
+    seedMember(db, 'C123', 'U2', { displayName: 'Ben', todayMl: 300, weekMl: 500, totalMl: 1500, todayDate: '2026-06-20' });
+
+    const members = await listWaterMembersForAdmin(db as never, 'C123');
+
+    expect(members).toEqual([
+      expect.objectContaining({ lineUserId: 'U1', rank: 1, todayMl: 700 }),
+      expect.objectContaining({ lineUserId: 'U2', rank: 2, todayMl: 300 }),
+    ]);
+  });
+
+  it('resets a member today water by deleting today records and rebuilding aggregates', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, 'C123', '讀書會', 1);
+    seedMember(db, 'C123', 'U1', {
+      displayName: 'Amy',
+      todayMl: 500,
+      todayDate: '2026-06-20',
+      weekMl: 900,
+      totalMl: 2000,
+      streak: 4,
+      lastDrinkAt: ts('2026-06-20T10:00:00.000+08:00'),
+    });
+    seedRecord(db, 'C123', 'r1', { lineUserId: 'U1', displayName: 'Amy', ml: 300, date: '2026-06-20' });
+    seedRecord(db, 'C123', 'r2', { lineUserId: 'U1', displayName: 'Amy', ml: 200, date: '2026-06-20' });
+    seedRecord(db, 'C123', 'r3', { lineUserId: 'U1', displayName: 'Amy', ml: 400, date: '2026-06-18' });
+
+    const result = await resetMemberTodayWater(db as never, 'C123', 'U1');
+
+    expect(result.removedMl).toBe(500);
+    expect(result.removedRecordCount).toBe(2);
+    expect(result.member).toEqual(expect.objectContaining({
+      lineUserId: 'U1',
+      todayMl: 0,
+      weekMl: 400,
+      totalMl: 1500,
+      streak: 4,
+    }));
+    expect(db.read('waterGroups/C123/records/r1')).toBeUndefined();
+    expect(db.read('waterGroups/C123/records/r2')).toBeUndefined();
+    expect(db.read('waterGroups/C123/records/r3')).toEqual(expect.objectContaining({ ml: 400 }));
+    expect(db.read('waterGroups/C123/members/U1')).toEqual(expect.objectContaining({
+      todayMl: 0,
+      weekMl: 400,
+      totalMl: 1500,
+      streak: 4,
+    }));
   });
 });

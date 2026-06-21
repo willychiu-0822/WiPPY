@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api, type Group, type RecentMessage, type BroadcastPreview } from '../lib/api';
+import { api, type Group, type RecentMessage, type BroadcastPreview, type WaterAdminMember } from '../lib/api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -22,18 +22,45 @@ function MessageDrawer({
   group: Group;
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<'messages' | 'water'>('messages');
   const [messages, setMessages] = useState<RecentMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [waterMembers, setWaterMembers] = useState<WaterAdminMember[]>([]);
+  const [waterLoading, setWaterLoading] = useState(true);
+  const [waterError, setWaterError] = useState('');
+  const [resettingUserId, setResettingUserId] = useState('');
+  const [resetFeedback, setResetFeedback] = useState('');
 
   useEffect(() => {
     api.groups.messages(group.groupId).then((r) => {
       setMessages(r.messages);
       setLoading(false);
     });
+
+    api.groups.waterMembers(group.groupId)
+      .then((r) => {
+        setWaterMembers(r.members);
+        setWaterError('');
+      })
+      .catch(() => setWaterError('無法載入喝水資料'))
+      .finally(() => setWaterLoading(false));
   }, [group.groupId]);
+
+  async function reloadWaterMembers() {
+    setWaterLoading(true);
+    try {
+      const r = await api.groups.waterMembers(group.groupId);
+      setWaterMembers(r.members);
+      setWaterError('');
+    } catch {
+      setWaterError('無法載入喝水資料');
+    } finally {
+      setWaterLoading(false);
+    }
+  }
 
   async function handleSend() {
     if (!reply.trim()) return;
@@ -51,6 +78,23 @@ function MessageDrawer({
     }
   }
 
+  async function handleResetWater(member: WaterAdminMember) {
+    const confirmed = window.confirm(`要把 ${member.displayName} 今天的喝水紀錄重置為 0 嗎？`);
+    if (!confirmed) return;
+
+    setResettingUserId(member.lineUserId);
+    setResetFeedback('');
+    try {
+      const result = await api.groups.resetWaterToday(group.groupId, member.lineUserId);
+      await reloadWaterMembers();
+      setResetFeedback(`已重置 ${member.displayName}，刪除 ${result.removedRecordCount} 筆、${result.removedMl} ml`);
+    } catch {
+      setResetFeedback(`重置 ${member.displayName} 失敗`);
+    } finally {
+      setResettingUserId('');
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       {/* Header */}
@@ -62,42 +106,127 @@ function MessageDrawer({
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {loading && <p className="text-center text-gray-400 text-sm mt-8">載入中...</p>}
-        {!loading && messages.length === 0 && (
-          <p className="text-center text-gray-400 text-sm mt-8">尚無訊息記錄</p>
+      <div className="px-4 py-3 border-b border-gray-100">
+        <div className="inline-flex rounded-xl bg-gray-100 p-1">
+          <button
+            onClick={() => setTab('messages')}
+            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              tab === 'messages' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            訊息
+          </button>
+          <button
+            onClick={() => setTab('water')}
+            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+              tab === 'water' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            喝水管理
+          </button>
+        </div>
+        {resetFeedback && (
+          <p className="mt-2 text-xs text-blue-600">{resetFeedback}</p>
         )}
-        {[...messages].reverse().map((msg) => (
-          <div key={msg.id} className="space-y-0.5">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-medium text-gray-700">{msg.senderName}</span>
-              <span className="text-xs text-gray-400">{formatTime(msg.timestamp._seconds)}</span>
-            </div>
-            <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm text-gray-800 inline-block max-w-xs">
-              {msg.content}
-            </div>
-          </div>
-        ))}
       </div>
 
-      {/* Quick reply input */}
-      <div className="px-4 py-3 border-t border-gray-200 flex gap-2">
-        <input
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="輸入訊息..."
-          value={reply}
-          onChange={(e) => setReply(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-        />
-        <button
-          onClick={handleSend}
-          disabled={sending || !reply.trim()}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg disabled:opacity-40 hover:bg-blue-700"
-        >
-          {sent ? '✓' : sending ? '...' : '發送'}
-        </button>
-      </div>
+      {tab === 'messages' ? (
+        <>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            {loading && <p className="text-center text-gray-400 text-sm mt-8">載入中...</p>}
+            {!loading && messages.length === 0 && (
+              <p className="text-center text-gray-400 text-sm mt-8">尚無訊息記錄</p>
+            )}
+            {[...messages].reverse().map((msg) => (
+              <div key={msg.id} className="space-y-0.5">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xs font-medium text-gray-700">{msg.senderName}</span>
+                  <span className="text-xs text-gray-400">{formatTime(msg.timestamp._seconds)}</span>
+                </div>
+                <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm text-gray-800 inline-block max-w-xs">
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="px-4 py-3 border-t border-gray-200 flex gap-2">
+            <input
+              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="輸入訊息..."
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+            />
+            <button
+              onClick={handleSend}
+              disabled={sending || !reply.trim()}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg disabled:opacity-40 hover:bg-blue-700"
+            >
+              {sent ? '✓' : sending ? '...' : '發送'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+            這裡會刪除該成員今日所有喝水紀錄，並把今日水量重置為 0。週總量與總量會同步重算，連勝與成就先保留。
+          </div>
+          {waterLoading && <p className="text-center text-gray-400 text-sm mt-8">載入中...</p>}
+          {!waterLoading && waterError && (
+            <div className="space-y-3">
+              <p className="text-center text-red-500 text-sm mt-8">{waterError}</p>
+              <button
+                onClick={reloadWaterMembers}
+                className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+              >
+                重新載入
+              </button>
+            </div>
+          )}
+          {!waterLoading && !waterError && waterMembers.length === 0 && (
+            <p className="text-center text-gray-400 text-sm mt-8">這個群組目前還沒有喝水成員資料</p>
+          )}
+          {waterMembers.map((member) => (
+            <div key={member.lineUserId} className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-blue-600">#{member.rank}</span>
+                    <p className="text-sm font-medium text-gray-900 truncate">{member.displayName}</p>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 break-all">{member.lineUserId}</p>
+                </div>
+                <button
+                  onClick={() => handleResetWater(member)}
+                  disabled={resettingUserId === member.lineUserId}
+                  className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 disabled:opacity-50"
+                >
+                  {resettingUserId === member.lineUserId ? '重置中...' : '今日歸零'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-sky-50 px-3 py-2">
+                  <div className="text-sky-600">今日</div>
+                  <div className="mt-1 font-semibold text-gray-900">{member.todayMl} ml</div>
+                </div>
+                <div className="rounded-lg bg-emerald-50 px-3 py-2">
+                  <div className="text-emerald-600">本週</div>
+                  <div className="mt-1 font-semibold text-gray-900">{member.weekMl} ml</div>
+                </div>
+                <div className="rounded-lg bg-gray-50 px-3 py-2">
+                  <div className="text-gray-500">累積</div>
+                  <div className="mt-1 font-semibold text-gray-900">{member.totalMl} ml</div>
+                </div>
+                <div className="rounded-lg bg-violet-50 px-3 py-2">
+                  <div className="text-violet-600">連勝</div>
+                  <div className="mt-1 font-semibold text-gray-900">{member.streak} 天</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

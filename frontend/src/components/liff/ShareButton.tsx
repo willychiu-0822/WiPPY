@@ -21,9 +21,17 @@ interface Props {
 
 export default function ShareButton({ member, surpassedCount = 0, achievements = [], idToken }: Props) {
   const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   async function handleShare() {
     if (sharing) return;
+    setShareError(null);
+
+    if (!liff.isApiAvailable('shareTargetPicker')) {
+      setShareError('此環境不支援分享功能，請在 LINE 群組中開啟');
+      return;
+    }
+
     setSharing(true);
     try {
       const { taunts } = await waterApi.taunts(idToken ?? undefined);
@@ -33,7 +41,7 @@ export default function ShareButton({ member, surpassedCount = 0, achievements =
       const liffId = import.meta.env.VITE_LIFF_ID as string;
       const achievementLabel = achievements.length > 0 ? ACHIEVEMENT_LABELS[achievements[0]] : null;
 
-      await liff.shareTargetPicker([{
+      const result = await liff.shareTargetPicker([{
         type: 'flex',
         altText: `💧 ${timeStr} 喝水打卡！今日已喝 ${Math.round(member.todayMl)} ml`,
         contents: {
@@ -53,20 +61,29 @@ export default function ShareButton({ member, surpassedCount = 0, achievements =
           },
         },
       }]);
+      if (!result) {
+        // User cancelled the share picker without selecting anyone — not an error
+      }
     } catch (err) {
       console.error('Share failed:', err);
+      setShareError('分享失敗，請再試一次');
     } finally {
       setSharing(false);
     }
   }
 
   return (
-    <button
-      onClick={handleShare}
-      disabled={sharing}
-      className="w-full min-h-[48px] bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold rounded-xl text-sm disabled:opacity-40 transition-all"
-    >
-      {sharing ? '分享中...' : '📤 分享喝水成績'}
-    </button>
+    <div className="flex flex-col gap-1">
+      <button
+        onClick={handleShare}
+        disabled={sharing}
+        className="w-full min-h-[48px] bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold rounded-xl text-sm disabled:opacity-40 transition-all"
+      >
+        {sharing ? '分享中...' : '📤 分享喝水成績'}
+      </button>
+      {shareError && (
+        <p className="text-xs text-red-500 text-center">{shareError}</p>
+      )}
+    </div>
   );
 }

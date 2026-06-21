@@ -8,6 +8,7 @@ import { listWaterMembersForAdmin, resetMemberTodayWater, setWaterGroupEnabled }
 const router = express.Router();
 
 const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
+const DEFAULT_WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
 
 async function loadOwnedGroupOr404(req: Request, res: Response) {
   const groupId = req.params['groupId'] as string;
@@ -22,11 +23,21 @@ async function loadOwnedGroupOr404(req: Request, res: Response) {
 }
 
 function buildWaterEntryUrl(groupId: string): string {
-  const base = String(process.env.WATER_LIFF_BASE_URL ?? process.env.LIFF_BASE_URL ?? '').trim().replace(/\/$/, '');
-  if (!base) {
-    throw new Error('WATER_LIFF_BASE_URL is not configured');
+  const configuredBase = String(process.env.WATER_LIFF_BASE_URL ?? process.env.LIFF_BASE_URL ?? '').trim();
+  const hostingBase = String(process.env.FIREBASE_HOSTING_URL ?? '').trim();
+  const liffPath = String(process.env.LIFF_PATH ?? '/liff/water').trim();
+
+  let base = configuredBase;
+  if (!base && hostingBase) {
+    const normalizedPath = liffPath.startsWith('/') ? liffPath : `/${liffPath}`;
+    base = `${hostingBase.replace(/\/$/, '')}${normalizedPath}`;
   }
-  return `${base}?wg=${encodeURIComponent(groupId)}`;
+
+  if (!base) {
+    base = DEFAULT_WATER_LIFF_BASE_URL;
+  }
+
+  return `${base.replace(/\/$/, '')}?wg=${encodeURIComponent(groupId)}`;
 }
 
 function buildWaterEnableMessage(groupName: string, entryUrl: string): string {

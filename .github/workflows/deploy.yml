@@ -65,6 +65,9 @@ jobs:
             LLM_MODEL=gemma-4-26b-a4b-it
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             LIFF_CHANNEL_ID=${{ steps.deploy-target.outputs.LIFF_CHANNEL_ID }}
+            LIFF_PATH=${{ steps.deploy-target.outputs.LIFF_PATH }}
+            FIREBASE_HOSTING_URL=${{ steps.deploy-target.outputs.FIREBASE_HOSTING_URL }}
+            WATER_LIFF_BASE_URL=${{ steps.deploy-target.outputs.FIREBASE_HOSTING_URL }}${{ steps.deploy-target.outputs.LIFF_PATH }}
             WATER_DEFAULT_GROUP_ID=${{ steps.deploy-target.outputs.WATER_DEFAULT_GROUP_ID }}
 
       - name: Install frontend dependencies

@@ -968,12 +968,17 @@ export async function setWaterGroupEnabled(
   const snapshot = await groupRef.get();
   const existing = toWaterGroupDoc(snapshot);
 
-  await groupRef.set({
+  const patch: Partial<WaterGroupDoc> = {
     isEnabled: input.enabled,
-    enabledAt: input.enabled ? (existing?.enabledAt ?? now) : existing?.enabledAt,
     groupName: input.groupName?.trim() || existing?.groupName || '',
     updatedAt: now,
-  } satisfies Partial<WaterGroupDoc>, { merge: true });
+  };
+
+  if (input.enabled) {
+    patch.enabledAt = existing?.enabledAt ?? now;
+  }
+
+  await groupRef.set(patch, { merge: true });
 
   return {
     groupId,

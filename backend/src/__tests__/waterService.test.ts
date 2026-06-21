@@ -1085,6 +1085,19 @@ describe('water group activation and session resolution', () => {
     } satisfies Partial<WaterGroupAccessError>);
   });
 
+  it('disables a water group without writing undefined enabledAt', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, GROUP_A, '測試用');
+
+    await setWaterGroupEnabled(db as never, GROUP_A, { enabled: true, groupName: '測試用' });
+    await setWaterGroupEnabled(db as never, GROUP_A, { enabled: false, groupName: '測試用' });
+
+    expect(db.read(`waterGroups/${GROUP_A}`)).toEqual(expect.objectContaining({
+      groupName: '測試用',
+      isEnabled: false,
+      enabledAt: expect.any(Timestamp),
+    }));
+  });
   it('allows access only to groups that the user is already bound to', async () => {
     const db = new FakeFirestore();
     seedGroup(db, GROUP_A, '測試用');

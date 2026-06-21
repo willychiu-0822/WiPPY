@@ -1,4 +1,5 @@
-import { toWaterApiErrorResponse } from '../routes/api/water';
+import { toWaterApiErrorResponse, validateDrinkInput } from '../routes/api/water';
+import { MAX_DRINK_ML } from '../services/waterService';
 
 describe('water API error response', () => {
   it('hides Firestore index URLs from LIFF users', () => {
@@ -15,5 +16,30 @@ describe('water API error response', () => {
       },
     });
     expect(JSON.stringify(response.body)).not.toContain('console.firebase.google.com');
+  });
+});
+
+describe('validateDrinkInput', () => {
+  it('accepts a normal drink within bounds', () => {
+    expect(validateDrinkInput(300, 'water')).toEqual({ ok: true, ml: 300, drinkType: 'water' });
+  });
+
+  it('rejects non-positive or non-integer ml', () => {
+    expect(validateDrinkInput(0, 'water')).toMatchObject({ ok: false });
+    expect(validateDrinkInput(-100, 'water')).toMatchObject({ ok: false });
+    expect(validateDrinkInput(150.5, 'water')).toMatchObject({ ok: false });
+    expect(validateDrinkInput('300', 'water')).toMatchObject({ ok: false });
+    expect(validateDrinkInput(undefined, 'water')).toMatchObject({ ok: false });
+  });
+
+  it('rejects values above the per-log cap to protect aggregates from abuse', () => {
+    expect(validateDrinkInput(MAX_DRINK_ML, 'water')).toMatchObject({ ok: true });
+    expect(validateDrinkInput(MAX_DRINK_ML + 1, 'water')).toMatchObject({ ok: false });
+    expect(validateDrinkInput(2_000_000_000, 'water')).toMatchObject({ ok: false });
+  });
+
+  it('rejects unknown drink types', () => {
+    expect(validateDrinkInput(300, 'beer')).toMatchObject({ ok: false });
+    expect(validateDrinkInput(300, undefined)).toMatchObject({ ok: false });
   });
 });

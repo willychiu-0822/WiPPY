@@ -13,11 +13,28 @@ import {
   logDrink,
   resolveWaterSession,
   WaterGroupAccessError,
+  MAX_DRINK_ML,
 } from '../../services/waterService';
 
 const router = express.Router();
 
 const VALID_DRINK_TYPES: DrinkType[] = ['water', 'tea', 'coffee', 'juice', 'other'];
+
+export function validateDrinkInput(
+  ml: unknown,
+  drinkType: unknown
+): { ok: true; ml: number; drinkType: DrinkType } | { ok: false; error: string } {
+  if (!Number.isInteger(ml) || (ml as number) <= 0) {
+    return { ok: false, error: 'ml must be a positive integer' };
+  }
+  if ((ml as number) > MAX_DRINK_ML) {
+    return { ok: false, error: `ml must not exceed ${MAX_DRINK_ML}` };
+  }
+  if (!drinkType || !VALID_DRINK_TYPES.includes(drinkType as DrinkType)) {
+    return { ok: false, error: 'drinkType is invalid' };
+  }
+  return { ok: true, ml: ml as number, drinkType: drinkType as DrinkType };
+}
 
 function formatErrorDetail(err: unknown): string {
   return err instanceof Error && err.message ? err.message : String(err);
@@ -109,25 +126,20 @@ router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) =>
       drinkType?: DrinkType;
     };
 
-    if (!Number.isInteger(ml) || (ml ?? 0) <= 0) {
-      res.status(400).json({ error: 'ml must be a positive integer' });
+    const validation = validateDrinkInput(ml, drinkType);
+    if (!validation.ok) {
+      res.status(400).json({ error: validation.error });
       return;
     }
 
-    if (!drinkType || !VALID_DRINK_TYPES.includes(drinkType)) {
-      res.status(400).json({ error: 'drinkType is invalid' });
-      return;
-    }
-
-    const safeMl = ml as number;
     const resolvedGroupId = await assertUserCanAccessWaterGroup(getDb(), req.liffUserId!, groupId);
     const result = await logDrink(
       getDb(),
       resolvedGroupId,
       getCurrentUser(req),
       {
-        ml: safeMl,
-        drinkType,
+        ml: validation.ml,
+        drinkType: validation.drinkType,
         groupName: groupName?.trim() || undefined,
       }
     );

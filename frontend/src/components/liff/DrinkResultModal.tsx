@@ -52,6 +52,7 @@ interface Props {
 export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, onClose }: Props) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+  const [shareSuccess, setShareSuccess] = useState<string | null>(null);
 
   const {
     member, eventAchievements, newPersistentAchievements,
@@ -68,6 +69,7 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
   async function handleShare() {
     if (sharing) return;
     setShareError(null);
+    setShareSuccess(null);
     setSharing(true);
     try {
       const { taunts } = await waterApi.taunts(idToken ?? undefined);
@@ -88,7 +90,7 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
         return;
       }
 
-      onClose();
+      setShareSuccess('分享成功，戰報已送出');
     } catch (err) {
       console.error('Share failed:', err);
       setShareError(`分享失敗：${getErrorMessage(err)}`);
@@ -177,6 +179,9 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
           >
             {sharing ? '分享中...' : '分享戰報'}
           </button>
+          {shareSuccess && (
+            <p className="text-center text-xs leading-relaxed text-emerald-200">{shareSuccess}</p>
+          )}
           {shareError && (
             <p className="text-center text-xs leading-relaxed text-rose-300">{shareError}</p>
           )}

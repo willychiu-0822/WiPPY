@@ -23,12 +23,28 @@ function formatErrorDetail(err: unknown): string {
   return err instanceof Error && err.message ? err.message : String(err);
 }
 
-function sendServerError(res: Response, error: string, err: unknown): void {
+export function toWaterApiErrorResponse(error: string, err: unknown): { status: number; body: Record<string, unknown> } {
   if (err instanceof WaterGroupAccessError) {
-    res.status(err.status).json({ error: err.message, code: err.code });
-    return;
+    return { status: err.status, body: { error: err.message, code: err.code } };
   }
-  res.status(500).json({ error, detail: formatErrorDetail(err) });
+
+  const detail = formatErrorDetail(err);
+  if (/requires (a|an) index|firestore\/indexes|FAILED_PRECONDITION/i.test(detail)) {
+    return {
+      status: 503,
+      body: {
+        error: '喝水戰場正在準備中，請稍後再試。',
+        code: 'water_index_building',
+      },
+    };
+  }
+
+  return { status: 500, body: { error } };
+}
+
+function sendServerError(res: Response, error: string, err: unknown): void {
+  const response = toWaterApiErrorResponse(error, err);
+  res.status(response.status).json(response.body);
 }
 
 function getCurrentUser(req: Request) {

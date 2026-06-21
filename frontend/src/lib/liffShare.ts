@@ -87,6 +87,19 @@ function isInLineClient(): boolean {
   }
 }
 
+export function closeLineWindow(): boolean {
+  try {
+    if (isInLineClient() && typeof liff.closeWindow === 'function') {
+      liff.closeWindow();
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
 export async function shareLineMessage(message: LineFlexMessage): Promise<ShareResult> {
   if (import.meta.env.VITE_USE_MOCK_API === 'true' && getActiveLiffMockPresetId() === 'share_unavailable') {
     throw new Error('Mock preset share_unavailable: LINE 分享功能不可用');

@@ -1,5 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import {
+  assertUserCanAccessWaterGroup,
   TAUNT_MESSAGES,
   ensureIdentity,
   getMemberProfile,
@@ -9,9 +10,11 @@ import {
   listWaterMembersForAdmin,
   isValidLineGroupId,
   logDrink,
+  resolveWaterSession,
   resetMemberTodayWater,
   resetDayIfNeeded,
-  resolveGroupId,
+  setWaterGroupEnabled,
+  WaterGroupAccessError,
 } from '../services/waterService';
 
 type WhereOp = '==' | '>=' | '<=';
@@ -318,6 +321,7 @@ function seedGroup(db: FakeFirestore, groupId: string, groupName = '讀書會', 
     activeSince: now,
     createdAt: now,
     updatedAt: now,
+    isEnabled: false,
   });
 }
 
@@ -382,7 +386,7 @@ describe('waterService', () => {
     );
 
     expect(first.isNewUser).toBe(true);
-    expect(db.read('waterUsers/U1')).toEqual(expect.objectContaining({ lastGroupId: 'C123' }));
+    expect(db.read('waterUsers/U1')).toEqual(expect.objectContaining({ lastGroupId: 'C123', groupIds: ['C123'] }));
     expect(db.read('waterGroups/C123/members/U1')).toEqual(expect.objectContaining({ todayMl: 0, streak: 0 }));
 
     jest.setSystemTime(new Date('2026-06-20T02:00:00.000Z'));
@@ -413,7 +417,16 @@ describe('waterService', () => {
     expect(result.member.weekMl).toBe(500);
     expect(result.member.streak).toBe(1);
     expect(result.newPersistentAchievements).toContain('first_drink');
-    expect(db.query('records', true)).toHaveLength(1);
+    expect(db.query('records', true)).toHaveLength(2);
+    expect(db.read('waterUsers/U1')).toEqual(expect.objectContaining({
+      totalMl: 500,
+      streak: 1,
+      achievements: expect.arrayContaining(['first_drink']),
+    }));
+    expect(db.read('waterUsers/U1/records/doc_1')).toEqual(expect.objectContaining({
+      groupId: 'C123',
+      ml: 500,
+    }));
   });
 
   it('calculates surpassedCount and now_im_best when the user jumps to first place', async () => {
@@ -718,6 +731,8 @@ describe('waterService', () => {
       totalMl: 1500,
       streak: 4,
     }));
+    expect(db.read('waterUsers/U1/records/r1')).toBeUndefined();
+    expect(db.read('waterUsers/U1/records/r2')).toBeUndefined();
   });
 });
 
@@ -981,66 +996,106 @@ describe('water gamification (BE-1~BE-5, BE-8)', () => {
   });
 });
 
-describe('group id resolution', () => {
-  const VALID_GROUP = 'C140df0374a3ba2a5864bcff0cbf8befd';
-  const ANOTHER_VALID_GROUP = 'Cabcabcabcabcabcabcabcabcabcabcab';
-  const EPHEMERAL_UUID = '0559b5ee-5dbb-477e-ba0d-8452cd69faed';
-
-  const originalDefault = process.env['WATER_DEFAULT_GROUP_ID'];
-  afterEach(() => {
-    if (originalDefault === undefined) {
-      delete process.env['WATER_DEFAULT_GROUP_ID'];
-    } else {
-      process.env['WATER_DEFAULT_GROUP_ID'] = originalDefault;
-    }
-  });
+describe('water group activation and session resolution', () => {
+  const GROUP_A = 'C140df0374a3ba2a5864bcff0cbf8befd';
+  const GROUP_B = 'C36f826d26cf8adefe4d214993742c230';
+  const GROUP_C = 'Cabcabcabcabcabcabcabcabcabcabcab';
+  const INVALID_ENTRY = '0559b5ee-5dbb-477e-ba0d-8452cd69faed';
 
   it('accepts only real LINE group/room ids', () => {
-    expect(isValidLineGroupId(VALID_GROUP)).toBe(true);
-    expect(isValidLineGroupId('R140df0374a3ba2a5864bcff0cbf8befd')).toBe(true);
-    expect(isValidLineGroupId(EPHEMERAL_UUID)).toBe(false);
+    expect(isValidLineGroupId(GROUP_A)).toBe(true);
+    expect(isValidLineGroupId(`R${GROUP_A.slice(1)}`)).toBe(true);
+    expect(isValidLineGroupId(INVALID_ENTRY)).toBe(false);
     expect(isValidLineGroupId('Cdev1')).toBe(false);
-    expect(isValidLineGroupId('')).toBe(false);
-    expect(isValidLineGroupId(null)).toBe(false);
-    expect(isValidLineGroupId(undefined)).toBe(false);
   });
 
-  it('trusts a valid requested groupId as-is', async () => {
+  it('first visit from an enabled entry auto-binds the user to that group', async () => {
     const db = new FakeFirestore();
-    await expect(resolveGroupId(db as never, 'U1', ANOTHER_VALID_GROUP)).resolves.toBe(ANOTHER_VALID_GROUP);
+    seedGroup(db, GROUP_A, '測試用');
+    await setWaterGroupEnabled(db as never, GROUP_A, { enabled: true, groupName: '測試用' });
+
+    const resolved = await resolveWaterSession(db as never, 'U1', { entryGroupId: GROUP_A });
+    expect('status' in resolved).toBe(false);
+
+    if ('status' in resolved) throw new Error('unexpected selection');
+
+    await ensureIdentity(db as never, resolved, { userId: 'U1', displayName: 'Amy', pictureUrl: '' });
+    expect(db.read(`waterGroups/${GROUP_A}/members/U1`)).toEqual(expect.objectContaining({ lineUserId: 'U1' }));
+    expect(db.read('waterUsers/U1')).toEqual(expect.objectContaining({ lastGroupId: GROUP_A, groupIds: [GROUP_A] }));
   });
 
-  it('falls back to the user lastGroupId when the request is an ephemeral UUID', async () => {
+  it('second visit from the same enabled group goes straight in', async () => {
     const db = new FakeFirestore();
-    db.seed('waterUsers/U1', { lineUserId: 'U1', lastGroupId: VALID_GROUP });
+    seedGroup(db, GROUP_A, '測試用');
+    await setWaterGroupEnabled(db as never, GROUP_A, { enabled: true, groupName: '測試用' });
+    await ensureIdentity(db as never, { groupId: GROUP_A, groupName: '測試用' }, { userId: 'U1', displayName: 'Amy', pictureUrl: '' });
 
-    await expect(resolveGroupId(db as never, 'U1', EPHEMERAL_UUID)).resolves.toBe(VALID_GROUP);
+    await expect(resolveWaterSession(db as never, 'U1', { entryGroupId: GROUP_A })).resolves.toEqual({
+      groupId: GROUP_A,
+      groupName: '測試用',
+    });
   });
 
-  it('falls back to the configured default group when nothing else is valid', async () => {
-    process.env['WATER_DEFAULT_GROUP_ID'] = VALID_GROUP;
+  it('adds a second membership when the user enters from another enabled group', async () => {
     const db = new FakeFirestore();
-    db.seed('waterUsers/U1', { lineUserId: 'U1', lastGroupId: EPHEMERAL_UUID });
+    seedGroup(db, GROUP_A, '測試用');
+    seedGroup(db, GROUP_B, '最佳專輯封面人物六人組');
+    await setWaterGroupEnabled(db as never, GROUP_A, { enabled: true, groupName: '測試用' });
+    await setWaterGroupEnabled(db as never, GROUP_B, { enabled: true, groupName: '最佳專輯封面人物六人組' });
+    await ensureIdentity(db as never, { groupId: GROUP_A, groupName: '測試用' }, { userId: 'U1', displayName: 'Amy', pictureUrl: '' });
 
-    await expect(resolveGroupId(db as never, 'U1', EPHEMERAL_UUID)).resolves.toBe(VALID_GROUP);
-    await expect(resolveGroupId(db as never, 'U1', undefined)).resolves.toBe(VALID_GROUP);
+    const resolved = await resolveWaterSession(db as never, 'U1', { entryGroupId: GROUP_B });
+    if ('status' in resolved) throw new Error('unexpected selection');
+
+    await ensureIdentity(db as never, resolved, { userId: 'U1', displayName: 'Amy', pictureUrl: '' });
+    expect(db.read('waterUsers/U1')).toEqual(expect.objectContaining({ groupIds: [GROUP_A, GROUP_B], lastGroupId: GROUP_B }));
+    expect(db.read(`waterGroups/${GROUP_B}/members/U1`)).toEqual(expect.objectContaining({ lineUserId: 'U1' }));
   });
 
-  it('never resolves to an ephemeral UUID when a valid default exists (the core bug)', async () => {
-    process.env['WATER_DEFAULT_GROUP_ID'] = VALID_GROUP;
+  it('returns a selectable group list after the user has multiple bindings', async () => {
     const db = new FakeFirestore();
+    seedGroup(db, GROUP_A, '測試用');
+    seedGroup(db, GROUP_B, '最佳專輯封面人物六人組');
+    seedGroup(db, GROUP_C, '第三群');
+    await setWaterGroupEnabled(db as never, GROUP_A, { enabled: true, groupName: '測試用' });
+    await setWaterGroupEnabled(db as never, GROUP_B, { enabled: true, groupName: '最佳專輯封面人物六人組' });
+    await setWaterGroupEnabled(db as never, GROUP_C, { enabled: true, groupName: '第三群' });
+    await ensureIdentity(db as never, { groupId: GROUP_A, groupName: '測試用' }, { userId: 'U1', displayName: 'Amy', pictureUrl: '' });
+    await ensureIdentity(db as never, { groupId: GROUP_B, groupName: '最佳專輯封面人物六人組' }, { userId: 'U1', displayName: 'Amy', pictureUrl: '' });
 
-    // Two separate "launches" hand back two different UUIDs — both must collapse
-    // to the same stable group so the same user's data is never split.
-    const first = await resolveGroupId(db as never, 'U1', '0559b5ee-5dbb-477e-ba0d-8452cd69faed');
-    const second = await resolveGroupId(db as never, 'U1', '10660f6c-d836-4794-a392-ea3e6cb90393');
-    expect(first).toBe(VALID_GROUP);
-    expect(second).toBe(VALID_GROUP);
+    const resolved = await resolveWaterSession(db as never, 'U1', { entryGroupId: GROUP_C });
+    expect(resolved).toEqual({
+      status: 'needs_group_selection',
+      user: expect.objectContaining({ lineUserId: 'U1', groupIds: [GROUP_A, GROUP_B] }),
+      entryGroup: { groupId: GROUP_C, groupName: '第三群' },
+      availableGroups: expect.arrayContaining([
+        expect.objectContaining({ groupId: GROUP_A }),
+        expect.objectContaining({ groupId: GROUP_B }),
+        expect.objectContaining({ groupId: GROUP_C, isEntryGroup: true }),
+      ]),
+    });
   });
 
-  it('honours the requested value as a last resort when no default is configured (dev)', async () => {
-    delete process.env['WATER_DEFAULT_GROUP_ID'];
+  it('rejects an entry group that has not been enabled', async () => {
     const db = new FakeFirestore();
-    await expect(resolveGroupId(db as never, 'U1', 'Cdev1')).resolves.toBe('Cdev1');
+    seedGroup(db, GROUP_A, '測試用');
+
+    await expect(resolveWaterSession(db as never, 'U1', { entryGroupId: GROUP_A })).rejects.toMatchObject({
+      code: 'water_group_not_enabled',
+    } satisfies Partial<WaterGroupAccessError>);
+  });
+
+  it('allows access only to groups that the user is already bound to', async () => {
+    const db = new FakeFirestore();
+    seedGroup(db, GROUP_A, '測試用');
+    seedGroup(db, GROUP_B, '最佳專輯封面人物六人組');
+    await setWaterGroupEnabled(db as never, GROUP_A, { enabled: true, groupName: '測試用' });
+    await setWaterGroupEnabled(db as never, GROUP_B, { enabled: true, groupName: '最佳專輯封面人物六人組' });
+    await ensureIdentity(db as never, { groupId: GROUP_A, groupName: '測試用' }, { userId: 'U1', displayName: 'Amy', pictureUrl: '' });
+
+    await expect(assertUserCanAccessWaterGroup(db as never, 'U1', GROUP_A)).resolves.toBe(GROUP_A);
+    await expect(assertUserCanAccessWaterGroup(db as never, 'U1', GROUP_B)).rejects.toMatchObject({
+      code: 'water_group_forbidden',
+    } satisfies Partial<WaterGroupAccessError>);
   });
 });

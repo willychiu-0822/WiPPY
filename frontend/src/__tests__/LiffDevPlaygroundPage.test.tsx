@@ -56,7 +56,7 @@ describe('LiffDevPlaygroundPage', () => {
     expect(screen.getByText('Ctest1')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open UAT page' })).toHaveAttribute(
       'href',
-      '/liff/water?mockPreset=rank_first'
+      '/liff/water?wg=Cdev1&mockPreset=rank_first'
     );
   });
 
@@ -67,7 +67,7 @@ describe('LiffDevPlaygroundPage', () => {
 
     expect(screen.getByRole('link', { name: 'Open UAT page' })).toHaveAttribute(
       'href',
-      '/liff/water?mockPreset=api_500'
+      '/liff/water?wg=Cdev1&mockPreset=api_500'
     );
     expect(screen.getByText(/後端錯誤/)).toBeInTheDocument();
   });

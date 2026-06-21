@@ -1,5 +1,7 @@
 import type { LiffContextType } from '../contexts/liff-context';
 
+export const LIFF_DEV_ENTRY_GROUP_ID = 'Cdev1';
+
 export const LIFF_MOCK_PRESET_IDS = [
   'default',
   'new_user',
@@ -56,7 +58,7 @@ export function shouldExposeLiffDevTools(): boolean {
 }
 
 export function buildLiffWaterUrl(presetId: LiffMockPresetId): string {
-  return `/liff/water?mockPreset=${encodeURIComponent(presetId)}`;
+  return `/liff/water?wg=${encodeURIComponent(LIFF_DEV_ENTRY_GROUP_ID)}&mockPreset=${encodeURIComponent(presetId)}`;
 }
 
 export function buildLiffPlaygroundUrl(presetId: LiffMockPresetId): string {

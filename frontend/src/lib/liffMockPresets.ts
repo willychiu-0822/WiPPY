@@ -43,7 +43,7 @@ interface LiffMockState {
 }
 
 export interface LiffWaterApiAdapter {
-  session: (groupId: string, groupName?: string, idToken?: string) => Promise<SessionResponse>;
+  session: (entryGroupId: string, entryGroupName?: string, selectedGroupId?: string, idToken?: string) => Promise<SessionResponse>;
   drink: (groupId: string, ml: number, drinkType: DrinkType, idToken?: string) => Promise<DrinkResponse>;
   todayLeaderboard: (groupId: string, idToken?: string) => Promise<TodayResponse>;
   myProfile: (groupId: string, idToken?: string) => Promise<MyProfileResponse>;
@@ -391,12 +391,18 @@ function delay(ms: number) {
 }
 
 export const mockWaterApi: LiffWaterApiAdapter = {
-  session: async (groupId: string, groupName?: string): Promise<SessionResponse> => {
+  session: async (entryGroupId: string, entryGroupName?: string): Promise<SessionResponse> => {
     maybeThrowPresetError();
     await delay(300);
     const state = getState();
     const { members, me } = buildMockLeaderboard(state);
     return {
+      status: 'ready',
+      activeGroup: {
+        groupId: entryGroupId || DEFAULT_GROUP_ID,
+        groupName: entryGroupName ?? DEFAULT_GROUP_NAME,
+        entryGroupId: entryGroupId || DEFAULT_GROUP_ID,
+      },
       isNewUser: activePresetId === 'new_user',
       user: {
         lineUserId: MOCK_USER_ID,
@@ -404,11 +410,12 @@ export const mockWaterApi: LiffWaterApiAdapter = {
         pictureUrl: '',
         firstSeenAt: NOW_TS,
         lastSeenAt: NOW_TS,
-        lastGroupId: groupId,
+        lastGroupId: entryGroupId || DEFAULT_GROUP_ID,
+        groupIds: [entryGroupId || DEFAULT_GROUP_ID],
       },
       member: buildMockMember(state),
       today: {
-        groupName: groupName ?? DEFAULT_GROUP_NAME,
+        groupName: entryGroupName ?? DEFAULT_GROUP_NAME,
         memberCount: members.length,
         members,
         me,

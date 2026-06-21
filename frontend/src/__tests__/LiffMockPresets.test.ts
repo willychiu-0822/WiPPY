@@ -25,6 +25,8 @@ describe('LIFF mock presets', () => {
     setSearch('?mockPreset=new_user');
 
     const session = await mockWaterApi.session('Cdev1');
+    expect(session.status).toBe('ready');
+    if (session.status !== 'ready') throw new Error('unexpected session status');
 
     expect(session.isNewUser).toBe(true);
     expect(session.member.todayMl).toBe(0);
@@ -35,6 +37,8 @@ describe('LIFF mock presets', () => {
     setSearch('?mockPreset=rank_behind');
 
     const session = await mockWaterApi.session('Cdev1');
+    expect(session.status).toBe('ready');
+    if (session.status !== 'ready') throw new Error('unexpected session status');
 
     expect(session.today.me.rank).toBe(3);
     expect(session.today.me.gapToAbove).toBeGreaterThan(0);

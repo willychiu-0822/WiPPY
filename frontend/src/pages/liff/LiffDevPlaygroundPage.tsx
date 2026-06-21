@@ -6,6 +6,7 @@ import {
   buildLiffPlaygroundUrl,
   buildLiffWaterUrl,
   getActiveLiffMockPresetId,
+  LIFF_DEV_ENTRY_GROUP_ID,
   LIFF_MOCK_PRESET_IDS,
   shouldExposeLiffDevTools,
   type LiffDevDiagnostics,
@@ -49,7 +50,7 @@ export default function LiffDevPlaygroundPage() {
   }), [activePreset, liffState]);
 
   if (!shouldExposeLiffDevTools()) {
-    return <Navigate to="/liff/water" replace />;
+    return <Navigate to={`/liff/water?wg=${encodeURIComponent(LIFF_DEV_ENTRY_GROUP_ID)}`} replace />;
   }
 
   const uatPath = buildLiffWaterUrl(activePreset);

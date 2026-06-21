@@ -43,13 +43,13 @@ function getVariantBanner(dr: DrinkResponse): Banner | null {
 interface Props {
   drinkResult: DrinkResponse;
   idToken: string | null;
-  groupId: string;
+  entryGroupId?: string | null;
   onClose: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function DrinkResultModal({ drinkResult, idToken, groupId: _groupId, onClose }: Props) {
+export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, onClose }: Props) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
 
@@ -79,6 +79,7 @@ export default function DrinkResultModal({ drinkResult, idToken, groupId: _group
         isDailyFirst,
         belowDisplayName,
         groupGoalJustReached,
+        entryGroupId,
       }));
 
       if (result === 'cancelled') {

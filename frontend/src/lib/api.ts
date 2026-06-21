@@ -80,6 +80,15 @@ export interface WaterAdminMember {
   lastDrinkAt: FirestoreTimestamp | null;
 }
 
+export interface WaterGroupConfig {
+  groupId: string;
+  groupName: string;
+  enabled: boolean;
+  entryUrl: string;
+  messageSent?: boolean;
+  messageError?: string | null;
+}
+
 // ─── Groups API ───────────────────────────────────────────────────────────────
 
 export const api = {
@@ -112,6 +121,15 @@ export const api = {
         removedRecordCount: number;
       }>(`/api/groups/${groupId}/water-members/${lineUserId}/reset-today`, {
         method: 'POST',
+      }),
+
+    waterConfig: (groupId: string) =>
+      request<WaterGroupConfig>(`/api/groups/${groupId}/water-config`),
+
+    updateWaterConfig: (groupId: string, enabled: boolean) =>
+      request<WaterGroupConfig>(`/api/groups/${groupId}/water-config`, {
+        method: 'POST',
+        body: JSON.stringify({ enabled }),
       }),
   },
 

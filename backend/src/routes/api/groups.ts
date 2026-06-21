@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
 import { authMiddleware } from '../../middleware/auth';
 import { getLineClient } from '../../line';
-import { listWaterMembersForAdmin, resetMemberTodayWater } from '../../services/waterService';
+import { listWaterMembersForAdmin, resetMemberTodayWater, setWaterGroupEnabled } from '../../services/waterService';
 
 const router = express.Router();
 
@@ -19,6 +19,24 @@ async function loadOwnedGroupOr404(req: Request, res: Response) {
   }
 
   return groupSnap;
+}
+
+function buildWaterEntryUrl(groupId: string): string {
+  const base = String(process.env.WATER_LIFF_BASE_URL ?? process.env.LIFF_BASE_URL ?? '').trim().replace(/\/$/, '');
+  if (!base) {
+    throw new Error('WATER_LIFF_BASE_URL is not configured');
+  }
+  return `${base}?wg=${encodeURIComponent(groupId)}`;
+}
+
+function buildWaterEnableMessage(groupName: string, entryUrl: string): string {
+  return [
+    `💧「${groupName}」已開通 WiPPY 喝水競賽`,
+    '之後請都從這個專屬連結進入：',
+    entryUrl,
+    '',
+    '舊的未帶群組參數連結已失效。',
+  ].join('\n');
 }
 
 // GET /api/groups
@@ -184,6 +202,74 @@ router.post('/:groupId/water-members/:lineUserId/reset-today', authMiddleware, a
   } catch (err) {
     console.error(JSON.stringify({ event: 'reset_group_water_member_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to reset member water today' });
+  }
+});
+
+router.post('/:groupId/water-config', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const groupSnap = await loadOwnedGroupOr404(req, res);
+    if (!groupSnap) {
+      return;
+    }
+
+    const groupId = req.params['groupId'] as string;
+    const { enabled } = req.body as { enabled?: boolean };
+    if (typeof enabled !== 'boolean') {
+      res.status(400).json({ error: 'enabled must be a boolean' });
+      return;
+    }
+
+    const groupName = String(groupSnap.data()!['name'] ?? '').trim() || groupId;
+    const result = await setWaterGroupEnabled(getDb(), groupId, { enabled, groupName });
+    const entryUrl = buildWaterEntryUrl(groupId);
+
+    let messageSent = false;
+    let messageError: string | null = null;
+    if (enabled) {
+      try {
+        await getLineClient().pushMessage(groupId, {
+          type: 'text',
+          text: buildWaterEnableMessage(groupName, entryUrl),
+        });
+        messageSent = true;
+      } catch (err) {
+        messageError = err instanceof Error ? err.message : String(err);
+      }
+    }
+
+    res.json({
+      groupId: result.groupId,
+      groupName: result.groupName,
+      enabled: result.isEnabled,
+      entryUrl,
+      messageSent,
+      messageError,
+    });
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'set_group_water_config_error', error: String(err) }));
+    res.status(500).json({ error: 'Failed to update water group config' });
+  }
+});
+
+router.get('/:groupId/water-config', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const groupSnap = await loadOwnedGroupOr404(req, res);
+    if (!groupSnap) {
+      return;
+    }
+
+    const groupId = req.params['groupId'] as string;
+    const waterSnap = await getDb().collection('waterGroups').doc(groupId).get();
+    const waterData = waterSnap.exists ? waterSnap.data()! : {};
+    res.json({
+      groupId,
+      groupName: String(groupSnap.data()!['name'] ?? groupId),
+      enabled: Boolean(waterData['isEnabled']),
+      entryUrl: buildWaterEntryUrl(groupId),
+    });
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'get_group_water_config_error', error: String(err) }));
+    res.status(500).json({ error: 'Failed to fetch water group config' });
   }
 });
 

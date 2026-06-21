@@ -503,6 +503,51 @@ async function loadNormalizedMember(db: Firestore, groupId: string, userId: stri
   return member;
 }
 
+// LINE group/room ids look like "C" or "R" followed by 32 hex chars. Anything
+// else (notably the ephemeral UUIDs liff.getContext() can hand back) is rejected
+// so we never partition water data on a value that changes every launch.
+const LINE_GROUP_ID_PATTERN = /^[CR][0-9a-f]{32}$/i;
+
+export function isValidLineGroupId(groupId?: string | null): boolean {
+  return typeof groupId === 'string' && LINE_GROUP_ID_PATTERN.test(groupId.trim());
+}
+
+/**
+ * Resolves a stable group id for a request. The client-supplied value is only
+ * trusted when it is a real LINE group/room id; otherwise we fall back to the
+ * user's last known good group, then to the configured default group. This keeps
+ * a user's water records in one place even when liff.getContext() is unreliable.
+ */
+export async function resolveGroupId(
+  db: Firestore,
+  userId: string,
+  requestedGroupId?: string | null
+): Promise<string> {
+  const requested = requestedGroupId?.trim();
+  if (isValidLineGroupId(requested)) {
+    return requested!;
+  }
+
+  const userSnap = await db.collection(WATER_USERS_COLLECTION).doc(userId).get();
+  const lastGroupId = userSnap.exists ? (userSnap.data() as WaterUserDoc).lastGroupId : null;
+  if (isValidLineGroupId(lastGroupId)) {
+    return lastGroupId!;
+  }
+
+  const configuredDefault = (process.env['WATER_DEFAULT_GROUP_ID'] ?? '').trim();
+  if (isValidLineGroupId(configuredDefault)) {
+    return configuredDefault;
+  }
+
+  // Last resort: honour whatever was requested so local/dev flows keep working
+  // even without a configured default.
+  if (requested) {
+    return requested;
+  }
+
+  throw new Error(`Unable to resolve a water group for user ${userId}`);
+}
+
 export async function ensureGroup(db: Firestore, groupId: string, groupName?: string): Promise<void> {
   const now = admin.firestore.Timestamp.now();
   const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);

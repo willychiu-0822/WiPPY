@@ -5,8 +5,10 @@ import {
   getMemberProfile,
   getRandomTaunt,
   getTodayLeaderboard,
+  isValidLineGroupId,
   logDrink,
   resetDayIfNeeded,
+  resolveGroupId,
 } from '../services/waterService';
 
 type WhereOp = '==' | '>=' | '<=';
@@ -547,6 +549,54 @@ describe('waterService', () => {
     expect(profile.member.achievements.filter((achievement) => achievement === 'hydration_master')).toHaveLength(1);
   });
 
+  it('keeps todayMl after leaving and re-entering the page on the same day (same group)', async () => {
+    const db = new FakeFirestore();
+
+    // Session 1: user opens the page and logs a drink.
+    const logged = await logDrink(
+      db as never,
+      'C123',
+      { userId: 'U1', displayName: 'Amy', pictureUrl: '' },
+      { ml: 500, drinkType: 'water', groupName: '讀書會' }
+    );
+    expect(logged.member.todayMl).toBe(500);
+
+    // Session 2 (same day): user leaves and re-enters. The real flow runs
+    // ensureIdentity first, then getTodayLeaderboard (see routes/api/water.ts).
+    await ensureIdentity(db as never, { groupId: 'C123' }, {
+      userId: 'U1',
+      displayName: 'Amy',
+      pictureUrl: '',
+    });
+    const reopened = await getTodayLeaderboard(db as never, 'C123', 'U1');
+
+    expect(reopened.me.todayMl).toBe(500);
+  });
+
+  it('is group-scoped: a different groupId reads an empty total (why a stable group id matters)', async () => {
+    const db = new FakeFirestore();
+
+    // Drink logged under the group the request resolved to.
+    await logDrink(
+      db as never,
+      'C-real-group',
+      { userId: 'U1', displayName: 'Amy', pictureUrl: '' },
+      { ml: 500, drinkType: 'water', groupName: '讀書會' }
+    );
+
+    // Reading under a different group id finds no records — this is exactly the
+    // data split that the production bug caused (a new group id per launch), and
+    // the reason resolveGroupId must collapse requests onto one stable group.
+    await ensureIdentity(db as never, { groupId: 'C-other-context' }, {
+      userId: 'U1',
+      displayName: 'Amy',
+      pictureUrl: '',
+    });
+    const reopened = await getTodayLeaderboard(db as never, 'C-other-context', 'U1');
+
+    expect(reopened.me.todayMl).toBe(0);
+  });
+
   it('returns taunts from the fixed pool of ten messages', () => {
     expect(TAUNT_MESSAGES).toHaveLength(10);
     TAUNT_MESSAGES.forEach((message, index) => {
@@ -594,5 +644,69 @@ describe('waterService', () => {
 
     expect(result.member.todayMl).toBe(500);
     expect(db.read('waterGroups/C123/members/U1')).toEqual(expect.objectContaining({ todayMl: 500 }));
+  });
+});
+
+describe('group id resolution', () => {
+  const VALID_GROUP = 'C140df0374a3ba2a5864bcff0cbf8befd';
+  const ANOTHER_VALID_GROUP = 'Cabcabcabcabcabcabcabcabcabcabcab';
+  const EPHEMERAL_UUID = '0559b5ee-5dbb-477e-ba0d-8452cd69faed';
+
+  const originalDefault = process.env['WATER_DEFAULT_GROUP_ID'];
+  afterEach(() => {
+    if (originalDefault === undefined) {
+      delete process.env['WATER_DEFAULT_GROUP_ID'];
+    } else {
+      process.env['WATER_DEFAULT_GROUP_ID'] = originalDefault;
+    }
+  });
+
+  it('accepts only real LINE group/room ids', () => {
+    expect(isValidLineGroupId(VALID_GROUP)).toBe(true);
+    expect(isValidLineGroupId('R140df0374a3ba2a5864bcff0cbf8befd')).toBe(true);
+    expect(isValidLineGroupId(EPHEMERAL_UUID)).toBe(false);
+    expect(isValidLineGroupId('Cdev1')).toBe(false);
+    expect(isValidLineGroupId('')).toBe(false);
+    expect(isValidLineGroupId(null)).toBe(false);
+    expect(isValidLineGroupId(undefined)).toBe(false);
+  });
+
+  it('trusts a valid requested groupId as-is', async () => {
+    const db = new FakeFirestore();
+    await expect(resolveGroupId(db as never, 'U1', ANOTHER_VALID_GROUP)).resolves.toBe(ANOTHER_VALID_GROUP);
+  });
+
+  it('falls back to the user lastGroupId when the request is an ephemeral UUID', async () => {
+    const db = new FakeFirestore();
+    db.seed('waterUsers/U1', { lineUserId: 'U1', lastGroupId: VALID_GROUP });
+
+    await expect(resolveGroupId(db as never, 'U1', EPHEMERAL_UUID)).resolves.toBe(VALID_GROUP);
+  });
+
+  it('falls back to the configured default group when nothing else is valid', async () => {
+    process.env['WATER_DEFAULT_GROUP_ID'] = VALID_GROUP;
+    const db = new FakeFirestore();
+    db.seed('waterUsers/U1', { lineUserId: 'U1', lastGroupId: EPHEMERAL_UUID });
+
+    await expect(resolveGroupId(db as never, 'U1', EPHEMERAL_UUID)).resolves.toBe(VALID_GROUP);
+    await expect(resolveGroupId(db as never, 'U1', undefined)).resolves.toBe(VALID_GROUP);
+  });
+
+  it('never resolves to an ephemeral UUID when a valid default exists (the core bug)', async () => {
+    process.env['WATER_DEFAULT_GROUP_ID'] = VALID_GROUP;
+    const db = new FakeFirestore();
+
+    // Two separate "launches" hand back two different UUIDs — both must collapse
+    // to the same stable group so the same user's data is never split.
+    const first = await resolveGroupId(db as never, 'U1', '0559b5ee-5dbb-477e-ba0d-8452cd69faed');
+    const second = await resolveGroupId(db as never, 'U1', '10660f6c-d836-4794-a392-ea3e6cb90393');
+    expect(first).toBe(VALID_GROUP);
+    expect(second).toBe(VALID_GROUP);
+  });
+
+  it('honours the requested value as a last resort when no default is configured (dev)', async () => {
+    delete process.env['WATER_DEFAULT_GROUP_ID'];
+    const db = new FakeFirestore();
+    await expect(resolveGroupId(db as never, 'U1', 'Cdev1')).resolves.toBe('Cdev1');
   });
 });

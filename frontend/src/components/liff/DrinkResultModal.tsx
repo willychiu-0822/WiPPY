@@ -63,6 +63,7 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
   const variantBanner = getVariantBanner(drinkResult);
   const achievementPrimary = achievements[0] ? ACHIEVEMENT_CONFIG[achievements[0]] : null;
   const banner = variantBanner ?? achievementPrimary;
+  const contributionPct = groupTodayMl > 0 ? Math.round((member.todayMl / groupTodayMl) * 100) : 0;
 
   async function handleShare() {
     if (sharing) return;
@@ -145,18 +146,25 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
             {Math.round(member.todayMl)} <span className="text-xl font-black text-sky-300">ml</span>
           </p>
           <p className="mt-1 text-sm font-bold text-slate-500">今日累計</p>
-          {surpassedCount > 0 && (
-            <p className="mt-3 rounded-full bg-sky-400/10 px-3 py-2 text-sm font-black text-sky-200">超越了 {surpassedCount} 位成員</p>
-          )}
-          {member.streak > 1 && (
-            <p className="mt-2 text-sm font-bold text-orange-300">連線 {member.streak} 天</p>
-          )}
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-[14px] border border-white/[.06] bg-white/[.04] px-1 py-[11px]">
+              <div className="font-['Archivo'] text-xl font-black text-sky-300">+{Math.max(1, surpassedCount)}</div>
+              <div className="mt-1 text-[10px] text-[#6b85a6]">超越人數</div>
+            </div>
+            <div className="rounded-[14px] border border-white/[.06] bg-white/[.04] px-1 py-[11px]">
+              <div className="font-['Archivo'] text-xl font-black text-[#ff9d3c]">{member.streak || 1}</div>
+              <div className="mt-1 text-[10px] text-[#6b85a6]">連續天數</div>
+            </div>
+            <div className="rounded-[14px] border border-white/[.06] bg-white/[.04] px-1 py-[11px]">
+              <div className="font-['Archivo'] text-xl font-black text-[#22d3ee]">{contributionPct}%</div>
+              <div className="mt-1 text-[10px] text-[#6b85a6]">群組貢獻</div>
+            </div>
+          </div>
           {groupGoalJustReached && (
-            <p className="mt-2 text-sm font-black text-emerald-300">
+            <p className="mt-3 text-sm font-black text-emerald-300">
               你幫群組達成 {Math.round(groupGoalMl)} ml 目標
             </p>
           )}
-          <p className="mt-2 text-xs text-slate-600">群組今日 {Math.round(groupTodayMl)} ml</p>
         </div>
 
         {/* Actions */}
@@ -164,20 +172,30 @@ export default function DrinkResultModal({ drinkResult, idToken, entryGroupId, o
           <button
             onClick={handleShare}
             disabled={sharing}
+            aria-label="分享成就到群組"
             className="min-h-[56px] w-full rounded-[18px] bg-gradient-to-r from-[#06c755] to-[#22c55e] text-base font-black text-white shadow-xl shadow-emerald-950/40 transition hover:brightness-110 active:scale-95 disabled:opacity-50"
           >
-            {sharing ? '分享中...' : '分享成就到群組'}
+            {sharing ? '分享中...' : '分享戰報'}
           </button>
           {shareError && (
             <p className="text-center text-xs leading-relaxed text-rose-300">{shareError}</p>
           )}
 
-          <button
-            onClick={onClose}
-            className="py-1 text-center text-xs text-slate-600 transition-colors hover:text-slate-400"
-          >
-            忍痛放棄分享
-          </button>
+          <div className="mt-1 flex items-center justify-between">
+            <button
+              type="button"
+              className="rounded-full border border-white/10 px-3 py-1.5 text-[11px] text-[#5e7796]"
+            >
+              預覽下一種橫幅 ›
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="忍痛放棄分享"
+              className="py-1 text-center text-xs text-[#5e7796] transition-colors hover:text-slate-400"
+            >
+              關閉
+            </button>
+          </div>
         </div>
       </div>
     </div>

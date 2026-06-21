@@ -1,13 +1,17 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useLiff } from '../../contexts/useLiff';
 import { waterApi } from '../../lib/liffApi';
-import type { DrinkType, SessionResponse, DrinkResponse, AchievementId } from '../../lib/liffApi';
+import type { DrinkType, SessionResponse, DrinkResponse } from '../../lib/liffApi';
 import { getErrorMessage } from '../../lib/apiError';
+import { selectHeroState } from '../../lib/waterLogic';
 import DailyProgress from '../../components/liff/DailyProgress';
 import DrinkLogger from '../../components/liff/DrinkLogger';
 import Leaderboard from '../../components/liff/Leaderboard';
 import ShareButton from '../../components/liff/ShareButton';
 import DrinkResultModal from '../../components/liff/DrinkResultModal';
+import HeroStatusCard from '../../components/liff/HeroStatusCard';
+import GroupGoalBar from '../../components/liff/GroupGoalBar';
+import LivePulse from '../../components/liff/LivePulse';
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -37,13 +41,15 @@ export default function WaterTrackerPage() {
   const [drinkResult, setDrinkResult] = useState<DrinkResponse | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // POST /session on mount (once liff is ready)
+  // POST /session on mount (once liff is ready). We intentionally do NOT gate on
+  // groupId: liff.getContext().groupId is unreliable (it can return an ephemeral
+  // value), so we let the backend resolve a stable group from the user instead.
   useEffect(() => {
-    if (!ready || !groupId) return;
+    if (!ready) return;
     setSessionLoading(true);
 
     waterApi
-      .session(groupId, undefined, idToken ?? undefined)
+      .session(groupId ?? '', undefined, idToken ?? undefined)
       .then(data => {
         setSessionData(data);
         setSessionError(null);
@@ -54,12 +60,10 @@ export default function WaterTrackerPage() {
 
   const handleDrink = useCallback(
     async (ml: number, drinkType: DrinkType) => {
-      if (!groupId) return;
       setSubmitting(true);
       try {
-        const res = await waterApi.drink(groupId, ml, drinkType, idToken ?? undefined);
+        const res = await waterApi.drink(groupId ?? '', ml, drinkType, idToken ?? undefined);
         setDrinkResult(res);
-
         setDrinkError(null);
 
         // Update leaderboard optimistically
@@ -67,7 +71,7 @@ export default function WaterTrackerPage() {
           if (!prev) return prev;
           const updatedMembers = prev.today.members.map(m =>
             m.lineUserId === res.member.lineUserId
-              ? { ...m, todayMl: res.member.todayMl, streak: res.member.streak }
+              ? { ...m, todayMl: res.member.todayMl, streak: res.member.streak, lastDrinkAt: res.member.lastDrinkAt }
               : m
           );
           updatedMembers.sort((a, b) => b.todayMl - a.todayMl);
@@ -91,6 +95,8 @@ export default function WaterTrackerPage() {
                 gapToAbove: myRow?.gapToAbove ?? null,
                 leadOverSecond: myRow?.leadOverSecond ?? null,
                 aboveDisplayName: above?.displayName ?? null,
+                aboveLastDrinkAt: prev.today.me.aboveLastDrinkAt,
+                belowDisplayName: res.belowDisplayName,
               },
             },
           };
@@ -109,6 +115,11 @@ export default function WaterTrackerPage() {
     [groupId, idToken]
   );
 
+  const handleQuickLog = useCallback(
+    (ml: number) => { handleDrink(ml, 'water').catch(() => {}); },
+    [handleDrink]
+  );
+
   // ── Render states ───────────────────────────────────────────────────────────
 
   if (liffLoading) return <Skeleton />;
@@ -119,16 +130,6 @@ export default function WaterTrackerPage() {
         <p className="text-sky-500 text-4xl">💧</p>
         <p className="text-gray-600">LIFF 初始化失敗</p>
         <p className="text-xs text-gray-400">{liffError}</p>
-      </div>
-    );
-  }
-
-  if (ready && !groupId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3 p-6 text-center">
-        <p className="text-sky-500 text-4xl">💧</p>
-        <p className="text-gray-700 font-semibold">請在群組內開啟</p>
-        <p className="text-sm text-gray-400">這個工具需要在 LINE 群組中使用</p>
       </div>
     );
   }
@@ -154,9 +155,7 @@ export default function WaterTrackerPage() {
   if (!sessionData) return <Skeleton />;
 
   const { today, member } = sessionData;
-  const modalAchievements: AchievementId[] = drinkResult
-    ? [...drinkResult.eventAchievements, ...drinkResult.newPersistentAchievements]
-    : [];
+  const heroState = selectHeroState(today, member);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white">
@@ -164,9 +163,7 @@ export default function WaterTrackerPage() {
       {/* Post-drink result modal */}
       {showModal && drinkResult && (
         <DrinkResultModal
-          member={drinkResult.member}
-          achievements={modalAchievements}
-          surpassedCount={drinkResult.surpassedCount}
+          drinkResult={drinkResult}
           idToken={idToken}
           groupId={groupId ?? ''}
           onClose={() => setShowModal(false)}
@@ -203,11 +200,17 @@ export default function WaterTrackerPage() {
           aboveDisplayName={today.me.aboveDisplayName}
         />
 
+        {/* Hero Status Card (M1, M6) */}
+        <HeroStatusCard heroState={heroState} onQuickLog={handleQuickLog} />
+
+        {/* Group Goal Bar (M3) */}
+        <GroupGoalBar group={today.group} />
+
         {/* Share button — always visible */}
         <ShareButton
           member={member}
           surpassedCount={drinkResult?.surpassedCount}
-          achievements={modalAchievements}
+          achievements={drinkResult ? [...drinkResult.eventAchievements, ...drinkResult.newPersistentAchievements] : []}
           idToken={idToken}
         />
 
@@ -223,8 +226,15 @@ export default function WaterTrackerPage() {
         {/* Leaderboard */}
         <section className="bg-white rounded-2xl p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-sky-600 mb-3">今日排行 💧</h2>
-          <Leaderboard members={today.members} myUserId={member.lineUserId} />
+          <Leaderboard
+            members={today.members}
+            myUserId={member.lineUserId}
+            myLastDrinkAt={member.lastDrinkAt}
+          />
         </section>
+
+        {/* Live Pulse (M2) */}
+        <LivePulse pulse={today.pulse} />
       </main>
     </div>
   );

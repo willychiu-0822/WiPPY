@@ -65,6 +65,7 @@ jobs:
             LLM_MODEL=gemma-4-26b-a4b-it
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             LIFF_CHANNEL_ID=${{ steps.deploy-target.outputs.LIFF_CHANNEL_ID }}
+            WATER_DEFAULT_GROUP_ID=${{ steps.deploy-target.outputs.WATER_DEFAULT_GROUP_ID }}
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -91,3 +92,26 @@ jobs:
 
       - name: Deploy Firestore rules and indexes
         run: firebase deploy --only firestore:rules,firestore:indexes --project "${{ env.FIREBASE_PROJECT_ID }}"
+
+      - name: Notify LINE group of successful deploy
+        continue-on-error: true
+        env:
+          INTERNAL_HARNESS_SECRET: ${{ secrets.INTERNAL_HARNESS_SECRET }}
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          WORKFLOW_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          LIFF_URL="https://liff.line.me/${{ steps.deploy-target.outputs.LIFF_ID }}?v=${SHORT_SHA}"
+          GROUP_ID="${{ steps.deploy-target.outputs.LIFF_DEPLOY_NOTIFY_GROUP_ID }}"
+          CLOUD_RUN_URL="${{ steps.deploy-target.outputs.CLOUD_RUN_URL }}"
+
+          PAYLOAD=$(printf '{"groupId":"%s","url":"%s","version":"%s","workflowUrl":"%s"}' \
+            "$GROUP_ID" "$LIFF_URL" "$SHORT_SHA" "$WORKFLOW_URL")
+
+          HTTP_STATUS=$(curl -s -o /tmp/notify_response.json -w "%{http_code}" \
+            -X POST "${CLOUD_RUN_URL}/api/internal/deploy-notify" \
+            -H "Content-Type: application/json" \
+            -H "x-internal-secret: ${INTERNAL_HARNESS_SECRET}" \
+            -d "$PAYLOAD")
+
+          echo "Deploy notify HTTP status: ${HTTP_STATUS}"
+          cat /tmp/notify_response.json

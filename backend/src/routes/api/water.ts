@@ -7,8 +7,10 @@ import {
   ensureIdentity,
   getMemberProfile,
   getTodayLeaderboard,
+  getGroupPulse,
   getWeeklyStats,
   logDrink,
+  resolveGroupId,
 } from '../../services/waterService';
 
 const router = express.Router();
@@ -34,18 +36,15 @@ function getCurrentUser(req: Request) {
 // POST /api/water/session
 router.post('/session', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { groupId, groupName } = req.body as { groupId?: string; groupName?: string };
-    if (!groupId?.trim()) {
-      res.status(400).json({ error: 'groupId is required' });
-      return;
-    }
+    const { groupId: requestedGroupId, groupName } = req.body as { groupId?: string; groupName?: string };
+    const groupId = await resolveGroupId(getDb(), req.liffUserId!, requestedGroupId);
 
     const identity = await ensureIdentity(
       getDb(),
-      { groupId: groupId.trim(), groupName: groupName?.trim() || undefined },
+      { groupId, groupName: groupName?.trim() || undefined },
       getCurrentUser(req)
     );
-    const today = await getTodayLeaderboard(getDb(), groupId.trim(), req.liffUserId!);
+    const today = await getTodayLeaderboard(getDb(), groupId, req.liffUserId!);
 
     res.json({
       isNewUser: identity.isNewUser,
@@ -62,17 +61,12 @@ router.post('/session', liffAuthMiddleware, async (req: Request, res: Response) 
 // POST /api/water/drink
 router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { groupId, groupName, ml, drinkType } = req.body as {
+    const { groupId: requestedGroupId, groupName, ml, drinkType } = req.body as {
       groupId?: string;
       groupName?: string;
       ml?: number;
       drinkType?: DrinkType;
     };
-
-    if (!groupId?.trim()) {
-      res.status(400).json({ error: 'groupId is required' });
-      return;
-    }
 
     if (!Number.isInteger(ml) || (ml ?? 0) <= 0) {
       res.status(400).json({ error: 'ml must be a positive integer' });
@@ -85,9 +79,10 @@ router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) =>
     }
 
     const safeMl = ml as number;
+    const groupId = await resolveGroupId(getDb(), req.liffUserId!, requestedGroupId);
     const result = await logDrink(
       getDb(),
-      groupId.trim(),
+      groupId,
       getCurrentUser(req),
       {
         ml: safeMl,
@@ -106,11 +101,7 @@ router.post('/drink', liffAuthMiddleware, async (req: Request, res: Response) =>
 // GET /api/water/group/:groupId/today
 router.get('/group/:groupId/today', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = String(req.params['groupId'] ?? '').trim();
-    if (!groupId) {
-      res.status(400).json({ error: 'groupId is required' });
-      return;
-    }
+    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
 
     await ensureIdentity(getDb(), { groupId }, getCurrentUser(req));
     const leaderboard = await getTodayLeaderboard(getDb(), groupId, req.liffUserId!);
@@ -124,11 +115,7 @@ router.get('/group/:groupId/today', liffAuthMiddleware, async (req: Request, res
 // GET /api/water/group/:groupId/me
 router.get('/group/:groupId/me', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = String(req.params['groupId'] ?? '').trim();
-    if (!groupId) {
-      res.status(400).json({ error: 'groupId is required' });
-      return;
-    }
+    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
 
     await ensureIdentity(getDb(), { groupId }, getCurrentUser(req));
     const profile = await getMemberProfile(getDb(), groupId, req.liffUserId!);
@@ -142,17 +129,26 @@ router.get('/group/:groupId/me', liffAuthMiddleware, async (req: Request, res: R
 // GET /api/water/group/:groupId/stats
 router.get('/group/:groupId/stats', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const groupId = String(req.params['groupId'] ?? '').trim();
-    if (!groupId) {
-      res.status(400).json({ error: 'groupId is required' });
-      return;
-    }
+    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
 
     const stats = await getWeeklyStats(getDb(), groupId);
     res.json(stats);
   } catch (err) {
     console.error(JSON.stringify({ event: 'water_stats_error', error: String(err) }));
     sendServerError(res, 'Failed to fetch weekly stats', err);
+  }
+});
+
+// GET /api/water/group/:groupId/pulse — BE-6 (P1)
+router.get('/group/:groupId/pulse', liffAuthMiddleware, async (req: Request, res: Response) => {
+  try {
+    const groupId = await resolveGroupId(getDb(), req.liffUserId!, String(req.params['groupId'] ?? ''));
+    const limit = Math.min(Number(req.query['limit'] ?? 20) || 20, 50);
+    const result = await getGroupPulse(getDb(), groupId, limit);
+    res.json(result);
+  } catch (err) {
+    console.error(JSON.stringify({ event: 'water_pulse_error', error: String(err) }));
+    sendServerError(res, 'Failed to fetch pulse', err);
   }
 });
 

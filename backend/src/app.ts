@@ -12,6 +12,7 @@ import { activitiesRouter } from './routes/api/activities';
 import { agentRouter } from './routes/api/agent';
 import { waterRouter } from './routes/api/water';
 import { internalRouter } from './routes/internal/harness';
+import { deployNotifyRouter } from './routes/internal/deployNotify';
 import { ensureFirebaseApp } from './firebase';
 
 export function createApp() {
@@ -36,6 +37,7 @@ export function createApp() {
   app.use('/api/agent', express.json(), agentRouter);
   app.use('/api/water', express.json(), waterRouter);
   app.use('/api/internal', express.json(), internalRouter);
+  app.use('/api/internal', express.json(), deployNotifyRouter);
 
   app.use('/webhook', webhookRouter);
 

@@ -8,6 +8,7 @@ const ACHIEVEMENT_LABELS: Record<AchievementId, string> = {
   hydration_master: '喝水狂人 🚰',
   '7_day_streak': '七日連線 🔥',
   '30_day_streak': '三十日連線 🏅',
+  daily_first: '今日開局者 ☀️',
 };
 
 interface Props {

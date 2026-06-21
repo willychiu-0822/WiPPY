@@ -15,7 +15,8 @@ export type AchievementId =
   | '30_day_streak'
   | 'hydration_master'
   | 'now_im_best'
-  | 'now_im_worst';
+  | 'now_im_worst'
+  | 'daily_first';
 
 export interface FirestoreTimestampJson {
   _seconds: number;
@@ -62,6 +63,7 @@ export interface LeaderboardRow {
   streak: number;
   gapToAbove: number | null;
   leadOverSecond: number | null;
+  lastDrinkAt: FirestoreTimestampJson | null; // ★ BE-2
 }
 
 export interface LeaderboardMe {
@@ -71,6 +73,26 @@ export interface LeaderboardMe {
   gapToAbove: number | null;
   leadOverSecond: number | null;
   aboveDisplayName: string | null;
+  aboveLastDrinkAt: FirestoreTimestampJson | null; // ★ BE-3
+  belowDisplayName: string | null;                 // ★ BE-3
+}
+
+export interface GroupGoal {                        // ★ BE-1 / M3
+  todayMl: number;
+  goalMl: number;
+  goalReached: boolean;
+  perMemberBaselineMl: number;
+  firstLoggerDisplayName: string | null;           // ★ BE-8 / M6
+}
+
+export interface PulseItem {                        // ★ BE-4 / M2
+  lineUserId: string;
+  displayName: string;
+  pictureUrl: string;
+  ml: number;
+  drinkType: DrinkType;
+  timestamp: FirestoreTimestampJson;
+  rankNow: number;
 }
 
 export interface TodayLeaderboardResponse {
@@ -78,6 +100,8 @@ export interface TodayLeaderboardResponse {
   memberCount: number;
   members: LeaderboardRow[];
   me: LeaderboardMe;
+  group: GroupGoal;   // ★ BE-1
+  pulse: PulseItem[]; // ★ BE-4
 }
 
 export interface WeeklyStatsResponse {
@@ -105,6 +129,13 @@ export interface LogDrinkResponse {
   surpassedCount: number;
   eventAchievements: AchievementId[];
   newPersistentAchievements: AchievementId[];
+  comboCount: number;            // ★ BE-5
+  groupTodayMl: number;          // ★ BE-5
+  groupGoalMl: number;           // ★ BE-5
+  groupGoalJustReached: boolean; // ★ BE-5
+  groupDrinkSequence: number;    // ★ BE-5
+  belowDisplayName: string | null; // ★ BE-5
+  isDailyFirst: boolean;         // ★ BE-8
 }
 
 export interface EnsureIdentityResponse {
@@ -140,6 +171,11 @@ interface WaterGroupDoc {
   activeSince: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  perMemberBaselineMl?: number;      // ★ BE-1 optional per-group override
+  lastGoalReachedDate?: string;      // ★ BE-5 de-dup M3 goal celebration (yyyy-MM-dd)
+  firstLoggerDate?: string;          // ★ BE-8 M6 today's first logger date
+  firstLoggerUserId?: string;        // ★ BE-8
+  firstLoggerDisplayName?: string;   // ★ BE-8
 }
 
 interface WaterMemberDoc {
@@ -310,6 +346,7 @@ function computeLeaderboardRows(members: NormalizedMember[]): LeaderboardRow[] {
       streak: member.streak,
       gapToAbove: above ? Math.max(0, above.todayMl - member.todayMl) : null,
       leadOverSecond: index === 0 ? Math.max(0, member.todayMl - (second?.todayMl ?? member.todayMl)) : null,
+      lastDrinkAt: member.lastDrinkAt ? timestampToJson(member.lastDrinkAt) : null, // ★ BE-2
     };
   });
 }
@@ -329,6 +366,8 @@ function buildMeRow(rows: LeaderboardRow[], userId: string): LeaderboardMe {
     gapToAbove: me.gapToAbove,
     leadOverSecond: me.leadOverSecond,
     aboveDisplayName: index > 0 ? rows[index - 1]?.displayName ?? null : null,
+    aboveLastDrinkAt: index > 0 ? rows[index - 1]?.lastDrinkAt ?? null : null, // ★ BE-3
+    belowDisplayName: rows[index + 1]?.displayName ?? null,                    // ★ BE-3
   };
 }
 
@@ -535,6 +574,51 @@ async function loadNormalizedMember(db: Firestore, groupId: string, userId: stri
   return member;
 }
 
+// LINE group/room ids look like "C" or "R" followed by 32 hex chars. Anything
+// else (notably the ephemeral UUIDs liff.getContext() can hand back) is rejected
+// so we never partition water data on a value that changes every launch.
+const LINE_GROUP_ID_PATTERN = /^[CR][0-9a-f]{32}$/i;
+
+export function isValidLineGroupId(groupId?: string | null): boolean {
+  return typeof groupId === 'string' && LINE_GROUP_ID_PATTERN.test(groupId.trim());
+}
+
+/**
+ * Resolves a stable group id for a request. The client-supplied value is only
+ * trusted when it is a real LINE group/room id; otherwise we fall back to the
+ * user's last known good group, then to the configured default group. This keeps
+ * a user's water records in one place even when liff.getContext() is unreliable.
+ */
+export async function resolveGroupId(
+  db: Firestore,
+  userId: string,
+  requestedGroupId?: string | null
+): Promise<string> {
+  const requested = requestedGroupId?.trim();
+  if (isValidLineGroupId(requested)) {
+    return requested!;
+  }
+
+  const userSnap = await db.collection(WATER_USERS_COLLECTION).doc(userId).get();
+  const lastGroupId = userSnap.exists ? (userSnap.data() as WaterUserDoc).lastGroupId : null;
+  if (isValidLineGroupId(lastGroupId)) {
+    return lastGroupId!;
+  }
+
+  const configuredDefault = (process.env['WATER_DEFAULT_GROUP_ID'] ?? '').trim();
+  if (isValidLineGroupId(configuredDefault)) {
+    return configuredDefault;
+  }
+
+  // Last resort: honour whatever was requested so local/dev flows keep working
+  // even without a configured default.
+  if (requested) {
+    return requested;
+  }
+
+  throw new Error(`Unable to resolve a water group for user ${userId}`);
+}
+
 export async function ensureGroup(db: Firestore, groupId: string, groupName?: string): Promise<void> {
   const now = admin.firestore.Timestamp.now();
   const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);
@@ -649,12 +733,14 @@ export async function logDrink(
 
   return db.runTransaction(async (transaction) => {
     const now = admin.firestore.Timestamp.now();
-    const [memberSnap, membersSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
+    const [groupSnap, memberSnap, membersSnap, weekRecordsSnap, todayRecordsSnap] = await Promise.all([
+      transaction.get(groupRef),
       transaction.get(memberRef),
       transaction.get(membersRef),
       transaction.get(buildRecentRecordsQuery(recordsRef, weekStart, todayStr)),
       transaction.get(buildRecentRecordsQuery(recordsRef, todayStr, todayStr)),
     ]);
+    const groupDoc = toWaterGroupDoc(groupSnap as Parameters<typeof toWaterGroupDoc>[0]);
 
     if (!memberSnap.exists) {
       throw new Error(`Water member ${user.userId} not found`);
@@ -791,6 +877,55 @@ export async function logDrink(
       eventAchievements.push('now_im_worst');
     }
 
+    // ─── BE-5: New gamification fields ────────────────────────────────────────
+
+    const baseline = getPerMemberBaseline(groupDoc);
+
+    // comboCount: records by this user in the past 90 min + 1 (this drink)
+    const ninetyMinAgoMs = now.toMillis() - 90 * 60 * 1000;
+    const comboCount =
+      todayUserRecords.filter((r) => r.timestamp.toMillis() >= ninetyMinAgoMs).length + 1;
+
+    // group totals before and after this drink
+    const beforeGroupTodayMl = normalizedMembers.reduce((sum, m) => sum + m.todayMl, 0);
+    const groupTodayMl = afterMembers.reduce((sum, m) => sum + m.todayMl, 0);
+    const groupGoalMl = afterMembers.length * baseline;
+
+    // groupDrinkSequence: position of this drink in today's group log
+    const groupDrinkSequence = todayRecordsSnap.docs.length + 1;
+
+    // groupGoalJustReached: first time today that the group crossed the goal
+    const groupGoalJustReached =
+      beforeGroupTodayMl < groupGoalMl &&
+      groupTodayMl >= groupGoalMl &&
+      (groupDoc?.lastGoalReachedDate ?? '') !== todayStr;
+
+    if (groupGoalJustReached) {
+      transaction.set(groupRef, { lastGoalReachedDate: todayStr, updatedAt: now }, { merge: true });
+    }
+
+    // belowDisplayName: the member ranked just below me after this drink
+    const belowDisplayName = afterRows[afterMe.rank]?.displayName ?? null;
+
+    // ─── BE-8: M6 daily first logger ──────────────────────────────────────────
+
+    const isDailyFirst =
+      groupDrinkSequence === 1 && (groupDoc?.firstLoggerDate ?? '') !== todayStr;
+
+    if (isDailyFirst) {
+      transaction.set(
+        groupRef,
+        {
+          firstLoggerDate: todayStr,
+          firstLoggerUserId: user.userId,
+          firstLoggerDisplayName: user.displayName,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
+      eventAchievements.push('daily_first');
+    }
+
     return {
       record: serializeWaterRecord(recordDoc),
       member: serializeWaterMember(updatedMember),
@@ -799,6 +934,70 @@ export async function logDrink(
       surpassedCount: Math.max(0, beforeMe.rank - afterMe.rank),
       eventAchievements,
       newPersistentAchievements,
+      comboCount,
+      groupTodayMl,
+      groupGoalMl,
+      groupGoalJustReached,
+      groupDrinkSequence,
+      belowDisplayName,
+      isDailyFirst,
+    };
+  });
+}
+
+// ─── BE-1: Group goal ────────────────────────────────────────────────────────
+
+function getPerMemberBaseline(group?: WaterGroupDoc | null): number {
+  return group?.perMemberBaselineMl ?? (Number(process.env['WATER_PER_MEMBER_GOAL_ML']) || 1500);
+}
+
+function computeGroupGoal(
+  members: NormalizedMember[],
+  baseline: number,
+  group: WaterGroupDoc | null,
+  todayStr: string
+): GroupGoal {
+  const todayMl = members.reduce((sum, m) => sum + m.todayMl, 0);
+  const goalMl = members.length * baseline;
+  return {
+    todayMl,
+    goalMl,
+    goalReached: todayMl >= goalMl,
+    perMemberBaselineMl: baseline,
+    firstLoggerDisplayName:
+      group?.firstLoggerDate === todayStr ? (group.firstLoggerDisplayName ?? null) : null,
+  };
+}
+
+// ─── BE-4: Pulse ─────────────────────────────────────────────────────────────
+
+async function getRecentPulse(
+  db: Firestore,
+  groupId: string,
+  limit: number,
+  todayStr: string,
+  rows: LeaderboardRow[]
+): Promise<PulseItem[]> {
+  const recordsRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId).collection('records');
+  const snap = await recordsRef
+    .where('date', '==', todayStr)
+    .orderBy('timestamp', 'desc')
+    .limit(limit)
+    .get();
+
+  const rankMap = new Map(rows.map((r) => [r.lineUserId, r.rank]));
+  const pictureMap = new Map(rows.map((r) => [r.lineUserId, r.pictureUrl]));
+
+  return snap.docs.map((doc) => {
+    const record = toWaterRecordDoc(doc);
+    return {
+      lineUserId: record.lineUserId,
+      displayName: record.displayName,
+      pictureUrl: pictureMap.get(record.lineUserId) ?? '',
+      ml: record.ml,
+      drinkType: record.drinkType,
+      timestamp: timestampToJson(record.timestamp),
+      rankNow: rankMap.get(record.lineUserId) ?? 0,
     };
   });
 }
@@ -809,21 +1008,41 @@ export async function getTodayLeaderboard(
   lineUserId: string
 ): Promise<TodayLeaderboardResponse> {
   const todayStr = getTaipeiDateString();
+  const pulseLimit = Number(process.env['WATER_PULSE_DEFAULT_LIMIT']) || 20;
   const groupRef = db.collection(WATER_GROUPS_COLLECTION).doc(groupId);
   const [groupSnap, members] = await Promise.all([
     groupRef.get(),
     refreshMembersForToday(db, groupId, todayStr),
   ]);
 
-  const group = toWaterGroupDoc(groupSnap);
+  const groupDoc = toWaterGroupDoc(groupSnap);
   const rows = computeLeaderboardRows(members);
+  const baseline = getPerMemberBaseline(groupDoc);
+  const pulse = await getRecentPulse(db, groupId, pulseLimit, todayStr, rows);
 
   return {
-    groupName: group?.groupName ?? '',
+    groupName: groupDoc?.groupName ?? '',
     memberCount: rows.length,
     members: rows,
     me: buildMeRow(rows, lineUserId),
+    group: computeGroupGoal(members, baseline, groupDoc, todayStr),
+    pulse,
   };
+}
+
+// ─── BE-6: Standalone pulse endpoint ─────────────────────────────────────────
+
+export async function getGroupPulse(
+  db: Firestore,
+  groupId: string,
+  limit: number
+): Promise<{ pulse: PulseItem[] }> {
+  const todayStr = getTaipeiDateString();
+  const safeLimit = Math.min(Math.max(1, limit), 50);
+  const members = await refreshMembersForToday(db, groupId, todayStr);
+  const rows = computeLeaderboardRows(members);
+  const pulse = await getRecentPulse(db, groupId, safeLimit, todayStr, rows);
+  return { pulse };
 }
 
 export async function getMemberProfile(

@@ -70,20 +70,29 @@ const { mockSessionData, mockDrinkResponse } = vi.hoisted(() => {
       groupName: '測試群',
       memberCount: 2,
       members: [
-        { rank: 1, lineUserId: 'Utest1', displayName: 'Test User', pictureUrl: '', todayMl: 300, streak: 2, gapToAbove: null, leadOverSecond: 100 },
-        { rank: 2, lineUserId: 'Uother', displayName: 'Other', pictureUrl: '', todayMl: 200, streak: 0, gapToAbove: 100, leadOverSecond: null },
+        { rank: 1, lineUserId: 'Utest1', displayName: 'Test User', pictureUrl: '', todayMl: 300, streak: 2, gapToAbove: null, leadOverSecond: 100, lastDrinkAt: null },
+        { rank: 2, lineUserId: 'Uother', displayName: 'Other', pictureUrl: '', todayMl: 200, streak: 0, gapToAbove: 100, leadOverSecond: null, lastDrinkAt: null },
       ],
-      me: { lineUserId: 'Utest1', rank: 1, todayMl: 300, gapToAbove: null, leadOverSecond: 100, aboveDisplayName: null },
+      me: { lineUserId: 'Utest1', rank: 1, todayMl: 300, gapToAbove: null, leadOverSecond: 100, aboveDisplayName: null, aboveLastDrinkAt: null, belowDisplayName: null },
+      group: { todayMl: 500, goalMl: 3000, goalReached: false, perMemberBaselineMl: 1500, firstLoggerDisplayName: null },
+      pulse: [],
     },
   };
   const drinkResponse = {
     record: { id: 'rec1', lineUserId: 'Utest1', displayName: 'Test User', ml: 200, drinkType: 'water' as const, date: '2026-06-20', timestamp: { _seconds: 0, _nanoseconds: 0 } },
     member: { ...sessionData.member, todayMl: 500 },
     rankBefore: 1,
-    rankAfter: 1,
+    rankAfter: 2,
     surpassedCount: 0,
     eventAchievements: ['now_im_best' as const],
     newPersistentAchievements: [],
+    comboCount: 1,
+    groupTodayMl: 700,
+    groupGoalMl: 3000,
+    groupGoalJustReached: false,
+    groupDrinkSequence: 3,
+    belowDisplayName: null,
+    isDailyFirst: false,
   };
   return { mockSessionData: sessionData, mockDrinkResponse: drinkResponse };
 });
@@ -276,11 +285,19 @@ describe('WaterTrackerPage — drink error handling', () => {
   });
 });
 
-describe('WaterTrackerPage — non-group guard', () => {
-  it('shows friendly message when not in a group context', async () => {
+describe('WaterTrackerPage — unreliable group context', () => {
+  it('still starts a session (backend resolves the group) when context has no groupId', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    (waterApi.session as ReturnType<typeof vi.fn>).mockClear();
+
     mockUseLiff.groupId = null;
     render(<Wrapper />);
-    await waitFor(() => expect(screen.getByText('請在群組內開啟')).toBeInTheDocument());
+
+    // No "open me in a group" dead-end — the tracker loads and the session call
+    // is made with an empty groupId so the backend can resolve a stable group.
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+    expect(waterApi.session).toHaveBeenCalledWith('', undefined, 'mock-id-token');
+
     mockUseLiff.groupId = 'Ctest1'; // restore
   });
 });

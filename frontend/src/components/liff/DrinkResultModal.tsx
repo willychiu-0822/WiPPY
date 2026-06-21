@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { AchievementId, WaterMember } from '../../lib/liffApi';
+import type { AchievementId, DrinkResponse } from '../../lib/liffApi';
 import { waterApi } from '../../lib/liffApi';
 import { getErrorMessage } from '../../lib/apiError';
 import { buildWaterShareMessage, shareLineMessage } from '../../lib/liffShare';
+import { selectResultVariant } from '../../lib/waterLogic';
 
 // ─── Achievement display config ───────────────────────────────────────────────
 
@@ -13,14 +14,34 @@ const ACHIEVEMENT_CONFIG: Record<AchievementId, { emoji: string; label: string; 
   hydration_master: { emoji: '🚰', label: '喝水狂人！',     sub: '今日已記錄 5 次以上，你太棒了', gradient: 'from-teal-400 via-emerald-300 to-teal-400' },
   '7_day_streak':   { emoji: '🔥', label: '七日連線！',     sub: '連續 7 天都有記錄，習慣養成中', gradient: 'from-orange-400 via-red-300 to-orange-400' },
   '30_day_streak':  { emoji: '🏅', label: '三十日連線！',   sub: '連續 30 天，你是喝水傳說',       gradient: 'from-purple-400 via-pink-300 to-purple-400' },
+  daily_first:      { emoji: '☀️', label: '今日開局者！',   sub: '你是今天群組第一個喝水的人',     gradient: 'from-yellow-400 via-amber-300 to-orange-400' },
 };
+
+// ─── Variant banner config ────────────────────────────────────────────────────
+
+interface Banner { emoji: string; label: string; sub: string; gradient: string }
+
+function getVariantBanner(dr: DrinkResponse): Banner | null {
+  switch (selectResultVariant(dr)) {
+    case 'daily_first':
+      return { emoji: '☀️', label: '今日開局者！',   sub: '你是今天群組第一個喝水的人',   gradient: 'from-yellow-400 via-amber-300 to-orange-400' };
+    case 'group_goal':
+      return { emoji: '🎯', label: '群組達標！',      sub: '大家一起喝到今日目標了',        gradient: 'from-emerald-400 via-green-300 to-teal-400' };
+    case 'reversal':
+      return { emoji: '🚀', label: '逆轉勝！',        sub: `超越了 ${dr.surpassedCount} 位成員`, gradient: 'from-indigo-400 via-purple-300 to-indigo-400' };
+    case 'combo':
+      return { emoji: '💥', label: `${dr.comboCount} 連喝！`, sub: '過去 90 分鐘連喝數次',  gradient: 'from-rose-400 via-pink-300 to-rose-400' };
+    case 'rare':
+      return { emoji: '✨', label: '里程碑！',        sub: `群組第 ${dr.groupDrinkSequence} 杯水`, gradient: 'from-violet-400 via-purple-300 to-fuchsia-400' };
+    default:
+      return null;
+  }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  member: WaterMember;
-  achievements: AchievementId[];
-  surpassedCount: number;
+  drinkResult: DrinkResponse;
   idToken: string | null;
   groupId: string;
   onClose: () => void;
@@ -28,11 +49,20 @@ interface Props {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function DrinkResultModal({ member, achievements, surpassedCount, idToken, groupId: _groupId, onClose }: Props) {
+export default function DrinkResultModal({ drinkResult, idToken, groupId: _groupId, onClose }: Props) {
   const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
 
-  const primary = achievements[0] ? ACHIEVEMENT_CONFIG[achievements[0]] : null;
+  const {
+    member, eventAchievements, newPersistentAchievements,
+    surpassedCount, groupGoalJustReached, groupGoalMl, groupTodayMl,
+    isDailyFirst, belowDisplayName,
+  } = drinkResult;
+
+  const achievements: AchievementId[] = [...eventAchievements, ...newPersistentAchievements];
+  const variantBanner = getVariantBanner(drinkResult);
+  const achievementPrimary = achievements[0] ? ACHIEVEMENT_CONFIG[achievements[0]] : null;
+  const banner = variantBanner ?? achievementPrimary;
 
   async function handleShare() {
     if (sharing) return;
@@ -46,6 +76,9 @@ export default function DrinkResultModal({ member, achievements, surpassedCount,
         taunt,
         surpassedCount,
         achievement: achievements[0] ?? null,
+        isDailyFirst,
+        belowDisplayName,
+        groupGoalJustReached,
       }));
 
       if (result === 'cancelled') {
@@ -66,20 +99,18 @@ export default function DrinkResultModal({ member, achievements, surpassedCount,
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-black/40">
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
 
-        {/* Achievement banner */}
-        {primary ? (
-          <div className={`bg-gradient-to-br ${primary.gradient} p-7 text-center relative overflow-hidden`}>
-            {/* Decorative sparkles */}
+        {/* Banner */}
+        {banner ? (
+          <div className={`bg-gradient-to-br ${banner.gradient} p-7 text-center relative overflow-hidden`}>
             <div className="absolute top-3 left-4 text-white/60 text-xl select-none">✨</div>
             <div className="absolute top-4 right-5 text-white/60 text-lg select-none">⭐</div>
             <div className="absolute bottom-3 left-8 text-white/50 text-sm select-none">✨</div>
             <div className="absolute bottom-4 right-6 text-white/60 text-xl select-none">⭐</div>
 
-            <div className="text-7xl mb-3 drop-shadow-lg">{primary.emoji}</div>
-            <p className="text-2xl font-black text-white drop-shadow-sm tracking-tight">{primary.label}</p>
-            <p className="text-sm text-white/80 mt-1 font-medium">{primary.sub}</p>
+            <div className="text-7xl mb-3 drop-shadow-lg">{banner.emoji}</div>
+            <p className="text-2xl font-black text-white drop-shadow-sm tracking-tight">{banner.label}</p>
+            <p className="text-sm text-white/80 mt-1 font-medium">{banner.sub}</p>
 
-            {/* Extra achievements */}
             {achievements.length > 1 && (
               <div className="flex justify-center gap-2 mt-3">
                 {achievements.slice(1).map(id => (
@@ -97,7 +128,9 @@ export default function DrinkResultModal({ member, achievements, surpassedCount,
 
         {/* Stats */}
         <div className="px-6 py-5 text-center border-b border-gray-100">
-          <p className="text-4xl font-black text-sky-700">{Math.round(member.todayMl)} <span className="text-xl font-semibold text-sky-400">ml</span></p>
+          <p className="text-4xl font-black text-sky-700">
+            {Math.round(member.todayMl)} <span className="text-xl font-semibold text-sky-400">ml</span>
+          </p>
           <p className="text-sm text-gray-400 mt-1">今日累計</p>
           {surpassedCount > 0 && (
             <p className="text-sm text-indigo-500 font-semibold mt-2">🚀 超越了 {surpassedCount} 位成員</p>
@@ -105,6 +138,12 @@ export default function DrinkResultModal({ member, achievements, surpassedCount,
           {member.streak > 1 && (
             <p className="text-sm text-orange-400 font-medium mt-1">🔥 連續 {member.streak} 天</p>
           )}
+          {groupGoalJustReached && (
+            <p className="text-sm text-emerald-500 font-semibold mt-2">
+              🎯 你幫群組達成 {Math.round(groupGoalMl)} ml 目標！
+            </p>
+          )}
+          <p className="text-xs text-gray-300 mt-2">群組今日 {Math.round(groupTodayMl)} ml</p>
         </div>
 
         {/* Actions */}

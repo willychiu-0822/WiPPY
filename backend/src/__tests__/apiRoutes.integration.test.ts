@@ -324,6 +324,34 @@ describe('backend API route integration safety net', () => {
     });
   });
 
+  it('falls back to the production LIFF URL when water entry env is missing', async () => {
+    delete process.env.WATER_LIFF_BASE_URL;
+    delete process.env.LIFF_BASE_URL;
+    delete process.env.FIREBASE_HOSTING_URL;
+    delete process.env.LIFF_PATH;
+    mockGetDb.mockReturnValue({
+      collection: jest.fn((name: string) => ({
+        doc: jest.fn(() => ({
+          get: jest.fn().mockResolvedValue(
+            name === 'groups'
+              ? { exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }
+              : { exists: true, data: () => ({ isEnabled: false }) }
+          ),
+        })),
+      })),
+    });
+
+    const res = await request(server, 'GET', '/api/groups/group_a/water-config');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      groupId: 'group_a',
+      groupName: 'VIP group',
+      enabled: false,
+      entryUrl: 'https://wippy-mvp.web.app/liff/water?wg=group_a',
+    });
+  });
+
   it('enables water competition for an owned group and auto-sends the entry URL', async () => {
     process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
     process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';

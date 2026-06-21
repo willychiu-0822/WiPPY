@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FirestoreTimestamp, LeaderboardRow } from '../../lib/liffApi';
+import { computeFocusScrollTop } from '../../lib/leaderboardFocus';
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 const RANK_COLORS: Record<number, string> = {
@@ -32,7 +33,25 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt, classNam
     const row = myRowRef.current;
     if (!scroller || !row) return;
 
-    const top = Math.max(0, row.offsetTop - (scroller.clientHeight / 2) + (row.clientHeight / 2));
+    // Measure the row's position relative to the scroller via bounding rects.
+    // offsetTop is relative to the nearest positioned ancestor (offsetParent),
+    // which is NOT the scroller here — using it over-scrolls and can push the
+    // top-ranked row (e.g. rank 1) out of view entirely.
+    const getRect = row.getBoundingClientRect?.bind(row);
+    const getScrollerRect = scroller.getBoundingClientRect?.bind(scroller);
+    if (!getRect || !getScrollerRect) return;
+
+    const rowRect = getRect();
+    const scrollerRect = getScrollerRect();
+    const top = computeFocusScrollTop({
+      rowTop: rowRect.top,
+      scrollerTop: scrollerRect.top,
+      scrollerScrollTop: scroller.scrollTop,
+      scrollerClientHeight: scroller.clientHeight,
+      scrollerScrollHeight: scroller.scrollHeight,
+      rowHeight: row.clientHeight,
+    });
+
     if (typeof scroller.scrollTo === 'function') {
       scroller.scrollTo({ top, behavior: 'smooth' });
     } else {

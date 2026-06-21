@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import type { FirestoreTimestamp, LeaderboardRow } from '../../lib/liffApi';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
+const RANK_COLORS: Record<number, string> = {
+  1: '#fbbf24',
+  2: '#cbd5e1',
+  3: '#d8884a',
+};
 
 function tsToMs(ts: FirestoreTimestamp): number {
   return ts._seconds * 1000 + Math.floor(ts._nanoseconds / 1e6);
@@ -28,7 +32,7 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props)
     <div className="flex flex-col gap-2">
       {members.map(row => {
         const isMe = row.lineUserId === myUserId;
-        const medal = row.rank <= 3 ? MEDALS[row.rank - 1] : null;
+        const medalBg = RANK_COLORS[row.rank];
         const isActive = row.lastDrinkAt != null
           && (now - tsToMs(row.lastDrinkAt)) < FIFTEEN_MIN_MS;
         const isOvertaker = !isMe
@@ -41,14 +45,15 @@ export default function Leaderboard({ members, myUserId, myLastDrinkAt }: Props)
           <div
             key={row.lineUserId}
             data-testid={isActive ? 'row-active' : undefined}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition-colors ${
+            className={`flex items-center gap-[11px] rounded-[15px] px-[11px] py-[9px] transition-colors ${
               isMe ? 'border border-sky-300/40 bg-sky-400/15' : 'border border-white/5 bg-white/[.025]'
             }`}
           >
-            <span className={`flex h-7 w-7 flex-none items-center justify-center rounded-xl text-center text-sm font-black leading-none ${
-              row.rank <= 3 ? 'bg-amber-300 text-[#03060e]' : 'text-slate-500'
-            }`}>
-              {medal ?? row.rank}
+            <span
+              className="flex h-6 w-6 flex-none items-center justify-center rounded-lg text-center font-['Archivo'] text-xs font-black leading-none"
+              style={medalBg ? { backgroundColor: medalBg, color: '#03060e' } : { color: '#5e7796' }}
+            >
+              {row.rank}
             </span>
 
             <div className={`h-10 w-10 flex-shrink-0 overflow-hidden rounded-full ${

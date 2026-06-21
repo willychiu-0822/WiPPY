@@ -5,26 +5,33 @@ import { relativeTimeFromTs } from '../../lib/waterLogic';
 interface Props {
   pulse: PulseItem[];
   compact?: boolean;
+  onOpenHistory?: () => void;
+  onOpenProfile?: () => void;
 }
 
 const FIFTEEN_MIN_MS = 15 * 60 * 1000;
 
-export default function LivePulse({ pulse, compact = false }: Props) {
+export default function LivePulse({ pulse, compact = false, onOpenHistory, onOpenProfile }: Props) {
   const [now] = useState(() => Date.now());
 
   if (pulse.length === 0) {
     return (
-      <div data-testid="pulse-empty" className={compact ? 'rounded-full border border-white/10 bg-white/[.035] px-4 py-3 text-center' : 'rounded-3xl border border-white/10 bg-white/[.035] p-4 text-center'}>
+      <button
+        type="button"
+        onClick={compact ? onOpenHistory : undefined}
+        data-testid="pulse-empty"
+        className={compact ? 'w-full rounded-full border border-white/10 bg-white/[.035] px-4 py-3 text-center' : 'rounded-3xl border border-white/10 bg-white/[.035] p-4 text-center'}
+      >
         <p className="text-sm text-slate-400">今天還沒有人開喝</p>
-      </div>
+      </button>
     );
   }
 
   if (compact) {
     const loop = [...pulse, ...pulse];
     return (
-      <div className="flex items-center overflow-hidden rounded-full border border-white/10 bg-white/[.035]">
-        <div className="min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_100%)]">
+      <div className="flex items-center overflow-hidden rounded-[22px] border border-white/[.06] bg-white/[.035]">
+        <button type="button" onClick={onOpenHistory} className="block min-w-0 flex-1 overflow-hidden p-0 text-left [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_100%)]">
           <div className="wb-marquee flex w-max gap-2 px-3 py-2">
             {loop.map((item, i) => {
               const ageMs = now - item.timestamp._seconds * 1000;
@@ -45,8 +52,11 @@ export default function LivePulse({ pulse, compact = false }: Props) {
               );
             })}
           </div>
-        </div>
-        <div className="m-1 flex h-9 w-9 flex-none items-center justify-center rounded-full border border-sky-300/30 bg-sky-400/15 text-sm font-black text-sky-200">你</div>
+        </button>
+        <button type="button" onClick={onOpenProfile} className="relative m-[3px_3px_3px_0] flex h-[38px] w-[38px] flex-none items-center justify-center rounded-full border border-sky-300/30 bg-sky-400/15 text-sm font-black text-sky-200">
+          你
+          <span className="absolute bottom-px right-px h-[9px] w-[9px] rounded-full border-2 border-[#0a1424] bg-emerald-500" />
+        </button>
       </div>
     );
   }

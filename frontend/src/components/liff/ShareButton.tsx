@@ -47,9 +47,10 @@ export default function ShareButton({ member, surpassedCount = 0, achievements =
       <button
         onClick={handleShare}
         disabled={sharing}
-        className="min-h-[54px] w-full rounded-[18px] bg-gradient-to-r from-[#06c755] to-[#22c55e] text-sm font-black text-white shadow-xl shadow-emerald-950/40 transition hover:brightness-110 active:scale-95 disabled:opacity-40"
+        className="flex min-h-[54px] w-full items-center justify-center gap-[9px] rounded-[18px] bg-gradient-to-r from-[#06c755] to-[#22c55e] text-base font-black text-white shadow-xl shadow-emerald-950/40 transition hover:brightness-110 active:scale-95 disabled:opacity-40"
       >
-        {sharing ? '分享中...' : '分享喝水戰績到群組'}
+        {!sharing && <span className="inline-block h-[9px] w-[9px] rounded-sm bg-white" />}
+        {sharing ? '分享中...' : '分享我的戰報到群組'}
       </button>
       {shareError && (
         <p className="text-center text-xs text-rose-300">{shareError}</p>

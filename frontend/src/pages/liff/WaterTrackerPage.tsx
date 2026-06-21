@@ -251,52 +251,13 @@ export default function WaterTrackerPage() {
   const heroState = selectHeroState(today, member);
   const activeCount = today.members.filter((item) => item.todayMl > 0).length;
 
-  const scenarioChips = ['一般追趕', '被超越', '連線告急', '守擂第一', '冷啟動'];
-
   return (
-    <div className="min-h-screen min-w-full w-max bg-[radial-gradient(120%_80%_at_30%_0%,#0a1830_0%,#050a16_55%,#03060e_100%)] p-10 text-sky-50">
-      <div className="mb-1.5 flex items-center gap-3.5">
-        <div className="h-[9px] w-[9px] rounded-full bg-sky-400 shadow-[0_0_12px_2px_#38bdf8]" />
-        <h1 className="m-0 font-['Archivo'] text-[22px] font-black tracking-normal text-[#eaf6ff]">WiPPY · 喝水戰隊</h1>
-        <span className="font-['Archivo'] text-xs uppercase tracking-[.1em] text-[#5e7796]">LINE LIFF · Group Hydration Battle</span>
-      </div>
-      <p className="mb-[22px] ml-[23px] max-w-[680px] text-[13px] text-[#6b85a6]">點下方情境切換英雄卡狀態 · 在手機內記錄一杯會觸發結算橫幅 · 右側為分享回群組的 LINE 卡片</p>
-
-      <div className="mb-[26px] ml-[23px] flex flex-wrap items-center gap-2">
-        <span className="mr-1 font-['Archivo'] text-[11px] uppercase tracking-[.14em] text-[#5e7796]">情境</span>
-        {scenarioChips.map((chip, index) => (
-          <button
-            key={chip}
-            type="button"
-            className={`min-h-[38px] rounded-full px-3.5 text-[13px] font-bold transition hover:brightness-110 ${
-              index === 0
-                ? 'border border-transparent bg-[linear-gradient(135deg,#38bdf8,#2563eb)] text-[#03060e]'
-                : 'border border-white/10 bg-white/[.04] text-[#9fb6d2]'
-            }`}
-          >
-            {chip}
-          </button>
-        ))}
-      </div>
-
-      <div className="flex items-start gap-9">
-        <div className="flex-none">
-          <div className="mb-2.5 pl-1 font-['Archivo'] text-[11px] uppercase tracking-[.14em] text-[#6b85a6]">主畫面 · In-App</div>
-      <div className="relative h-[844px] w-[390px] rounded-[46px] bg-[#03060e] p-[11px] shadow-[0_0_0_2px_#1b2942,0_40px_80px_-20px_rgba(0,0,0,.8),inset_0_0_0_1px_rgba(255,255,255,.04)]">
-        <div className="absolute left-1/2 top-[11px] z-[60] h-[30px] w-32 -translate-x-1/2 rounded-b-[18px] bg-[#03060e]" />
-        <div className={`wb-scroll relative h-full w-full overflow-x-hidden rounded-[36px] bg-[linear-gradient(180deg,#081428_0%,#050b18_45%,#04080f_100%)] transition-[padding-top] duration-500 ${heroExpanded ? 'overflow-y-hidden pt-20' : 'overflow-y-auto pt-0'}`}>
+    <div className={`wb-scroll relative min-h-screen overflow-x-hidden bg-[linear-gradient(180deg,#081428_0%,#050b18_45%,#04080f_100%)] text-sky-50 transition-[padding-top] duration-500 ${heroExpanded ? 'overflow-y-hidden pt-20' : 'overflow-y-auto pt-0'}`}>
         <header className="px-[14px] pt-[14px]">
-          <div className={`mb-2 flex h-[44px] items-start justify-between px-[10px] transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-12 opacity-100'}`}>
-            <span className="font-['Archivo'] text-sm font-black text-sky-50">9:41</span>
-            <span className="font-['Archivo'] text-[11px] font-bold tracking-widest text-slate-400">5G&nbsp;&nbsp;100%</span>
-          </div>
-
-          <button type="button" onClick={() => setHistoryOpen(true)} className="block w-full text-left">
-            <LivePulse pulse={today.pulse} compact />
-          </button>
+          <LivePulse pulse={today.pulse} compact onOpenHistory={() => setHistoryOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
 
           <div className={`mt-[10px] overflow-hidden rounded-[18px] border border-white/[.06] bg-white/[.035] transition-all duration-500 ${heroExpanded ? 'max-h-0 opacity-0' : 'max-h-60 p-[14px_16px] opacity-100'}`}>
-            <div className="flex items-start justify-between gap-3">
+            <div className="mb-[11px] flex items-start justify-between gap-[14px]">
               <div className="min-w-0">
                 <p className="text-lg font-black leading-tight text-sky-50">{today.groupName || '喝水戰隊'}</p>
                 <p className="mt-1 text-xs font-medium text-slate-500">
@@ -304,27 +265,27 @@ export default function WaterTrackerPage() {
                 </p>
                 <span className="sr-only">{today.memberCount} 位成員</span>
               </div>
-              {profile && (
-                <button type="button" onClick={() => setProfileOpen(true)} className="flex flex-none flex-col items-end gap-1">
-                  {profile.pictureUrl ? (
-                    <img src={profile.pictureUrl} alt={profile.displayName} className="h-10 w-10 rounded-full border border-sky-300/40 object-cover" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full border border-sky-300/40 bg-sky-400/20 text-sm font-black text-sky-200">
-                      {profile.displayName.charAt(0)}
-                    </div>
-                  )}
-                  <span className="max-w-20 truncate text-[11px] font-bold text-slate-400">{profile.displayName}</span>
-                </button>
-              )}
+              <div className="flex-none text-right">
+                <div className="font-['Archivo'] text-[10px] font-bold uppercase tracking-[.15em] text-[#7fdcff]">Group Tide</div>
+                <div className="mt-0.5 font-['Archivo'] text-[15px] font-black text-[#eaf6ff]">
+                  <span className="text-[#38bdf8]">{(today.group.todayMl / 1000).toFixed(1)}L</span>
+                  <span className="text-[#5e7796]"> / {(today.group.goalMl / 1000).toFixed(1)}L</span>
+                  <span className="text-[13px] font-bold text-[#9fb6d2]"> · {today.group.goalMl > 0 ? Math.min(100, Math.round((today.group.todayMl / today.group.goalMl) * 100)) : 0}%</span>
+                </div>
+              </div>
             </div>
-            <div className="mt-3">
-              <GroupGoalBar group={today.group} compact />
-            </div>
+            <GroupGoalBar group={today.group} compact />
           </div>
         </header>
 
         <main className="px-[14px] pb-24 pt-3">
-          <HeroStatusCard heroState={heroState} onQuickLog={handleHeroAction} todayMl={today.me.todayMl} expanded={heroExpanded}>
+          <HeroStatusCard
+            heroState={heroState}
+            onQuickLog={handleHeroAction}
+            todayMl={today.me.todayMl}
+            rankLabel={`第 ${today.me.rank} 名`}
+            expanded={heroExpanded}
+          >
             <DrinkLogger
               key={suggestionKey}
               onSubmit={handleDrink}
@@ -415,112 +376,6 @@ export default function WaterTrackerPage() {
           </div>
         </>
       )}
-        </div>
-      </div>
-        </div>
-        <ShareCardRail
-          member={member}
-          group={today.group}
-          groupName={today.groupName}
-          surpassedCount={drinkResult?.surpassedCount ?? 0}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ShareCardRail(props: {
-  member: { todayMl: number };
-  group: { todayMl: number; goalMl: number };
-  groupName: string;
-  surpassedCount: number;
-}) {
-  const groupPct = props.group.goalMl > 0 ? Math.min(100, Math.round((props.group.todayMl / props.group.goalMl) * 100)) : 0;
-
-  return (
-    <div className="flex flex-none flex-col gap-[30px]">
-      <div>
-        <div className="mb-2.5 pl-1 font-['Archivo'] text-[11px] uppercase tracking-[.14em] text-[#6b85a6]">分享卡 A · 嗆聲戰報</div>
-        <LineShareCard
-          variant="taunt"
-          title={`我超越了 ${props.surpassedCount > 0 ? `${props.surpassedCount} 人` : '阿華'}`}
-          subtitle="換你了"
-          metricLabel="我的名次"
-          metricValue={`第 2 名 · ${Math.round(props.member.todayMl)} ml`}
-        />
-      </div>
-
-      <div className="w-[300px] rounded-2xl border border-orange-300/20 bg-white/[.03] p-[14px_16px] text-xs leading-7 text-[#9fb6d2]">
-        <div className="mb-1.5 font-['Archivo'] text-[10px] font-black uppercase tracking-[.14em] text-[#ffb866]">LINE Flex 可行性</div>
-        <div className="mb-1.5">大致可行，但兩處要改用 Flex 支援的做法：</div>
-        <div className="flex gap-2"><span className="flex-none text-emerald-300">可</span><span>漸層 header、名次文字、綠色 CTA 皆原生支援。</span></div>
-        <div className="flex gap-2"><span className="flex-none text-[#ffb866]">改</span><span>動態波浪 SVG 無法跑動畫 → 改成預先算圖的 hero image。</span></div>
-        <div className="flex gap-2"><span className="flex-none text-[#ffb866]">改</span><span>頭像重疊用 position:absolute + offset 疊放。</span></div>
-      </div>
-
-      <div>
-        <div className="mb-2.5 pl-1 font-['Archivo'] text-[11px] uppercase tracking-[.14em] text-[#6b85a6]">分享卡 B · 群組達標</div>
-        <LineShareCard
-          variant="group"
-          title="群組今天達標了"
-          subtitle={`${(props.group.goalMl / 1000).toFixed(0)}L 全數補滿`}
-          metricLabel="今日群組水位"
-          metricValue={`${(props.group.todayMl / 1000).toFixed(1)}L / ${(props.group.goalMl / 1000).toFixed(0)}L · ${groupPct}%`}
-        />
-      </div>
-
-      <div className="w-[300px] rounded-2xl border border-white/[.06] bg-white/[.03] p-[14px_16px] text-xs leading-7 text-[#6b85a6]">
-        <div className="mb-1.5 font-['Archivo'] text-[10px] font-black uppercase tracking-[.14em] text-[#7fdcff]">IA 重構</div>
-        次要內容（成就 / 週統計 / 設定）收進右上頭像抽屜；完整動態歷史收進 Live 點擊後的底部抽屜，主畫面只留「狀態 → 行動 → 競爭」三層。
-      </div>
-    </div>
-  );
-}
-
-function LineShareCard(props: {
-  variant: 'taunt' | 'group';
-  title: string;
-  subtitle: string;
-  metricLabel: string;
-  metricValue: string;
-}) {
-  const gradient = props.variant === 'group'
-    ? 'linear-gradient(160deg,#34d399,#059669 60%,#047857)'
-    : 'linear-gradient(160deg,#ff5a5f,#e11d48 60%,#9f1239)';
-  const avatar = props.variant === 'group'
-    ? 'linear-gradient(140deg,#34d399,#059669)'
-    : 'linear-gradient(140deg,#38bdf8,#2563eb)';
-
-  return (
-    <div className="w-[300px] overflow-hidden rounded-[22px] bg-[#8aa0b8] p-[16px_14px_18px]">
-      <div className="flex items-end gap-2">
-        <div className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-full text-[13px] font-black text-[#03060e]" style={{ background: avatar }}>你</div>
-        <div className="max-w-[240px] overflow-hidden rounded-[6px_18px_18px_18px] bg-white shadow-[0_2px_6px_rgba(0,0,0,.12)]">
-          <div className="relative h-24 overflow-hidden" style={{ background: gradient }}>
-            <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="wb-wave absolute -bottom-1 left-0 h-[34px] w-[200%]">
-              <path d="M0 20 q37.5 -15 75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 t75 0 V40 H0 Z" fill="rgba(255,255,255,.28)" />
-            </svg>
-            <div className="relative z-10 p-[14px_16px]">
-              <div className="font-['Archivo'] text-[9px] font-black uppercase tracking-[.14em] text-white/85">WiPPY · 喝水戰隊</div>
-              <div className="mt-1 text-[19px] font-black leading-[1.15] text-white">{props.title}<br />{props.subtitle}</div>
-            </div>
-          </div>
-          <div className="p-[13px_16px_16px]">
-            <div className="mb-3 flex items-center gap-2.5">
-              <div className="flex">
-                <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-white bg-[#fbbf24] text-xs font-black text-[#3b2606]">明</div>
-                <div className="-ml-[9px] flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-white bg-[#38bdf8] text-xs font-black text-[#03060e]">你</div>
-                <div className="-ml-[9px] flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-white bg-[#a78bfa] text-xs font-black text-[#1e1442]">華</div>
-              </div>
-              <div className="flex-1">
-                <div className="text-[11px] text-slate-400">{props.metricLabel}</div>
-                <div className="font-['Archivo'] text-[15px] font-black text-slate-900">{props.metricValue}</div>
-              </div>
-            </div>
-            <div className="flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#06C755] text-sm font-black text-white">我也要記錄</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

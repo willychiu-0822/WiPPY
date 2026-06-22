@@ -24,8 +24,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function FallbackRoute({ user }: { user: unknown }) {
   const location = useLocation();
-  if (hasWaterEntryGroup(location.search)) {
-    return <Navigate to={`/liff/water${location.search}`} replace />;
+  if (hasWaterEntryGroup(location.search, location.hash)) {
+    return <Navigate to={`/liff/water${location.search}${location.hash}`} replace />;
   }
   return <Navigate to={user ? '/groups' : '/login'} replace />;
 }

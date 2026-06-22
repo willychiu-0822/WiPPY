@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { ReactNode } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLiff } from '../../contexts/useLiff';
 import { waterApi } from '../../lib/liffApi';
@@ -71,6 +71,118 @@ function GroupSelector(props: {
   );
 }
 
+type ManualEntry = {
+  groupId: string;
+  groupName?: string;
+  displayName?: string;
+};
+
+function EmergencyEntryPanel(props: {
+  initialDisplayName?: string;
+  submitting: boolean;
+  onSubmit: (entry: ManualEntry) => void;
+  onClose: () => void;
+}) {
+  const { initialDisplayName = '', submitting, onSubmit, onClose } = props;
+  const [displayName, setDisplayName] = useState(initialDisplayName);
+  const [groupId, setGroupId] = useState('');
+  const [groupName, setGroupName] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const normalizedGroupId = groupId.trim();
+    if (!LINE_GROUP_ID_PATTERN.test(normalizedGroupId)) {
+      setError('請輸入有效的 LINE 群組或聊天室 ID。');
+      return;
+    }
+
+    onSubmit({
+      groupId: normalizedGroupId,
+      groupName: groupName.trim() || undefined,
+      displayName: displayName.trim() || undefined,
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] flex h-[100dvh] items-center justify-center overflow-hidden bg-[#03060e]/75 p-[18px] backdrop-blur-md">
+      <form
+        onSubmit={handleSubmit}
+        className="flex max-h-[calc(100dvh-36px)] w-full max-w-[360px] flex-col overflow-hidden rounded-[28px] border border-white/[.09] bg-[#0a1424] shadow-[0_30px_70px_-20px_rgba(0,0,0,.85)]"
+      >
+        <div className="flex flex-none items-center justify-between gap-4 border-b border-white/[.06] px-[18px] py-[14px]">
+          <div className="min-w-0">
+            <p className="font-['Archivo'] text-[10px] font-black uppercase tracking-[.18em] text-sky-300">Fallback</p>
+            <h2 className="truncate text-[17px] font-black text-sky-50">救援入口</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-white/10 bg-white/[.06] text-sm font-black text-slate-300"
+            aria-label="關閉救援入口"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="wb-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-[18px]">
+          <label className="block">
+            <span className="text-xs font-bold text-slate-400">顯示名稱</span>
+            <input
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              placeholder="你的名稱"
+              className="mt-1 min-h-[46px] w-full rounded-2xl border border-white/15 bg-black/20 px-4 text-sm text-sky-50 outline-none placeholder:text-slate-600 focus:border-sky-300"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-xs font-bold text-slate-400">群組 ID</span>
+            <input
+              value={groupId}
+              onChange={(event) => {
+                setGroupId(event.target.value);
+                setError(null);
+              }}
+              placeholder="C/R + 32 碼"
+              className="mt-1 min-h-[46px] w-full rounded-2xl border border-white/15 bg-black/20 px-4 font-['Archivo'] text-sm text-sky-50 outline-none placeholder:text-slate-600 focus:border-sky-300"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-xs font-bold text-slate-400">群組名稱</span>
+            <input
+              value={groupName}
+              onChange={(event) => setGroupName(event.target.value)}
+              placeholder="可留空"
+              className="mt-1 min-h-[46px] w-full rounded-2xl border border-white/15 bg-black/20 px-4 text-sm text-sky-50 outline-none placeholder:text-slate-600 focus:border-sky-300"
+            />
+          </label>
+
+          {error && <p className="text-center text-xs text-rose-300">{error}</p>}
+        </div>
+
+        <div className="flex flex-none gap-2 border-t border-white/[.06] p-[18px]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[48px] flex-1 rounded-[18px] border border-white/10 bg-white/[.06] text-sm font-bold text-slate-300"
+          >
+            取消
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="min-h-[48px] flex-1 rounded-[18px] bg-sky-400 text-sm font-black text-[#03060e] disabled:opacity-50"
+          >
+            {submitting ? '連線中...' : '進入'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function CenteredPanel(props: {
   title: string;
   eyebrow?: string;
@@ -111,17 +223,23 @@ export default function WaterTrackerPage() {
   const { ready, loading: liffLoading, error: liffError, profile, idToken, groupId: liveGroupId, authRedirecting } = useLiff();
   const { search } = useLocation();
   const screenRef = useRef<HTMLDivElement>(null);
+  const secretTapRef = useRef({ count: 0, lastAt: 0 });
+
+  const [manualEntry, setManualEntry] = useState<ManualEntry | null>(null);
+  const [rescueOpen, setRescueOpen] = useState(false);
 
   const entryGroupId = useMemo(() => {
     const explicitGroupId = getWaterEntryGroupId(search);
     if (explicitGroupId) return explicitGroupId;
 
     const fallbackGroupId = liveGroupId?.trim() || '';
-    return LINE_GROUP_ID_PATTERN.test(fallbackGroupId) ? fallbackGroupId : '';
-  }, [search, liveGroupId]);
+    if (LINE_GROUP_ID_PATTERN.test(fallbackGroupId)) return fallbackGroupId;
+
+    return manualEntry?.groupId ?? '';
+  }, [search, liveGroupId, manualEntry?.groupId]);
   const entryGroupName = useMemo(
-    () => getLiffEntryParam(search, 'wgName')?.trim() || undefined,
-    [search]
+    () => getLiffEntryParam(search, 'wgName')?.trim() || manualEntry?.groupName,
+    [search, manualEntry?.groupName]
   );
 
   const [sessionData, setSessionData] = useState<ReadySessionResponse | null>(null);
@@ -139,15 +257,36 @@ export default function WaterTrackerPage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  const bootstrapSession = useCallback(async (selectedGroupId?: string) => {
-    if (!entryGroupId) {
+  const revealRescueEntry = useCallback(() => {
+    const now = Date.now();
+    const nextCount = now - secretTapRef.current.lastAt < 1200
+      ? secretTapRef.current.count + 1
+      : 1;
+    secretTapRef.current = { count: nextCount >= 7 ? 0 : nextCount, lastAt: now };
+    if (nextCount >= 7) {
+      setRescueOpen(true);
+    }
+  }, []);
+
+  const bootstrapSession = useCallback(async (selectedGroupId?: string, overrideEntry?: ManualEntry) => {
+    const activeEntryGroupId = overrideEntry?.groupId ?? entryGroupId;
+    const activeEntryGroupName = overrideEntry?.groupName ?? entryGroupName;
+    const displayNameOverride = overrideEntry?.displayName ?? manualEntry?.displayName;
+
+    if (!activeEntryGroupId) {
       setSessionError('缺少群組入口資訊，請從群組專屬 LIFF 連結進入。');
       return;
     }
 
     setSessionLoading(true);
     try {
-      const data = await waterApi.session(entryGroupId, entryGroupName, selectedGroupId, idToken ?? undefined);
+      const data = await waterApi.session(
+        activeEntryGroupId,
+        activeEntryGroupName,
+        selectedGroupId,
+        idToken ?? undefined,
+        displayNameOverride
+      );
       if (data.status === 'needs_group_selection') {
         setSelectionData(data);
         setSessionData(null);
@@ -161,7 +300,7 @@ export default function WaterTrackerPage() {
     } finally {
       setSessionLoading(false);
     }
-  }, [entryGroupId, entryGroupName, idToken]);
+  }, [entryGroupId, entryGroupName, idToken, manualEntry?.displayName]);
 
   useEffect(() => {
     if (!ready) return;
@@ -261,7 +400,7 @@ export default function WaterTrackerPage() {
   if (sessionError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#03060e] p-6 text-center">
-        <p className="text-4xl text-sky-300">💧</p>
+        <p className="text-4xl text-sky-300" onClick={revealRescueEntry}>💧</p>
         <p className="text-sky-100">載入失敗，請重試</p>
         <p className="text-xs text-slate-500">{sessionError}</p>
         <button
@@ -270,6 +409,19 @@ export default function WaterTrackerPage() {
         >
           重新載入
         </button>
+        {rescueOpen && (
+          <EmergencyEntryPanel
+            initialDisplayName={profile?.displayName ?? ''}
+            submitting={sessionLoading}
+            onClose={() => setRescueOpen(false)}
+            onSubmit={(entry) => {
+              setManualEntry(entry);
+              setRescueOpen(false);
+              setSessionError(null);
+              bootstrapSession(undefined, entry).catch(() => {});
+            }}
+          />
+        )}
       </div>
     );
   }

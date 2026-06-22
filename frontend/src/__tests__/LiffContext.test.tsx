@@ -57,7 +57,7 @@ describe('LiffProvider', () => {
     liffMock.init.mockResolvedValue(undefined);
     liffMock.isLoggedIn.mockReturnValue(true);
     liffMock.login.mockReturnValue(undefined);
-    liffMock.getContext.mockReturnValue({ type: 'group', groupId: 'Ctest1' });
+    liffMock.getContext.mockReturnValue({ type: 'group', groupId: 'C36f826d26cf8adefe4d214993742c230' });
     liffMock.getIDToken.mockReturnValue('mock-id-token');
     liffMock.getDecodedIDToken.mockReturnValue({
       sub: 'Udecoded1',
@@ -83,7 +83,7 @@ describe('LiffProvider', () => {
     expect(screen.getByTestId('error')).toHaveTextContent('');
     expect(screen.getByTestId('profile-name')).toHaveTextContent('Decoded User');
     expect(screen.getByTestId('profile-user-id')).toHaveTextContent('Udecoded1');
-    expect(screen.getByTestId('group-id')).toHaveTextContent('Ctest1');
+    expect(screen.getByTestId('group-id')).toHaveTextContent('C36f826d26cf8adefe4d214993742c230');
     expect(screen.getByTestId('id-token')).toHaveTextContent('mock-id-token');
     expect(screen.getByTestId('auth-redirecting')).toHaveTextContent('false');
   });
@@ -98,6 +98,28 @@ describe('LiffProvider', () => {
 
     expect(screen.getByTestId('ready')).toHaveTextContent('false');
     expect(screen.getByTestId('error')).toHaveTextContent('FORBIDDEN: Environment unsupported');
+  });
+
+  it('uses a valid LINE room id as the live entry context', async () => {
+    liffMock.getContext.mockReturnValue({ type: 'room', roomId: 'R36f826d26cf8adefe4d214993742c230' });
+
+    await renderStateProbe();
+
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    expect(screen.getByTestId('ready')).toHaveTextContent('true');
+    expect(screen.getByTestId('group-id')).toHaveTextContent('R36f826d26cf8adefe4d214993742c230');
+  });
+
+  it('ignores unstable non-LINE context ids in production mode', async () => {
+    liffMock.getContext.mockReturnValue({ type: 'group', groupId: '0559b5ee-5dbb-477e-ba0d-8452cd69faed' });
+
+    await renderStateProbe();
+
+    await waitFor(() => expect(screen.getByTestId('loading')).toHaveTextContent('false'));
+
+    expect(screen.getByTestId('ready')).toHaveTextContent('true');
+    expect(screen.getByTestId('group-id')).toHaveTextContent('');
   });
 
   it('surfaces a recoverable message instead of staying stuck when LINE login is required', async () => {

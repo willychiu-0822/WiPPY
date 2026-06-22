@@ -64,10 +64,11 @@ function sendServerError(res: Response, error: string, err: unknown): void {
   res.status(response.status).json(response.body);
 }
 
-function getCurrentUser(req: Request) {
+function getCurrentUser(req: Request, displayNameOverride?: string) {
+  const displayName = req.liffDisplayName?.trim() || displayNameOverride?.trim() || 'LINE User';
   return {
     userId: req.liffUserId!,
-    displayName: req.liffDisplayName ?? '',
+    displayName,
     pictureUrl: req.liffPictureUrl ?? '',
   };
 }
@@ -75,10 +76,11 @@ function getCurrentUser(req: Request) {
 // POST /api/water/session
 router.post('/session', liffAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { entryGroupId, entryGroupName, selectedGroupId } = req.body as {
+    const { entryGroupId, entryGroupName, selectedGroupId, displayNameOverride } = req.body as {
       entryGroupId?: string;
       entryGroupName?: string;
       selectedGroupId?: string;
+      displayNameOverride?: string;
     };
     const resolved = await resolveWaterSession(getDb(), req.liffUserId!, {
       entryGroupId,
@@ -94,7 +96,7 @@ router.post('/session', liffAuthMiddleware, async (req: Request, res: Response) 
     const identity = await ensureIdentity(
       getDb(),
       { groupId: resolved.groupId, groupName: resolved.groupName },
-      getCurrentUser(req)
+      getCurrentUser(req, displayNameOverride)
     );
     const today = await getTodayLeaderboard(getDb(), resolved.groupId, req.liffUserId!);
 

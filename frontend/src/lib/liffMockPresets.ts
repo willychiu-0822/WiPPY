@@ -43,7 +43,7 @@ interface LiffMockState {
 }
 
 export interface LiffWaterApiAdapter {
-  session: (entryGroupId: string, entryGroupName?: string, selectedGroupId?: string, idToken?: string) => Promise<SessionResponse>;
+  session: (entryGroupId: string, entryGroupName?: string, selectedGroupId?: string, idToken?: string, displayNameOverride?: string) => Promise<SessionResponse>;
   drink: (groupId: string, ml: number, drinkType: DrinkType, idToken?: string) => Promise<DrinkResponse>;
   todayLeaderboard: (groupId: string, idToken?: string) => Promise<TodayResponse>;
   myProfile: (groupId: string, idToken?: string) => Promise<MyProfileResponse>;

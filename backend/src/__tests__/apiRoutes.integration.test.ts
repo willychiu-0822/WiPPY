@@ -19,6 +19,9 @@ const mockExecuteHarness = jest.fn();
 const mockListWaterMembersForAdmin = jest.fn();
 const mockResetMemberTodayWater = jest.fn();
 const mockSetWaterGroupEnabled = jest.fn();
+const mockResolveWaterSession = jest.fn();
+const mockEnsureIdentity = jest.fn();
+const mockGetTodayLeaderboard = jest.fn();
 
 jest.mock('firebase-admin', () => ({
   apps: [],
@@ -87,6 +90,9 @@ jest.mock('../services/waterService', () => ({
   listWaterMembersForAdmin: (...args: unknown[]) => mockListWaterMembersForAdmin(...args),
   resetMemberTodayWater: (...args: unknown[]) => mockResetMemberTodayWater(...args),
   setWaterGroupEnabled: (...args: unknown[]) => mockSetWaterGroupEnabled(...args),
+  resolveWaterSession: (...args: unknown[]) => mockResolveWaterSession(...args),
+  ensureIdentity: (...args: unknown[]) => mockEnsureIdentity(...args),
+  getTodayLeaderboard: (...args: unknown[]) => mockGetTodayLeaderboard(...args),
   TAUNT_MESSAGES: [],
 }));
 
@@ -161,6 +167,8 @@ describe('backend API route integration safety net', () => {
     process.env.INTERNAL_HARNESS_SECRET = 'test-secret';
     delete process.env.CLOUD_TASKS_QUEUE;
     delete process.env.CLOUD_RUN_SERVICE_URL;
+    delete process.env.LIFF_DEV_BYPASS_USER;
+    delete process.env.LIFF_CHANNEL_ID;
     mockVerifyIdToken.mockResolvedValue({ uid: 'user_a' });
     mockIsNearLimit.mockReturnValue(false);
     server = createApp().listen(0, '127.0.0.1', done);
@@ -354,6 +362,85 @@ describe('backend API route integration safety net', () => {
       entryUrl: 'https://liff.line.me/2010457997-AsUbpde2?wg=group_a',
     });
   });
+
+  it('uses displayNameOverride only as the LIFF session display-name fallback', async () => {
+    const groupId = 'C36f826d26cf8adefe4d214993742c230';
+    process.env.LIFF_CHANNEL_ID = '1234567890';
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        sub: 'Uline1',
+        aud: '1234567890',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      }),
+    }) as typeof fetch;
+    const db = { marker: 'db' };
+    mockGetDb.mockReturnValue(db);
+    mockResolveWaterSession.mockResolvedValue({ groupId, groupName: '救援群' });
+    mockEnsureIdentity.mockResolvedValue({
+      isNewUser: true,
+      user: {
+        lineUserId: 'Uline1',
+        displayName: 'Fallback Amy',
+        pictureUrl: '',
+        firstSeenAt: { _seconds: 0, _nanoseconds: 0 },
+        lastSeenAt: { _seconds: 0, _nanoseconds: 0 },
+        lastGroupId: groupId,
+        groupIds: [groupId],
+      },
+      member: {
+        lineUserId: 'Uline1',
+        displayName: 'Fallback Amy',
+        pictureUrl: '',
+        todayMl: 0,
+        weekMl: 0,
+        totalMl: 0,
+        streak: 0,
+        achievements: [],
+        lastDrinkAt: null,
+      },
+    });
+    mockGetTodayLeaderboard.mockResolvedValue({
+      groupName: '救援群',
+      memberCount: 1,
+      members: [],
+      me: {
+        lineUserId: 'Uline1',
+        rank: 1,
+        todayMl: 0,
+        gapToAbove: null,
+        leadOverSecond: null,
+        aboveDisplayName: null,
+        aboveLastDrinkAt: null,
+        belowDisplayName: null,
+      },
+      group: {
+        todayMl: 0,
+        goalMl: 1500,
+        goalReached: false,
+        perMemberBaselineMl: 1500,
+        firstLoggerDisplayName: null,
+      },
+      pulse: [],
+    });
+
+    const res = await request(server, 'POST', '/api/water/session', {
+      entryGroupId: groupId,
+      displayNameOverride: 'Fallback Amy',
+    });
+
+    expect(res.status).toBe(200);
+    expect(mockEnsureIdentity).toHaveBeenCalledWith(
+      db,
+      { groupId, groupName: '救援群' },
+      { userId: 'Uline1', displayName: 'Fallback Amy', pictureUrl: '' }
+    );
+    expect(res.body).toEqual(expect.objectContaining({
+      status: 'ready',
+      activeGroup: expect.objectContaining({ groupId, groupName: '救援群' }),
+    }));
+  });
+
   it('enables water competition for an owned group and auto-sends the entry URL', async () => {
     process.env.LIFF_ID = '2010457997-AsUbpde2';
     process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';

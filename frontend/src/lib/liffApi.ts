@@ -205,10 +205,10 @@ async function liffRequest<T>(
 // ─── Real adapter ─────────────────────────────────────────────────────────────
 
 const realApi: LiffWaterApiAdapter = {
-  session: (entryGroupId: string, entryGroupName?: string, selectedGroupId?: string, idToken = '') =>
+  session: (entryGroupId: string, entryGroupName?: string, selectedGroupId?: string, idToken = '', displayNameOverride?: string) =>
     liffRequest<SessionResponse>(
       '/api/water/session',
-      { method: 'POST', body: JSON.stringify({ entryGroupId, entryGroupName, selectedGroupId }) },
+      { method: 'POST', body: JSON.stringify({ entryGroupId, entryGroupName, selectedGroupId, displayNameOverride }) },
       idToken
     ),
 

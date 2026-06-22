@@ -10,6 +10,7 @@ function getTotal() {
 
 beforeEach(() => {
   noop.mockClear();
+  document.body.style.overflow = '';
 });
 
 describe('DrinkLogger — drink type selector', () => {
@@ -150,6 +151,15 @@ describe('DrinkLogger — overflow dialog (>2000ml)', () => {
     render(<DrinkLogger onSubmit={noop} />);
     addUntilOverflow();
     expect(screen.getByText('你真的一次喝那麼多？💧')).toBeInTheDocument();
+  });
+
+  it('locks the page scroll while the overflow dialog is open', () => {
+    render(<DrinkLogger onSubmit={noop} />);
+    addUntilOverflow();
+    expect(document.body.style.overflow).toBe('hidden');
+
+    fireEvent.click(screen.getByRole('button', { name: /對阿我很棒/ }));
+    expect(document.body.style.overflow).toBe('');
   });
 
   it('option 1 (awesome) closes dialog and keeps total', () => {

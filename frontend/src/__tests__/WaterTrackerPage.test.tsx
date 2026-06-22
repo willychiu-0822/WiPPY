@@ -349,7 +349,7 @@ describe('WaterTrackerPage — unreliable group context', () => {
     // Even if LIFF context loses the live groupId, the explicit entry link keeps
     // the tracker bootable and the backend still knows which group this launch belongs to.
     await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
-    expect(waterApi.session).toHaveBeenCalledWith('Ctest1', undefined, undefined, 'mock-id-token');
+    expect(waterApi.session).toHaveBeenCalledWith('Ctest1', undefined, undefined, 'mock-id-token', undefined);
 
     mockUseLiff.groupId = 'Ctest1'; // restore
   });
@@ -374,7 +374,7 @@ describe('WaterTrackerPage — unreliable group context', () => {
     fireEvent.click(screen.getByRole('button', { name: /測試群/ }));
 
     await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
-    expect(waterApi.session).toHaveBeenLastCalledWith('Ctest1', undefined, 'Ctest1', 'mock-id-token');
+    expect(waterApi.session).toHaveBeenLastCalledWith('Ctest1', undefined, 'Ctest1', 'mock-id-token', undefined);
   });
 
   it('falls back to the live LIFF group context when the URL has no explicit wg param', async () => {
@@ -400,7 +400,8 @@ describe('WaterTrackerPage — unreliable group context', () => {
       'C36f826d26cf8adefe4d214993742c230',
       '海浪群',
       undefined,
-      'mock-id-token'
+      'mock-id-token',
+      undefined
     );
 
     mockUseLiff.groupId = 'Ctest1';
@@ -413,6 +414,40 @@ describe('WaterTrackerPage — unreliable group context', () => {
 
     await waitFor(() =>
       expect(screen.getByText('缺少群組入口資訊，請從群組專屬 LIFF 連結進入。')).toBeInTheDocument()
+    );
+
+    mockUseLiff.groupId = 'Ctest1';
+  });
+
+  it('opens a hidden rescue entry after repeated water-drop taps and starts with manual group info', async () => {
+    const { waterApi } = await import('../lib/liffApi');
+    (waterApi.session as ReturnType<typeof vi.fn>).mockClear();
+    mockUseLiff.groupId = null;
+
+    render(<LegacyWrapper />);
+
+    await waitFor(() =>
+      expect(screen.getByText('缺少群組入口資訊，請從群組專屬 LIFF 連結進入。')).toBeInTheDocument()
+    );
+
+    const drop = screen.getByText('💧');
+    for (let i = 0; i < 7; i += 1) {
+      fireEvent.click(drop);
+    }
+
+    expect(screen.getByText('救援入口')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('你的名稱'), { target: { value: 'Fallback Amy' } });
+    fireEvent.change(screen.getByPlaceholderText('C/R + 32 碼'), { target: { value: 'C36f826d26cf8adefe4d214993742c230' } });
+    fireEvent.change(screen.getByPlaceholderText('可留空'), { target: { value: '救援群' } });
+    fireEvent.click(screen.getByRole('button', { name: '進入' }));
+
+    await waitFor(() => expect(screen.getByText('測試群')).toBeInTheDocument());
+    expect(waterApi.session).toHaveBeenLastCalledWith(
+      'C36f826d26cf8adefe4d214993742c230',
+      '救援群',
+      undefined,
+      'mock-id-token',
+      'Fallback Amy'
     );
 
     mockUseLiff.groupId = 'Ctest1';

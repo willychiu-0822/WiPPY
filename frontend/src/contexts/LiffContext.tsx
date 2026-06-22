@@ -4,6 +4,7 @@ import type { Liff } from '@line/liff';
 import { LiffContext, type LiffProfile } from './liff-context';
 import { getActiveLiffMockPresetId } from '../lib/liffDev';
 import { DEFAULT_GROUP_ID } from '../lib/liffMockPresets';
+import { LINE_GROUP_ID_PATTERN } from '../lib/liffEntry';
 
 // ─── Dev fallback ─────────────────────────────────────────────────────────────
 
@@ -88,6 +89,18 @@ function buildDevContext(): ReturnType<Liff['getContext']> {
   } as unknown as ReturnType<Liff['getContext']>;
 }
 
+function getLineContextGroupId(ctx: ReturnType<Liff['getContext']>, allowDevId = false): string | null {
+  const contextId =
+    ctx?.type === 'group'
+      ? (ctx as { groupId?: string }).groupId
+      : ctx?.type === 'room'
+        ? (ctx as { roomId?: string }).roomId
+        : null;
+  const trimmed = contextId?.trim() || '';
+  if (allowDevId && trimmed) return trimmed;
+  return LINE_GROUP_ID_PATTERN.test(trimmed) ? trimmed : null;
+}
+
 async function installLiffMockPlugin() {
   if (liffMockInstalled) return;
   try {
@@ -120,9 +133,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
       // Dev fallback: non-LINE browser in dev mode
       if (DEV_FALLBACK) {
         const devContext = buildDevContext();
-        const devGroupId = devContext?.type === 'group'
-          ? (devContext as { groupId?: string }).groupId ?? null
-          : null;
+        const devGroupId = getLineContextGroupId(devContext, true);
 
         try {
           await installLiffMockPlugin();
@@ -186,8 +197,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           profile = fallbackProfile;
         }
 
-        const groupId =
-          ctx?.type === 'group' ? (ctx as { groupId?: string }).groupId ?? null : null;
+        const groupId = getLineContextGroupId(ctx);
 
         if (cancelled) return;
         setState({

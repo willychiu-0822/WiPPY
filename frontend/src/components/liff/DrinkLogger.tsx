@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { DrinkType } from '../../lib/liffApi';
 
 const DRINK_OPTIONS: Array<{ type: DrinkType; label: string; emoji: string }> = [
@@ -35,6 +36,15 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
   const prevTotal = useRef(initialAmount && initialAmount > 0 ? initialAmount : 0);
 
   const total = history.reduce((s, n) => s + n, 0);
+
+  useEffect(() => {
+    if (!overflow.open) return undefined;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [overflow.open]);
 
   function checkOverflow(newTotal: number) {
     if (newTotal > OVERFLOW_THRESHOLD && prevTotal.current <= OVERFLOW_THRESHOLD && !overflow.handled) {
@@ -214,8 +224,8 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
       </button>
 
       {/* Overflow dialog */}
-      {overflow.open && (
-        <div className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center bg-black/60 p-4 backdrop-blur">
+      {overflow.open && createPortal((
+        <div className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center overflow-hidden bg-black/60 p-4 backdrop-blur">
           <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#071326] p-5 shadow-xl">
             <h2 className="mb-1 text-center text-base font-black text-sky-50">
               你真的一次喝那麼多？💧
@@ -245,7 +255,7 @@ export default function DrinkLogger({ onSubmit, submitting = false, initialAmoun
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 }

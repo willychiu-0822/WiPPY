@@ -14,6 +14,7 @@ import { LiffProvider } from './contexts/LiffContext';
 import WaterTrackerPage from './pages/liff/WaterTrackerPage';
 import LiffDevPlaygroundPage from './pages/liff/LiffDevPlaygroundPage';
 import { hasWaterEntryGroup } from './lib/liffEntry';
+import { LearningAccessGate, LearningAccessProvider, LearningHomePage, LearningShell } from './learning';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -47,7 +48,7 @@ export default function App() {
       <Route path="/onboarding/*" element={
         <ProtectedRoute><OnboardingPage /></ProtectedRoute>
       } />
-      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+      <Route element={<ProtectedRoute><LearningAccessProvider><Layout /></LearningAccessProvider></ProtectedRoute>}>
         {/* V2 pages */}
         <Route path="/groups" element={<GroupsPage />} />
         <Route path="/history" element={<SendHistoryPage />} />
@@ -58,6 +59,9 @@ export default function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/today" element={<TodayPage />} />
         <Route path="/report" element={<ReportPage />} />
+        <Route path="/learn" element={<LearningAccessGate><LearningShell /></LearningAccessGate>}>
+          <Route index element={<LearningHomePage />} />
+        </Route>
       </Route>
       <Route path="*" element={<FallbackRoute user={user} />} />
     </Routes>

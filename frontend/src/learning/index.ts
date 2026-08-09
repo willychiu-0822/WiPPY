@@ -6,3 +6,4 @@ export { LearningShell } from './layout/LearningShell';
 export { LearningHomePage } from './pages/LearningHomePage';
 export { SourceImportPage } from './source/SourceImportPage';
 export { ReaderPage } from './source/ReaderPage';
+export { RoundPage } from './round/RoundPage';

@@ -14,7 +14,7 @@ import { LiffProvider } from './contexts/LiffContext';
 import WaterTrackerPage from './pages/liff/WaterTrackerPage';
 import LiffDevPlaygroundPage from './pages/liff/LiffDevPlaygroundPage';
 import { hasWaterEntryGroup } from './lib/liffEntry';
-import { LearningAccessGate, LearningAccessProvider, LearningHomePage, LearningShell, ReaderPage, SourceImportPage } from './learning';
+import { LearningAccessGate, LearningAccessProvider, LearningHomePage, LearningShell, ReaderPage, RoundPage, SourceImportPage } from './learning';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -63,6 +63,7 @@ export default function App() {
           <Route index element={<LearningHomePage />} />
           <Route path="sources/new" element={<SourceImportPage />} />
           <Route path="sources/:sourceId" element={<ReaderPage />} />
+          <Route path="round" element={<RoundPage />} />
         </Route>
       </Route>
       <Route path="*" element={<FallbackRoute user={user} />} />

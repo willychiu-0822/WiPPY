@@ -24,7 +24,7 @@ export interface LearningSourceView {
   author: string | null;
   url: string | null;
   learningObjective: string | null;
-  paragraphs: Array<{ id: string; ordinal: number; text: string }>;
+  paragraphs: Array<{ id: string; order: number; text: string }>;
   verifiedItemCount: number;
 }
 

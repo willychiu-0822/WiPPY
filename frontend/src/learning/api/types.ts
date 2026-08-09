@@ -108,6 +108,10 @@ export interface KnowledgePageView {
     senseKey: string;
     senseStatus: string;
     qualityStatus: string;
+    occurrenceCount?: number;
+    sourceTitles?: string[];
+    excludedByUser?: boolean;
+    challengeabilityLabel?: string;
     facets: Array<{ facet: LearningFacet; label: string; evidence: EvidenceSummaryView | null }>;
   }>;
   nextCursor: string | null;

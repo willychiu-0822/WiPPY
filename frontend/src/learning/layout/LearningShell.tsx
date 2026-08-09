@@ -13,6 +13,9 @@ export function LearningShell() {
         <NavLink to="/learn/round" className={({ isActive }) => (isActive ? 'text-blue-700' : 'text-gray-500')}>
           來一輪
         </NavLink>
+        <NavLink to="/learn/knowledge" className={({ isActive }) => (isActive ? 'text-blue-700' : 'text-gray-500')}>
+          知識庫
+        </NavLink>
       </nav>
       <Outlet />
     </section>

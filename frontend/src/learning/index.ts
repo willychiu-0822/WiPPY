@@ -7,3 +7,4 @@ export { LearningHomePage } from './pages/LearningHomePage';
 export { SourceImportPage } from './source/SourceImportPage';
 export { ReaderPage } from './source/ReaderPage';
 export { RoundPage } from './round/RoundPage';
+export { KnowledgePage } from './knowledge/KnowledgePage';

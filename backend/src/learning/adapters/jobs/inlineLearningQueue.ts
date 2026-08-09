@@ -11,6 +11,8 @@ export class InlineLearningQueue implements LearningQueue {
   }
 
   async enqueue(input: { userId: string; runId: string }): Promise<void> {
-    await this.run(input);
+    setTimeout(() => {
+      void this.run(input);
+    }, 0);
   }
 }

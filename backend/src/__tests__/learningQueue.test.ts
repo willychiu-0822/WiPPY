@@ -13,6 +13,8 @@ describe('learning queues', () => {
     const run = jest.fn().mockResolvedValue(undefined);
     const queue = new InlineLearningQueue({ firestoreEmulatorHost: '127.0.0.1:8080', run });
     await queue.enqueue({ userId: 'user-a', runId: 'run-1' });
+    expect(run).not.toHaveBeenCalled();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(run).toHaveBeenCalledWith({ userId: 'user-a', runId: 'run-1' });
   });
 

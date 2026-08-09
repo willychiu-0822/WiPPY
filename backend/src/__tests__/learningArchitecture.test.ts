@@ -14,6 +14,21 @@ const forbiddenImportFragments = [
   '/activities',
 ];
 
+const forbiddenLearningCouplingFragments = [
+  'activityKnowledge',
+  'reviewStatus',
+  'streak',
+  'backlog',
+  'dueAt',
+  'remainingCount',
+  'leaderboard',
+  'harnessRuns',
+  '/water',
+  '/harness',
+  '/activities',
+  '/liff',
+];
+
 function collectTypeScriptFiles(directory: string): string[] {
   if (!fs.existsSync(directory)) {
     return [];
@@ -46,6 +61,21 @@ describe('learning domain architecture', () => {
       }
       expect(source).not.toContain('Date.now(');
       expect(source).not.toContain('process.env');
+    }
+  });
+
+  it('keeps all learning layers free of unrelated WiPPY completion and review models', () => {
+    const learningRoot = path.join(__dirname, '..', 'learning');
+    const files = collectTypeScriptFiles(learningRoot);
+
+    expect(files.length).toBeGreaterThan(0);
+
+    for (const file of files) {
+      const source = fs.readFileSync(file, 'utf8');
+      const comparablePath = file.split(path.sep).join('/');
+      for (const fragment of forbiddenLearningCouplingFragments) {
+        expect(`${comparablePath}\n${source}`).not.toContain(fragment);
+      }
     }
   });
 });

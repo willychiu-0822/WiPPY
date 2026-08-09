@@ -8,6 +8,10 @@ export interface KnowledgeItemView {
   senseKey: string;
   senseStatus: string;
   qualityStatus: string;
+  occurrenceCount: number;
+  sourceTitles: string[];
+  excludedByUser: boolean;
+  challengeabilityLabel: string;
   facets: Array<{ facet: Facet; label: string; evidence: EvidenceSummary | null }>;
 }
 
@@ -41,6 +45,14 @@ export async function listLearningKnowledge(
         senseKey: item.senseKey,
         senseStatus: item.senseStatus,
         qualityStatus: item.qualityStatus,
+        occurrenceCount: (item as typeof item & { occurrenceCount?: number }).occurrenceCount ?? 0,
+        sourceTitles: (item as typeof item & { sourceTitles?: string[] }).sourceTitles ?? [],
+        excludedByUser: item.excludedByUser,
+        challengeabilityLabel: item.excludedByUser
+          ? '仍保留在知識庫，但不再出題'
+          : item.senseStatus === 'unresolved'
+            ? '需要更多語言證據才會出題'
+            : '可出題',
         facets,
       };
     }),

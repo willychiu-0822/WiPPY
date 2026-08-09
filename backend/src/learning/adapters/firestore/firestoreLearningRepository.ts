@@ -480,6 +480,23 @@ export class FirestoreLearningRepository implements LearningRepository {
 
   async completeRun(input: CompleteRunInput): Promise<void> {
     const expiresAt = terminalRunExpiresAt(input.completedAt);
+    const sourceItems = await this.db
+      .collection(learningCollections.sourceItems)
+      .where('userId', '==', input.userId)
+      .where('sourceVersionId', '==', input.sourceVersionId)
+      .get();
+    const occurrences = await this.db
+      .collection(learningCollections.occurrences)
+      .where('userId', '==', input.userId)
+      .where('sourceVersionId', '==', input.sourceVersionId)
+      .get();
+    const facetStates = await this.db
+      .collection(learningCollections.facetStates)
+      .where('userId', '==', input.userId)
+      .where('published', '==', false)
+      .limit(500)
+      .get();
+
     await this.db.runTransaction(async (tx) => {
       tx.update(this.db.collection(learningCollections.runs).doc(input.runId), {
         status: 'completed',
@@ -499,6 +516,15 @@ export class FirestoreLearningRepository implements LearningRepository {
         verifiedItemCount: input.verifiedItemCount,
         updatedAt: input.completedAt,
       });
+      for (const doc of sourceItems.docs) {
+        tx.update(doc.ref, { published: true, publishedAt: input.completedAt });
+      }
+      for (const doc of occurrences.docs) {
+        tx.update(doc.ref, { published: true, publishedAt: input.completedAt });
+      }
+      for (const doc of facetStates.docs) {
+        tx.update(doc.ref, { published: true, publishedAt: input.completedAt });
+      }
     });
   }
 
@@ -511,8 +537,59 @@ export class FirestoreLearningRepository implements LearningRepository {
     });
   }
 
-  async listSelectionCandidates(): Promise<SelectionCandidate[]> {
-    return [];
+  async listSelectionCandidates(userId: string, input: { nowIso: string; limit: number; currentSourceId: string | null }): Promise<SelectionCandidate[]> {
+    const itemIds = new Set<string>();
+    if (input.currentSourceId !== null) {
+      const sourceItems = await this.db
+        .collection(learningCollections.sourceItems)
+        .where('userId', '==', userId)
+        .where('sourceId', '==', input.currentSourceId)
+        .where('published', '==', true)
+        .limit(input.limit)
+        .get();
+      for (const doc of sourceItems.docs) {
+        const data = doc.data() as { itemId?: string; qualityStatus?: string };
+        if (data.itemId && data.qualityStatus === 'verified') itemIds.add(data.itemId);
+      }
+    } else {
+      const states = await this.db
+        .collection(learningCollections.facetStates)
+        .where('userId', '==', userId)
+        .where('published', '==', true)
+        .limit(input.limit)
+        .get();
+      for (const doc of states.docs) {
+        const data = doc.data() as FacetMemory;
+        itemIds.add(data.itemId);
+      }
+    }
+
+    const candidates: SelectionCandidate[] = [];
+    for (const itemId of itemIds) {
+      const item = await this.getKnowledgeItem(userId, itemId);
+      if (!item) continue;
+      for (const facet of item.facets) {
+        for (const target of ['source_recognition', 'novel_context_recognition'] as const) {
+          const stateSnap = await this.db.collection(learningCollections.facetStates).doc(facetStateId(userId, itemId, facet, target)).get();
+          if (!stateSnap.exists) continue;
+          const memory = stateSnap.data() as FacetMemory & { published?: boolean };
+          if (memory.published !== true) continue;
+          candidates.push({
+            item,
+            memory,
+            facet,
+            attemptCount: memory.immediateUnaidedSuccesses + memory.delayedUnaidedSuccesses,
+            currentSourceFit: input.currentSourceId === null ? 0 : 1,
+            contextQuality: 1,
+            transferGap: target === 'novel_context_recognition' ? 0.8 : 0.2,
+            recentExposurePenalty: 0,
+            redundancyPenalty: 0,
+            ambiguityRisk: item.senseStatus === 'resolved' ? 0 : 1,
+          });
+        }
+      }
+    }
+    return candidates.slice(0, input.limit);
   }
 
   async getKnowledgeItem(userId: string, itemId: string): Promise<KnowledgeItem | null> {

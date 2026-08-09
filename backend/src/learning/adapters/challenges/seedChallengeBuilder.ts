@@ -94,15 +94,103 @@ const runByTemplates: Template[] = [
   },
 ];
 
+const runCompanyTemplates: Template[] = [
+  {
+    id: 'synthetic-run-company-meaning-1',
+    facet: 'meaning',
+    excerptEn: 'She runs the company with care.',
+    promptZh: '這裡的 runs the company 比較接近哪個意思？',
+    options: [
+      { id: 'a', text: '經營／管理公司' },
+      { id: 'b', text: '在公司裡跑步' },
+    ],
+    correctOptionId: 'a',
+    hints: ['run 後面接 company 時，常不是身體移動。', 'run a company 是管理或經營一間公司。'],
+    explanationZh: 'run a company 表示經營或管理公司。',
+    decisiveCluesZh: ['run + company 指管理一個組織。'],
+    optionExplanations: [
+      { optionId: 'a', explanationZh: '保留了 operate/manage 的意思。' },
+      { optionId: 'b', explanationZh: '把 run 誤解成身體動作。' },
+    ],
+    ambiguityNoteZh: null,
+  },
+  {
+    id: 'synthetic-run-company-chunk-1',
+    facet: 'chunk',
+    excerptEn: 'Later, run the company with care.',
+    promptZh: 'run the company 裡，the company 扮演什麼角色？',
+    options: [
+      { id: 'a', text: '被經營／管理的組織' },
+      { id: 'b', text: '提供建議的人' },
+    ],
+    correctOptionId: 'a',
+    hints: ['company 是 run 的受詞。', '這裡不是 run something by someone 的「被徵詢者」。'],
+    explanationZh: 'the company 是被經營或管理的對象。',
+    decisiveCluesZh: ['run + organization。'],
+    optionExplanations: [
+      { optionId: 'a', explanationZh: '符合 run a company 的搭配角色。' },
+      { optionId: 'b', explanationZh: '這會混到 run something by someone 的用法。' },
+    ],
+    ambiguityNoteZh: null,
+  },
+  {
+    id: 'synthetic-run-company-syntax-1',
+    facet: 'syntax',
+    excerptEn: 'They run the company.',
+    promptZh: '哪個語序最自然？',
+    options: [
+      { id: 'a', text: 'run + company' },
+      { id: 'b', text: 'run + by + company' },
+    ],
+    correctOptionId: 'a',
+    hints: ['經營公司的意思通常直接接組織。', 'by company 不是這個意思需要的結構。'],
+    explanationZh: 'run a company 的常見語序是 run + organization。',
+    decisiveCluesZh: ['company 直接作為 run 的受詞。'],
+    optionExplanations: [
+      { optionId: 'a', explanationZh: '符合「經營某組織」的結構。' },
+      { optionId: 'b', explanationZh: '多了 by，會變成另一種結構。' },
+    ],
+    ambiguityNoteZh: null,
+  },
+  {
+    id: 'synthetic-run-company-pragmatics-1',
+    facet: 'pragmatics',
+    excerptEn: 'She runs the company with care.',
+    promptZh: '這裡 runs the company 可能帶出什麼效果？',
+    options: [
+      { id: 'a', text: '強調她負責營運與管理' },
+      { id: 'b', text: '強調她正在快速移動' },
+    ],
+    correctOptionId: 'a',
+    hints: ['with care 修飾管理方式很自然。', '公司不太會是跑步的場地重點。'],
+    explanationZh: '一種讀法是這句把焦點放在她如何經營公司，而不是身體動作。',
+    decisiveCluesZh: ['run + company + with care。'],
+    optionExplanations: [
+      { optionId: 'a', explanationZh: '符合經營管理的語氣效果。' },
+      { optionId: 'b', explanationZh: '忽略了 company 作為組織受詞。' },
+    ],
+    ambiguityNoteZh: '這是根據語言線索做出的可能解讀，不是作者意圖的唯一答案。',
+  },
+];
+
 function supports(item: KnowledgeItem): boolean {
-  return item.normalizedForm === 'run something by someone' && item.senseKey === 'seek-feedback' && item.qualityStatus === 'verified';
+  return (
+    item.qualityStatus === 'verified' &&
+    ((item.normalizedForm === 'run something by someone' && item.senseKey === 'seek-feedback') ||
+      (item.normalizedForm === 'run a company' && item.senseKey === 'manage-business'))
+  );
+}
+
+function templatesFor(item: KnowledgeItem): Template[] {
+  if (item.normalizedForm === 'run a company' && item.senseKey === 'manage-business') return runCompanyTemplates;
+  return runByTemplates;
 }
 
 function sourceBlueprint(item: KnowledgeItem, facet: Facet, sourceContext: SourceContextRef, input: Parameters<ChallengeBuilder['build']>[0]): ChallengeBlueprint | null {
   if (!supports(item) || sourceContext.contextQuality < 0.7 || sourceContext.startOffset >= sourceContext.endOffset) {
     return null;
   }
-  const template = runByTemplates.find((entry) => entry.facet === facet);
+  const template = templatesFor(item).find((entry) => entry.facet === facet);
   if (!template || input.excludedContextFingerprints.includes(sourceContext.contextFingerprint)) {
     return null;
   }
@@ -145,7 +233,7 @@ export const seedChallengeBuilder: ChallengeBuilder = {
       return null;
     }
 
-    const template = runByTemplates.find((entry) => entry.facet === input.facet);
+    const template = templatesFor(input.item).find((entry) => entry.facet === input.facet);
     if (!template || input.excludedContextFingerprints.includes(`sha256:${template.id}`)) {
       return null;
     }

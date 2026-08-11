@@ -22,6 +22,24 @@ export function setLearningContainerForTests(container: LearningContainer | null
   testContainer = container;
 }
 
+function createProductionQueue(): LearningQueue {
+  let queue: LearningQueue | null = null;
+
+  return {
+    async enqueue(input): Promise<void> {
+      queue ??= new CloudTasksLearningQueue({
+        projectId: process.env['LEARNING_TASKS_PROJECT_ID'],
+        location: process.env['LEARNING_TASKS_LOCATION'],
+        queue: process.env['LEARNING_TASKS_QUEUE'],
+        serviceUrl: process.env['LEARNING_WORKER_BASE_URL'],
+        serviceAccountEmail: process.env['LEARNING_TASKS_SERVICE_ACCOUNT'],
+        audience: process.env['LEARNING_TASKS_AUDIENCE'],
+      });
+      await queue.enqueue(input);
+    },
+  };
+}
+
 export function getLearningContainer(): LearningContainer {
   if (testContainer) return testContainer;
   if (productionContainer) return productionContainer;
@@ -41,14 +59,7 @@ export function getLearningContainer(): LearningContainer {
               { repository },
             ),
         })
-      : new CloudTasksLearningQueue({
-          projectId: process.env['LEARNING_TASKS_PROJECT_ID'],
-          location: process.env['LEARNING_TASKS_LOCATION'],
-          queue: process.env['LEARNING_TASKS_QUEUE'],
-          serviceUrl: process.env['LEARNING_WORKER_BASE_URL'],
-          serviceAccountEmail: process.env['LEARNING_TASKS_SERVICE_ACCOUNT'],
-          audience: process.env['LEARNING_TASKS_AUDIENCE'],
-        });
+      : createProductionQueue();
   productionContainer = {
     repository,
     queue,

@@ -10,10 +10,11 @@ Backend:
 LEARNING_CORE_ENABLED=true
 LEARNING_TASKS_QUEUE=wippy-learning-ingestion
 LEARNING_TASKS_LOCATION=asia-east1
-LEARNING_TASKS_PROJECT=wippy-mvp
+LEARNING_TASKS_PROJECT_ID=wippy-mvp
 LEARNING_TASKS_SERVICE_ACCOUNT=<task-invoker-service-account>
 LEARNING_RECONCILE_JOB=wippy-learning-reconcile
-LEARNING_INTERNAL_AUDIENCE=<backend-url>
+LEARNING_WORKER_BASE_URL=<backend-url>
+LEARNING_TASKS_AUDIENCE=<backend-url>
 LEARNING_INLINE_QUEUE=false
 ```
 
@@ -74,7 +75,7 @@ gcloud projects add-iam-policy-binding wippy-mvp --member="serviceAccount:servic
 Create the reconcile scheduler:
 
 ```powershell
-gcloud scheduler jobs create http wippy-learning-reconcile --location asia-east1 --project wippy-mvp --schedule="* * * * *" --uri="https://<backend-host>/api/internal/learning/reconcile" --http-method=POST --oidc-service-account-email="wippy-learning-task@wippy-mvp.iam.gserviceaccount.com" --oidc-token-audience="https://<backend-host>"
+gcloud scheduler jobs create http wippy-learning-reconcile --location asia-east1 --project wippy-mvp --schedule="* * * * *" --uri="https://<backend-host>/api/internal/learning/reconcile-enqueues" --http-method=POST --oidc-service-account-email="wippy-learning-task@wippy-mvp.iam.gserviceaccount.com" --oidc-token-audience="https://<backend-host>"
 ```
 
 Grant the Cloud Scheduler service agent token creation permission if the project does not already have it:

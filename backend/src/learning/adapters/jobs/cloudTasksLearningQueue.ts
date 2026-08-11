@@ -39,7 +39,7 @@ export class CloudTasksLearningQueue implements LearningQueue {
           name: `${parent}/tasks/${input.runId}`,
           httpRequest: {
             httpMethod: 'POST',
-            url: `${this.config.serviceUrl.replace(/\/$/, '')}/internal/learning/ingest`,
+            url: `${this.config.serviceUrl.replace(/\/$/, '')}/api/internal/learning/ingest`,
             headers: { 'Content-Type': 'application/json' },
             body: Buffer.from(JSON.stringify(input)).toString('base64'),
             oidcToken: {

@@ -13,6 +13,7 @@ import { agentRouter } from './routes/api/agent';
 import { waterRouter } from './routes/api/water';
 import { internalRouter } from './routes/internal/harness';
 import { deployNotifyRouter } from './routes/internal/deployNotify';
+import { learningRouter } from './learning/http/learningRouter';
 import { ensureFirebaseApp } from './firebase';
 
 export function createApp() {
@@ -36,6 +37,7 @@ export function createApp() {
   app.use('/api/activities', express.json(), activitiesRouter);
   app.use('/api/agent', express.json(), agentRouter);
   app.use('/api/water', express.json(), waterRouter);
+  app.use('/api/learning', express.json({ limit: '256kb' }), learningRouter);
   app.use('/api/internal', express.json(), internalRouter);
   app.use('/api/internal', express.json(), deployNotifyRouter);
 

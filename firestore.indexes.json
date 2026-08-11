@@ -254,6 +254,15 @@
       ]
     },
     {
+      "collectionGroup": "learningSegments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "sourceId", "order": "ASCENDING" },
+        { "fieldPath": "ordinal", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "learningItems",
       "queryScope": "COLLECTION",
       "fields": [

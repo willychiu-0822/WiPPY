@@ -382,7 +382,7 @@ git commit -m "docs: record learning production UAT failure"
 
 Preserve `.tmp/` and `frontend/test-results/` as unrelated untracked files.
 
-- [ ] **Step 5: Create the isolated repair worktree when a reproducible P0/P1 exists**
+- [x] **Step 5: Create the isolated repair worktree when a reproducible P0/P1 exists**
 
 From `C:\Users\willy\Desktop\Side Project- WiPPY\WiPPY`, fetch and create exactly:
 
@@ -393,7 +393,7 @@ git worktree add "C:\Users\willy\Desktop\Side Project- WiPPY\WiPPY-worktrees\lea
 
 Verify the resolved worktree path is inside `C:\Users\willy\Desktop\Side Project- WiPPY\WiPPY-worktrees` before creation. If the path or branch already exists, inspect it and reuse it only when clean and based on current `origin/main`; otherwise stop and report the collision.
 
-- [ ] **Step 6: Bring the approved UAT documents into the repair branch**
+- [x] **Step 6: Bring the approved UAT documents into the repair branch**
 
 Cherry-pick only the local documentation commits that are newer than the already-merged feature branch tip:
 
@@ -403,7 +403,7 @@ git -C "C:\Users\willy\Desktop\Side Project- WiPPY\WiPPY-worktrees\learning-uat-
 
 Expected: the repair branch gains the approved UAT spec, this implementation plan, and the pre-fix UAT report without bringing old feature implementation commits back into the PR.
 
-- [ ] **Step 7: Verify a clean baseline in the repair worktree**
+- [x] **Step 7: Verify a clean baseline in the repair worktree**
 
 Run:
 
@@ -420,15 +420,15 @@ npm test
 
 Expected: no uncommitted tracked changes; every command exits 0. Existing baseline failures stop implementation and must be recorded separately from the production defect.
 
-- [ ] **Step 8: Perform systematic root-cause analysis without editing code**
+- [x] **Step 8: Perform systematic root-cause analysis without editing code**
 
 Invoke `superpowers:systematic-debugging`. Trace the browser failure through the exact request, Express mount, production composition, queue configuration, worker, repository, or frontend state boundary. Use read-only Cloud Run configuration/log checks where relevant. Do not infer root cause solely from the known route/env suspicions.
 
-- [ ] **Step 9: Write the failure-specific TDD addendum**
+- [x] **Step 9: Write the failure-specific TDD addendum**
 
 Create `docs/superpowers/plans/2026-08-12-learning-production-uat-fix-addendum.md` in the repair worktree. It must name exact source and test paths, quote the exact current signatures, include the complete failing test code, state the expected failure message, include the minimal implementation code, and list targeted and full verification commands. Run the writing-plans self-review before Task 8.
 
-- [ ] **Step 10: Mark Task 7 complete in this plan**
+- [x] **Step 10: Mark Task 7 complete in this plan**
 
 Record the chosen branch of the decision gate and, when applicable, the worktree and addendum paths.
 
@@ -447,11 +447,11 @@ Record the chosen branch of the decision gate and, when applicable, the worktree
 - Consumes: clean repair worktree, systematic root cause, and reviewed addendum from Task 7.
 - Produces: minimal tested repair, green full local gate, commits, and self-review evidence.
 
-- [ ] **Step 1: Execute the addendum with TDD**
+- [x] **Step 1: Execute the addendum with TDD**
 
 Invoke `superpowers:test-driven-development`. Run the exact red test first, confirm it fails for the documented root cause, implement only the addendum's minimal change, and run the exact green test. If the red failure differs, stop and revise the addendum before code changes.
 
-- [ ] **Step 2: Run all backend gates**
+- [x] **Step 2: Run all backend gates**
 
 From `backend/` run:
 
@@ -463,7 +463,7 @@ npm run test:learning:emulator
 
 Expected: all exit 0. The emulator command must use the repository's fixed `demo-wippy-learning` project and must not point at production Firebase.
 
-- [ ] **Step 3: Run all frontend gates**
+- [x] **Step 3: Run all frontend gates**
 
 From `frontend/` run:
 
@@ -480,7 +480,7 @@ Expected: all exit 0, including the three existing learning canary E2E tests.
 
 From the repair worktree root run the same Docker build/start/`/health` behavior used by `.github/workflows/ci.yml`. Require HTTP success before stopping the test container.
 
-- [ ] **Step 5: Perform verification-before-completion and self-review**
+- [x] **Step 5: Perform verification-before-completion and self-review**
 
 Invoke `superpowers:verification-before-completion`, then `superpowers:requesting-code-review`. Review UID ownership, `private, no-store`, Cloud Tasks OIDC audience/URL/route consistency, idempotency, secret exposure, debug routes, unrelated diff, and exact environment-variable names.
 
@@ -488,7 +488,7 @@ Invoke `superpowers:verification-before-completion`, then `superpowers:requestin
 
 Stage only addendum-declared source/tests/docs and the UAT report. Use one commit per independent root cause with a `fix:` subject, followed by a `test:` or `docs:` commit only when those changes are independently meaningful.
 
-- [ ] **Step 7: Record local verification**
+- [x] **Step 7: Record local verification**
 
 Add exact commands, exit results, test counts when available, commit hashes, and review findings to the UAT report.
 

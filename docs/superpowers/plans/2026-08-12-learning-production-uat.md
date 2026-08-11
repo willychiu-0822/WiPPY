@@ -57,7 +57,7 @@ The conditional addendum is a safety boundary, not deferred design. Product file
 - Consumes: approved production target, test-data convention, stop conditions, and browser-control skill.
 - Produces: one persistent browser binding selected for the production URL and a report with every case initially marked `NOT RUN`.
 
-- [ ] **Step 1: Create the report skeleton**
+- [x] **Step 1: Create the report skeleton**
 
 Create `docs/uat/2026-08-12-learning-production-uat-report.md` with these exact sections and initial states:
 
@@ -110,19 +110,19 @@ Not required unless a repair branch is created.
 - Cross-account and Firestore rules remain covered by Emulator/integration tests, not a second production account.
 ```
 
-- [ ] **Step 2: Select the browser for the exact target URL**
+- [x] **Step 2: Select the browser for the exact target URL**
 
 Use the Browser skill's target-URL selection path for `https://wippy-mvp.web.app/learn`. Read the selected browser's complete documentation before obtaining or interacting with a tab. Reuse the resulting browser binding for the entire UAT.
 
-- [ ] **Step 3: Obtain one production tab and record the initial URL**
+- [x] **Step 3: Obtain one production tab and record the initial URL**
 
 Navigate the tab to `https://wippy-mvp.web.app/learn`. Record the resolved URL, visible page state, viewport, and Asia/Taipei timestamp under UAT-01 evidence. Do not inspect browser storage or credentials.
 
-- [ ] **Step 4: Apply the authentication gate**
+- [x] **Step 4: Apply the authentication gate**
 
 If the page requires sign-in, stop and ask the user to sign in in the selected browser and confirm readiness. If the page resolves to `/groups` after authentication, record UAT-01 as `BLOCKED`, capture the visible state and relevant `/api/learning/access` status when available, and execute Task 7 without creating source data.
 
-- [ ] **Step 5: Mark Task 1 complete in this plan**
+- [x] **Step 5: Mark Task 1 complete in this plan**
 
 Update only the checkboxes completed in Task 1. Do not commit the report yet because later tasks must append evidence.
 
@@ -140,19 +140,19 @@ Update only the checkboxes completed in Task 1. Do not commit the report yet bec
 - Consumes: authenticated production tab from Task 1.
 - Produces: UAT-01 result and a stop/continue decision for production writes.
 
-- [ ] **Step 1: Verify the learning shell**
+- [x] **Step 1: Verify the learning shell**
 
 Confirm the page exposes the learning heading and the four navigation destinations `首頁`, `來源`, `來一輪`, and `知識庫`. Click each destination once and verify the route remains under `/learn`.
 
-- [ ] **Step 2: Check for blocking access states**
+- [x] **Step 2: Check for blocking access states**
 
 Fail UAT-01 if the UI remains in loading, shows `暫時無法確認使用權限`, redirects to `/groups`, or returns an unexpected learning API `5xx`. A visible recoverable access error may use `重新確認` once; a second failure is final for this session.
 
-- [ ] **Step 3: Record UAT-01**
+- [x] **Step 3: Record UAT-01**
 
 Write `PASS`, `FAIL`, or `BLOCKED`, with timestamp, resolved URL, visible text summary, and HTTP method/path/status evidence. If `FAIL` or `BLOCKED`, skip Tasks 3–6 and execute Task 7.
 
-- [ ] **Step 4: Mark Task 2 complete in this plan**
+- [x] **Step 4: Mark Task 2 complete in this plan**
 
 Update the Task 2 checkboxes to reflect the actions actually completed.
 
@@ -170,11 +170,11 @@ Update the Task 2 checkboxes to reflect the actions actually completed.
 - Consumes: UAT-01 `PASS`, current Asia/Taipei time, and the approved reviewed source body.
 - Produces: reviewed UAT source title, source route, ingestion timing, network status evidence, and UAT-02 result.
 
-- [ ] **Step 1: Generate and record the reviewed source title**
+- [x] **Step 1: Generate and record the reviewed source title**
 
 Generate `UAT-20260812-<HHmmss>-reviewed-seed` using the actual Asia/Taipei submission time. Replace `Recorded in Task 3` in the report with the exact title before submitting the form.
 
-- [ ] **Step 2: Submit the reviewed source**
+- [x] **Step 2: Submit the reviewed source**
 
 Navigate to `/learn/sources/new`, fill the exact title, and fill the body with:
 
@@ -184,19 +184,19 @@ Before building it, run the idea by a few users. Later, run the company with car
 
 Submit with `收進知識庫`. Record the source-creation HTTP method/path/status without recording authorization values.
 
-- [ ] **Step 3: Observe production ingestion**
+- [x] **Step 3: Observe production ingestion**
 
 Start the 120-second observation window when the source request succeeds. Record every visible state transition and the final reader URL. If the UI exposes retry after a recoverable failure, use it once and record the retry request status.
 
-- [ ] **Step 4: Verify the completed reader**
+- [x] **Step 4: Verify the completed reader**
 
 Require the exact title, both English sentences, and `開始 3–5 分鐘練習`. Reload once and verify the completed state and CTA persist.
 
-- [ ] **Step 5: Record UAT-02 and apply the stop condition**
+- [x] **Step 5: Record UAT-02 and apply the stop condition**
 
 Mark UAT-02 `PASS` only when ingestion completes within the allowed window and survives reload. Mark `FAIL` on an unexpected `5xx`, retry exhaustion, permanent processing, incorrect source text, duplicated source, or lost completed state. On failure, stop new production writes and execute Task 7.
 
-- [ ] **Step 6: Mark Task 3 complete in this plan**
+- [x] **Step 6: Mark Task 3 complete in this plan**
 
 Update the Task 3 checkboxes to reflect actual execution.
 
@@ -359,19 +359,19 @@ Update the Task 6 checkboxes and continue to Task 7.
 - Consumes: all completed or stopped UAT cases and captured browser/network evidence.
 - Produces: either a no-code completion path or one reproducible defect packet and a ready isolated repair worktree.
 
-- [ ] **Step 1: Classify every non-pass result**
+- [x] **Step 1: Classify every non-pass result**
 
 Use the approved definitions: P0 for blocked core journeys, cross-user data, loss, unrecoverable ingestion, unexpected `5xx`, or false ability evidence; P1 for recoverable but incorrect state, exclusion/persistence failure, keyboard/mobile blocking, or high-risk copy; P2 for minor non-blocking visual/copy defects.
 
-- [ ] **Step 2: Write a complete defect packet for each P0/P1**
+- [x] **Step 2: Write a complete defect packet for each P0/P1**
 
 Record exact URL, Asia/Taipei time, UAT source title, viewport, visible state, HTTP method/path/status, shortest reproduction, one retry/reload result, expected behavior, and actual behavior. Never record auth headers or secrets.
 
-- [ ] **Step 3: Take the no-bug path when applicable**
+- [x] **Step 3: Take the no-bug path when applicable**
 
 If all P0/P1 cases pass, set the report overall result to `PASS`, leave repair/PR/deployment sections as not required, skip Tasks 8–10, and execute Task 11.
 
-- [ ] **Step 4: Commit the pre-fix UAT evidence on the documentation branch**
+- [x] **Step 4: Commit the pre-fix UAT evidence on the documentation branch**
 
 On `codex/feature/learning-core-loop`, stage only the report and this plan, then commit:
 

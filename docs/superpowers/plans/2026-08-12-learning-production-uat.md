@@ -484,7 +484,7 @@ From the repair worktree root run the same Docker build/start/`/health` behavior
 
 Invoke `superpowers:verification-before-completion`, then `superpowers:requesting-code-review`. Review UID ownership, `private, no-store`, Cloud Tasks OIDC audience/URL/route consistency, idempotency, secret exposure, debug routes, unrelated diff, and exact environment-variable names.
 
-- [ ] **Step 6: Commit the repair in root-cause-sized commits**
+- [x] **Step 6: Commit the repair in root-cause-sized commits**
 
 Stage only addendum-declared source/tests/docs and the UAT report. Use one commit per independent root cause with a `fix:` subject, followed by a `test:` or `docs:` commit only when those changes are independently meaningful.
 

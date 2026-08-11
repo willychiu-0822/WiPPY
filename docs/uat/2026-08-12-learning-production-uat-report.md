@@ -55,6 +55,7 @@
 - `git diff --check` passed. Generated `.tmp/` and `frontend/test-results/` remain untracked and excluded from the repair.
 - Backend container readiness was not runnable locally because this Windows host has no `docker` executable. The PR's mandatory `Backend Docker readiness` CI job remains the authoritative gate.
 - Independent review: no Critical, Important, or Minor findings; the reviewer confirmed both segment indexes are necessary, field order/query scope are exact, deployment includes `firestore:indexes`, and no privacy/security-sensitive or unrelated tracked changes were introduced.
+- Repair commit: `08871f5` (`fix: add learning source reader index`).
 
 ## PR, CI, and deployment
 

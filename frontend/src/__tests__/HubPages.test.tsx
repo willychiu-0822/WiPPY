@@ -83,6 +83,18 @@ describe('AgentsPage', () => {
     expect(within(secret).getByText('i@example.com')).toBeInTheDocument();
   });
 
+  it('updates the Grok routine webhook on an existing agent, keeping the key when left empty', async () => {
+    api.admin.agents.mockResolvedValue({ agents: [{ id: 'g1', name: 'Grok', kind: 'grok_bot', enabled: true, allowedGroupIds: ['C2'], dailySendLimit: 20, inboxAlertHours: 24, routineUrl: null, hasRoutineKey: false, apiKeyPrefix: 'wpy_x', accountUid: null, accountEmail: null, createdAt: '' }] });
+    api.admin.updateAgent.mockResolvedValue({ agent: {} });
+    renderPage(<AgentsPage />);
+    await userEvent.type(await screen.findByLabelText('Routine 網址（Grok）'), 'https://grok.example/r/2');
+    await userEvent.click(screen.getByRole('button', { name: '儲存 Grok 設定' }));
+    expect(api.admin.updateAgent).toHaveBeenCalledWith('g1', { allowedGroupIds: ['C2'], dailySendLimit: 20, routineUrl: 'https://grok.example/r/2' });
+    await userEvent.type(screen.getByLabelText('Routine Key（Grok，留空表示不變）'), 'new-key');
+    await userEvent.click(screen.getByRole('button', { name: '儲存 Grok 設定' }));
+    expect(api.admin.updateAgent).toHaveBeenLastCalledWith('g1', { allowedGroupIds: ['C2'], dailySendLimit: 20, routineUrl: 'https://grok.example/r/2', routineKey: 'new-key' });
+  });
+
   it('disables an agent', async () => {
     api.admin.agents.mockResolvedValue({ agents: [{ id: 'g1', name: 'Grok', kind: 'grok_bot', enabled: true, allowedGroupIds: [], dailySendLimit: 20, inboxAlertHours: 24, routineUrl: null, hasRoutineKey: false, apiKeyPrefix: 'wpy_x', accountUid: null, accountEmail: null, createdAt: '' }] });
     api.admin.updateAgent.mockResolvedValue({ agent: {} });

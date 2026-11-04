@@ -8,6 +8,7 @@ import type { HubJob } from './core/jobs';
 import { PermanentError } from './core/jobs';
 import { onDispatchFailed, runDispatch } from './dispatch';
 import { registerSchedulerTask } from './http/schedulerRoutes';
+import { cleanupExpired } from './cleanup';
 import { alertOverdueInbox } from './inbox';
 import { registerJobHandler } from './jobHandlers';
 import { recordLlmCall } from './llmThrottle';
@@ -49,6 +50,8 @@ registerSchedulerTask('hub-tick', async () => {
   const overdueAlerts = await alertOverdueInbox(ctx);
   return { dispatched: dispatched.length, overdueAlerts };
 });
+
+registerSchedulerTask('hub-cleanup', async () => ({ deleted: await cleanupExpired(getHub()) }));
 
 setLLMCallObserver(() => {
   recordLlmCall(getHub()).catch((err) => console.warn(JSON.stringify({ severity: 'WARNING', event: 'hub_llm_observer_error', error: String(err) })));

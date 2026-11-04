@@ -89,7 +89,18 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
 function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; groups: HubGroup[]; onChanged: () => void; onSecret: (s: Secret) => void }) {
   const [allowed, setAllowed] = useState(agent.allowedGroupIds);
   const [limit, setLimit] = useState(String(agent.dailySendLimit));
+  const [routineUrl, setRoutineUrl] = useState(agent.routineUrl ?? '');
+  const [routineKey, setRoutineKey] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+
+  function settingsPatch(): Record<string, unknown> {
+    const patch: Record<string, unknown> = { allowedGroupIds: allowed, dailySendLimit: Number(limit) };
+    if (agent.kind === 'grok_bot') {
+      if (routineUrl.trim() !== (agent.routineUrl ?? '')) patch['routineUrl'] = routineUrl.trim() || null;
+      if (routineKey.trim()) patch['routineKey'] = routineKey.trim();
+    }
+    return patch;
+  }
 
   async function run(fn: () => Promise<unknown>, done?: string) {
     setMessage(null);
@@ -120,8 +131,14 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
       </div>
       <GroupChecklist legend="允許使用的群組" groups={groups} selected={allowed} onChange={setAllowed} />
       <TextField label="每日發送上限" value={limit} onChange={setLimit} type="number" />
+      {agent.kind === 'grok_bot' && (
+        <>
+          <TextField label={`Routine 網址（${agent.name}）`} value={routineUrl} onChange={setRoutineUrl} placeholder="https://..." />
+          <TextField label={`Routine Key（${agent.name}，留空表示不變）`} value={routineKey} onChange={setRoutineKey} type="password" />
+        </>
+      )}
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" label={`儲存 ${agent.name} 設定`} onClick={() => run(() => hubApi.admin.updateAgent(agent.id, { allowedGroupIds: allowed, dailySendLimit: Number(limit) }), '已儲存')}>儲存設定</Button>
+        <Button variant="secondary" label={`儲存 ${agent.name} 設定`} onClick={() => run(async () => { await hubApi.admin.updateAgent(agent.id, settingsPatch()); setRoutineKey(''); }, '已儲存')}>儲存設定</Button>
         {agent.kind === 'grok_bot' ? (
           <>
             <Button variant="secondary" onClick={() => run(async () => { const r = await hubApi.admin.testAgent(agent.id); setMessage(r.ok ? `Webhook 測試成功（HTTP ${r.status}）` : `Webhook 測試失敗：${r.status ?? ''} ${r.detail ?? ''}`); })}>測試 Webhook</Button>

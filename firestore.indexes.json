@@ -160,132 +160,6 @@
         { "fieldPath": "date", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "learningItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "qualityStatus", "order": "ASCENDING" },
-        { "fieldPath": "excludedByUser", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningFacetStates",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "published", "order": "ASCENDING" },
-        { "fieldPath": "nextCandidateAt", "order": "ASCENDING" },
-        { "fieldPath": "itemId", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningAttempts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "itemId", "order": "ASCENDING" },
-        { "fieldPath": "facet", "order": "ASCENDING" },
-        { "fieldPath": "target", "order": "ASCENDING" },
-        { "fieldPath": "occurredAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningChallengeReports",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "itemId", "order": "ASCENDING" },
-        { "fieldPath": "facet", "order": "ASCENDING" },
-        { "fieldPath": "target", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningOccurrences",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "sourceId", "order": "ASCENDING" },
-        { "fieldPath": "published", "order": "ASCENDING" },
-        { "fieldPath": "itemIds", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "startOffset", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningOccurrences",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "published", "order": "ASCENDING" },
-        { "fieldPath": "itemIds", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "sourceVersionId", "order": "DESCENDING" },
-        { "fieldPath": "startOffset", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningSourceItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "sourceId", "order": "ASCENDING" },
-        { "fieldPath": "qualityStatus", "order": "ASCENDING" },
-        { "fieldPath": "capturedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningSourceItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "qualityStatus", "order": "ASCENDING" },
-        { "fieldPath": "capturedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningSegments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "sourceVersionId", "order": "ASCENDING" },
-        { "fieldPath": "ordinal", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningSegments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "sourceId", "order": "ASCENDING" },
-        { "fieldPath": "ordinal", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningItems",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" },
-        { "fieldPath": "__name__", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningIngestionRuns",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "learningIngestionRuns",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "nextEnqueueAt", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": [
@@ -293,36 +167,18 @@
       "collectionGroup": "members",
       "fieldPath": "lineUserId",
       "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
-        }
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "arrayConfig": "CONTAINS", "queryScope": "COLLECTION_GROUP" }
       ]
     },
     {
       "collectionGroup": "records",
       "fieldPath": "lineUserId",
       "indexes": [
-        {
-          "order": "ASCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "order": "DESCENDING",
-          "queryScope": "COLLECTION_GROUP"
-        },
-        {
-          "arrayConfig": "CONTAINS",
-          "queryScope": "COLLECTION_GROUP"
-        }
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" },
+        { "arrayConfig": "CONTAINS", "queryScope": "COLLECTION_GROUP" }
       ]
     }
   ]

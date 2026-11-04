@@ -100,23 +100,6 @@ service cloud.firestore {
       }
     }
 
-    // ── Learning canary: backend only ────────────────────────────────────────
-    match /learningAccess/{id} { allow read, write: if false; }
-    match /learningSources/{id} { allow read, write: if false; }
-    match /learningSourceVersions/{id} { allow read, write: if false; }
-    match /learningSegments/{id} { allow read, write: if false; }
-    match /learningItems/{id} { allow read, write: if false; }
-    match /learningSourceItems/{id} { allow read, write: if false; }
-    match /learningOccurrences/{id} { allow read, write: if false; }
-    match /learningFacetStates/{id} { allow read, write: if false; }
-    match /learningSessions/{id} { allow read, write: if false; }
-    match /learningRoundUnits/{id} { allow read, write: if false; }
-    match /learningChallenges/{id} { allow read, write: if false; }
-    match /learningChallengeReports/{id} { allow read, write: if false; }
-    match /learningAttempts/{id} { allow read, write: if false; }
-    match /learningIngestionRuns/{id} { allow read, write: if false; }
-    match /learningIngestionBatches/{id} { allow read, write: if false; }
-
     // ── V1: LINE link tokens ──────────────────────────────────────────────────
     match /lineLinks/{token} {
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;

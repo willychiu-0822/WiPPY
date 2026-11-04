@@ -69,14 +69,6 @@ jobs:
             FIREBASE_HOSTING_URL=${{ steps.deploy-target.outputs.FIREBASE_HOSTING_URL }}
             WATER_LIFF_BASE_URL=${{ steps.deploy-target.outputs.FIREBASE_HOSTING_URL }}${{ steps.deploy-target.outputs.LIFF_PATH }}
             WATER_DEFAULT_GROUP_ID=${{ steps.deploy-target.outputs.WATER_DEFAULT_GROUP_ID }}
-            LEARNING_CORE_ENABLED=${{ steps.deploy-target.outputs.LEARNING_CORE_ENABLED }}
-            LEARNING_TASKS_PROJECT_ID=${{ steps.deploy-target.outputs.LEARNING_TASKS_PROJECT_ID }}
-            LEARNING_TASKS_LOCATION=${{ steps.deploy-target.outputs.LEARNING_TASKS_LOCATION }}
-            LEARNING_TASKS_QUEUE=${{ steps.deploy-target.outputs.LEARNING_TASKS_QUEUE }}
-            LEARNING_WORKER_BASE_URL=${{ steps.deploy-target.outputs.LEARNING_WORKER_BASE_URL }}
-            LEARNING_TASKS_SERVICE_ACCOUNT=${{ steps.deploy-target.outputs.LEARNING_TASKS_SERVICE_ACCOUNT }}
-            LEARNING_TASKS_AUDIENCE=${{ steps.deploy-target.outputs.LEARNING_TASKS_AUDIENCE }}
-            LEARNING_INLINE_QUEUE=${{ steps.deploy-target.outputs.LEARNING_INLINE_QUEUE }}
 
       - name: Install frontend dependencies
         working-directory: frontend

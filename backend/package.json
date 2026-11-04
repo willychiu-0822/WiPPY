@@ -10,7 +10,6 @@
     "build": "tsc",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:emulator": "firebase emulators:exec --only firestore --project demo-wippy \"jest water.emulator --runInBand\"",
     "dump:run": "ts-node src/scripts/dumpRun.ts"
   },
   "jest": {
@@ -45,7 +44,6 @@
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
-    "firebase-tools": "^14.27.0",
     "jest": "^30.3.0",
     "nodemon": "^3.1.0",
     "ts-jest": "^29.4.9",

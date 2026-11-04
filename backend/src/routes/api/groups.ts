@@ -3,13 +3,10 @@ import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
 import { authMiddleware } from '../../middleware/auth';
 import { getLineClient } from '../../line';
-import { listWaterMembersForAdmin, resetMemberTodayWater, setWaterGroupEnabled } from '../../services/waterService';
 
 const router = express.Router();
 
 const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
-const DEFAULT_WATER_LIFF_ID = '2010457997-AsUbpde2';
-const DEFAULT_WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
 
 async function loadOwnedGroupOr404(req: Request, res: Response) {
   const groupId = req.params['groupId'] as string;
@@ -23,43 +20,6 @@ async function loadOwnedGroupOr404(req: Request, res: Response) {
   return groupSnap;
 }
 
-function buildWaterEntryUrl(groupId: string): string {
-  const liffId = String(
-    process.env.LIFF_ID
-      ?? process.env.VITE_LIFF_ID
-      ?? DEFAULT_WATER_LIFF_ID
-      ?? ''
-  ).trim();
-  if (liffId) {
-    return `https://liff.line.me/${encodeURIComponent(liffId)}?wg=${encodeURIComponent(groupId)}`;
-  }
-
-  const configuredBase = String(process.env.WATER_LIFF_BASE_URL ?? process.env.LIFF_BASE_URL ?? '').trim();
-  const hostingBase = String(process.env.FIREBASE_HOSTING_URL ?? '').trim();
-  const liffPath = String(process.env.LIFF_PATH ?? '/liff/water').trim();
-
-  let base = configuredBase;
-  if (!base && hostingBase) {
-    const normalizedPath = liffPath.startsWith('/') ? liffPath : `/${liffPath}`;
-    base = `${hostingBase.replace(/\/$/, '')}${normalizedPath}`;
-  }
-
-  if (!base) {
-    base = DEFAULT_WATER_LIFF_BASE_URL;
-  }
-
-  return `${base.replace(/\/$/, '')}?wg=${encodeURIComponent(groupId)}`;
-}
-
-function buildWaterEnableMessage(groupName: string, entryUrl: string): string {
-  return [
-    `💧「${groupName}」已開通 WiPPY 喝水競賽`,
-    '之後請都從這個專屬連結進入：',
-    entryUrl,
-    '',
-    '舊的未帶群組參數連結已失效。',
-  ].join('\n');
-}
 // GET /api/groups
 // Returns all active groups for the authenticated user, sorted by lastMessageAt DESC
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
@@ -181,118 +141,6 @@ router.post('/:groupId/messages', authMiddleware, async (req: Request, res: Resp
   }
 });
 
-router.get('/:groupId/water-members', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const groupSnap = await loadOwnedGroupOr404(req, res);
-    if (!groupSnap) {
-      return;
-    }
-
-    const groupId = req.params['groupId'] as string;
-    const members = await listWaterMembersForAdmin(getDb(), groupId);
-
-    res.json({
-      groupName: groupSnap.data()!['name'],
-      members,
-    });
-  } catch (err) {
-    console.error(JSON.stringify({ event: 'get_group_water_members_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to fetch water members' });
-  }
-});
-
-router.post('/:groupId/water-members/:lineUserId/reset-today', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const groupSnap = await loadOwnedGroupOr404(req, res);
-    if (!groupSnap) {
-      return;
-    }
-
-    const groupId = req.params['groupId'] as string;
-    const lineUserId = String(req.params['lineUserId'] ?? '').trim();
-    if (!lineUserId) {
-      res.status(400).json({ error: 'lineUserId is required' });
-      return;
-    }
-
-    const result = await resetMemberTodayWater(getDb(), groupId, lineUserId);
-    res.json({
-      groupName: groupSnap.data()!['name'],
-      ...result,
-    });
-  } catch (err) {
-    console.error(JSON.stringify({ event: 'reset_group_water_member_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to reset member water today' });
-  }
-});
-
-router.post('/:groupId/water-config', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const groupSnap = await loadOwnedGroupOr404(req, res);
-    if (!groupSnap) {
-      return;
-    }
-
-    const groupId = req.params['groupId'] as string;
-    const { enabled } = req.body as { enabled?: boolean };
-    if (typeof enabled !== 'boolean') {
-      res.status(400).json({ error: 'enabled must be a boolean' });
-      return;
-    }
-
-    const groupName = String(groupSnap.data()!['name'] ?? '').trim() || groupId;
-    const result = await setWaterGroupEnabled(getDb(), groupId, { enabled, groupName });
-    const entryUrl = buildWaterEntryUrl(groupId);
-
-    let messageSent = false;
-    let messageError: string | null = null;
-    if (enabled) {
-      try {
-        await getLineClient().pushMessage(groupId, {
-          type: 'text',
-          text: buildWaterEnableMessage(groupName, entryUrl),
-        });
-        messageSent = true;
-      } catch (err) {
-        messageError = err instanceof Error ? err.message : String(err);
-      }
-    }
-
-    res.json({
-      groupId: result.groupId,
-      groupName: result.groupName,
-      enabled: result.isEnabled,
-      entryUrl,
-      messageSent,
-      messageError,
-    });
-  } catch (err) {
-    console.error(JSON.stringify({ event: 'set_group_water_config_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to update water group config' });
-  }
-});
-
-router.get('/:groupId/water-config', authMiddleware, async (req: Request, res: Response) => {
-  try {
-    const groupSnap = await loadOwnedGroupOr404(req, res);
-    if (!groupSnap) {
-      return;
-    }
-
-    const groupId = req.params['groupId'] as string;
-    const waterSnap = await getDb().collection('waterGroups').doc(groupId).get();
-    const waterData = waterSnap.exists ? waterSnap.data()! : {};
-    res.json({
-      groupId,
-      groupName: String(groupSnap.data()!['name'] ?? groupId),
-      enabled: Boolean(waterData['isEnabled']),
-      entryUrl: buildWaterEntryUrl(groupId),
-    });
-  } catch (err) {
-    console.error(JSON.stringify({ event: 'get_group_water_config_error', error: String(err) }));
-    res.status(500).json({ error: 'Failed to fetch water group config' });
-  }
-});
 // POST /api/groups/sync
 // Refresh group data from LINE API for all active groups
 router.post('/sync', authMiddleware, async (req: Request, res: Response) => {

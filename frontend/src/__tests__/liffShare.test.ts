@@ -1,66 +1,76 @@
-import { describe, expect, it, vi, afterEach } from 'vitest';
-import { buildWaterShareMessage } from '../lib/liffShare';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('buildWaterShareMessage', () => {
+const liffMock = vi.hoisted(() => ({
+  isInClient: vi.fn(),
+  sendMessages: vi.fn(),
+  shareTargetPicker: vi.fn(),
+  closeWindow: vi.fn(),
+}));
+
+vi.mock('@line/liff', () => ({ default: liffMock }));
+
+import { closeLineWindow, shareLineMessage, type LineFlexMessage } from '../lib/liffShare';
+
+const message: LineFlexMessage = { type: 'flex', altText: 'hi', contents: { type: 'bubble' } };
+
+describe('shareLineMessage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState(null, '', '/');
+  });
+
   afterEach(() => {
     vi.unstubAllEnvs();
   });
 
-  it('uses the configured LIFF deep link with the explicit group id', () => {
-    vi.stubEnv('VITE_LIFF_ID', 'test-liff-id');
+  it('sends to the current chat when running inside the LINE client', async () => {
+    liffMock.isInClient.mockReturnValue(true);
+    liffMock.sendMessages.mockResolvedValue(undefined);
 
-    const message = buildWaterShareMessage({
-      member: {
-        lineUserId: 'U1',
-        displayName: 'Amy',
-        pictureUrl: '',
-        todayMl: 900,
-        weekMl: 2400,
-        totalMl: 9800,
-        streak: 3,
-        achievements: [],
-        lastDrinkAt: null,
-      },
-      taunt: '補水補起來',
-      entryGroupId: 'Cgroup1',
-    });
-
-    const bodyContents = (message.contents.body as { contents: Array<Record<string, unknown>> }).contents;
-    const cta = bodyContents.find((item) => item.type === 'button');
-
-    expect(cta).toEqual(expect.objectContaining({
-      action: expect.objectContaining({
-        uri: 'https://liff.line.me/test-liff-id?wg=Cgroup1',
-      }),
-    }));
+    await expect(shareLineMessage(message)).resolves.toBe('sent');
+    expect(liffMock.sendMessages).toHaveBeenCalledWith([message]);
+    expect(liffMock.shareTargetPicker).not.toHaveBeenCalled();
   });
 
-  it('falls back to the default LIFF deep link when env is missing', () => {
-    vi.stubEnv('VITE_LIFF_ID', '');
+  it('falls back to shareTargetPicker when sendMessages fails', async () => {
+    liffMock.isInClient.mockReturnValue(true);
+    liffMock.sendMessages.mockRejectedValue(new Error('no permission'));
+    liffMock.shareTargetPicker.mockResolvedValue({ status: 'success' });
 
-    const message = buildWaterShareMessage({
-      member: {
-        lineUserId: 'U1',
-        displayName: 'Amy',
-        pictureUrl: '',
-        todayMl: 900,
-        weekMl: 2400,
-        totalMl: 9800,
-        streak: 3,
-        achievements: [],
-        lastDrinkAt: null,
-      },
-      taunt: '補水補起來',
-      entryGroupId: 'Cgroup1',
-    });
+    await expect(shareLineMessage(message)).resolves.toBe('shared');
+  });
 
-    const bodyContents = (message.contents.body as { contents: Array<Record<string, unknown>> }).contents;
-    const cta = bodyContents.find((item) => item.type === 'button');
+  it('reports cancelled when the user closes the target picker', async () => {
+    liffMock.isInClient.mockReturnValue(false);
+    liffMock.shareTargetPicker.mockResolvedValue(undefined);
 
-    expect(cta).toEqual(expect.objectContaining({
-      action: expect.objectContaining({
-        uri: 'https://liff.line.me/2010457997-AsUbpde2?wg=Cgroup1',
-      }),
-    }));
+    await expect(shareLineMessage(message)).resolves.toBe('cancelled');
+    expect(liffMock.sendMessages).not.toHaveBeenCalled();
+  });
+
+  it('throws a readable error when no share API works', async () => {
+    liffMock.isInClient.mockReturnValue(false);
+    liffMock.shareTargetPicker.mockRejectedValue(new Error('not supported'));
+
+    await expect(shareLineMessage(message)).rejects.toThrow('LINE 分享功能不可用');
+  });
+
+  it('simulates share failure with the share_unavailable dev preset', async () => {
+    vi.stubEnv('VITE_LIFF_DEV', 'true');
+    window.history.replaceState(null, '', '/?mockPreset=share_unavailable');
+
+    await expect(shareLineMessage(message)).rejects.toThrow('share_unavailable');
+    expect(liffMock.shareTargetPicker).not.toHaveBeenCalled();
+  });
+});
+
+describe('closeLineWindow', () => {
+  it('closes only inside the LINE client', () => {
+    liffMock.isInClient.mockReturnValue(false);
+    expect(closeLineWindow()).toBe(false);
+
+    liffMock.isInClient.mockReturnValue(true);
+    expect(closeLineWindow()).toBe(true);
+    expect(liffMock.closeWindow).toHaveBeenCalled();
   });
 });

@@ -16,6 +16,6 @@ That shared command includes the Testing Impact Gate. Do not create a PR from ei
 
 ## LIFF Development
 
-Both Codex and Claude Code must use `docs/agent-commands/wippy-liff-dev.md` for LIFF feature work, LIFF bug fixes, water tracker UAT, mock preset changes, and LINE App debugging.
+Both Codex and Claude Code must use `docs/agent-commands/wippy-liff-dev.md` for LIFF feature work, LIFF bug fixes, mock preset changes, and LINE App debugging.
 
 The PM-facing UAT guide is `docs/liff-dev-uat.md`.

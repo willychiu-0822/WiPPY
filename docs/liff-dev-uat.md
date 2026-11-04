@@ -2,6 +2,15 @@
 
 This is the shared PM and agent guide for WiPPY LIFF development, debugging, and UAT.
 
+The reusable LIFF infrastructure is:
+
+- `frontend/src/contexts/LiffContext.tsx` (`LiffProvider`) and `useLiff()`: LIFF init, LINE login, profile, ID token, and group/room context.
+- `frontend/src/lib/liffEntry.ts`: read entry params from direct, `liff.state`, and hash-based LIFF redirects.
+- `frontend/src/lib/liffShare.ts`: `shareLineMessage()` (sendMessages → shareTargetPicker fallback) and `closeLineWindow()`.
+- `backend/src/middleware/liffAuth.ts`: `liffAuthMiddleware` verifies the LIFF ID token and sets `req.liffUserId`.
+
+Wrap a new LIFF page in `<LiffProvider>` in `frontend/src/App.tsx`, outside the Firebase Auth `ProtectedRoute`.
+
 ## Local setup
 
 Create a LIFF dev env file from the example:
@@ -17,54 +26,25 @@ cd frontend
 npm run dev:liff
 ```
 
-Open:
+With `VITE_LIFF_DEV=true`, `LiffProvider` skips real LINE login and returns a dev profile (`Dev User`), a mock ID token, and the mock group `Cdev1`.
+
+For backend calls without a real LIFF token, set `LIFF_DEV_BYPASS_USER` in `backend/.env` (ignored when `NODE_ENV=production`):
 
 ```text
-http://localhost:5173/dev/liff-playground
+LIFF_DEV_BYPASS_USER={"userId":"Udev1234567890","displayName":"Dev User"}
 ```
-
-Use the playground first, then open the generated `/liff/water` UAT link.
 
 ## Mock presets
 
+Append `?mockPreset=<id>` to the LIFF page URL.
+
 | Preset | What to verify |
 |---|---|
-| `default` | Normal group usage, session load, drink logging, leaderboard, share entry points. |
-| `new_user` | First-time user state, zero progress, first drink achievement. |
-| `rank_behind` | User starts behind other members; ranking and gap UI are clear. |
-| `rank_first` | User starts first; lead-over-second and achievement/share UI are clear. |
-| `no_group` | Page shows the friendly group-only guard. |
-| `share_unavailable` | Share action shows a readable failure without breaking the page. |
-| `api_401` | Session load shows token/auth style failure copy. |
-| `api_500` | Session load shows backend failure copy and retry affordance. |
+| `default` | Normal group context (`groupId=Cdev1`). |
+| `no_group` | Page opened outside a group; the page should show a friendly guard. |
+| `share_unavailable` | `shareLineMessage()` throws; share action shows a readable failure. |
 
-Direct links:
-
-```text
-/dev/liff-playground?mockPreset=default
-/dev/liff-playground?mockPreset=new_user
-/dev/liff-playground?mockPreset=rank_behind
-/dev/liff-playground?mockPreset=rank_first
-/dev/liff-playground?mockPreset=no_group
-/dev/liff-playground?mockPreset=share_unavailable
-/dev/liff-playground?mockPreset=api_401
-/dev/liff-playground?mockPreset=api_500
-```
-
-PM UAT page links use the same preset on `/liff/water`.
-
-## UAT checklist
-
-For each relevant preset:
-
-1. Confirm `/dev/liff-playground` shows the expected active preset.
-2. Confirm diagnostics: ready, profile, context type, group ID, ID token presence, and share capability.
-3. Open the UAT link.
-4. Verify the page state matches the preset.
-5. For normal ranking presets, submit a drink record and confirm the modal, leaderboard, and progress update.
-6. For share-related work, click share and record whether the result is sent, shared, cancelled, or failed.
-
-Record the tested preset URLs in the PR or handoff notes.
+Add a preset in `frontend/src/lib/liffDev.ts` only when a new page needs a context state the existing ones cannot reproduce.
 
 ## LINE App real-device debugging
 
@@ -88,8 +68,8 @@ Use LIFF Inspector for:
 
 ## Troubleshooting order
 
-1. Frontend env: `VITE_LIFF_DEV`, `VITE_USE_MOCK_API`, `VITE_LIFF_ID`, `VITE_API_BASE_URL`.
-2. Mock preset: confirm `/dev/liff-playground` active preset and diagnostics.
+1. Frontend env: `VITE_LIFF_DEV`, `VITE_LIFF_ID`, `VITE_API_BASE_URL`.
+2. Mock preset: confirm the `mockPreset` query param.
 3. Backend dev bypass/env: `LIFF_DEV_BYPASS_USER`, `LIFF_CHANNEL_ID`.
 4. Cloud Run and Firebase status for deployed paths.
 5. LINE API Status: https://api.line-status.info/

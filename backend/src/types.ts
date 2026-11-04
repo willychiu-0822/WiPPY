@@ -261,27 +261,3 @@ export interface AgentChatApiResponse {
   generatedMessageCount?: number;
   extractedKnowledgeCount?: number;
 }
-
-// ─── V1 Legacy Types (WiPPY 1.0 — Habit Scheduler) ──────────────────────────
-// Kept for backwards compatibility with existing webhook/scheduler handlers.
-
-export interface V1Slot {
-  wishId: string;
-  wishName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'pending' | 'notified' | 'recorded' | 'skipped';
-  feelEmoji?: string;
-  notifiedAt?: Timestamp;
-  recordedAt?: Timestamp;
-}
-
-export interface V1Record {
-  slotId: string;
-  wishId: string;
-  wishName: string;
-  date: string;
-  feelEmoji: string;
-  recordedAt: Timestamp;
-}

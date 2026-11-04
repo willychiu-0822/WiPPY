@@ -131,7 +131,7 @@ describe('LiffProvider', () => {
 
     expect(screen.getByTestId('ready')).toHaveTextContent('false');
     expect(screen.getByTestId('auth-redirecting')).toHaveTextContent('true');
-    expect(screen.getByTestId('error')).toHaveTextContent('需要 LINE 登入才能開啟喝水頁面');
+    expect(screen.getByTestId('error')).toHaveTextContent('需要 LINE 登入才能開啟此頁面');
     expect(liffMock.login).toHaveBeenCalledWith({ redirectUri: window.location.href });
   });
 
@@ -150,7 +150,7 @@ describe('LiffProvider', () => {
 
   it('sets no group when the no_group mock preset is active', async () => {
     vi.stubEnv('VITE_LIFF_DEV', 'true');
-    window.history.replaceState(null, '', '/liff/water?mockPreset=no_group');
+    window.history.replaceState(null, '', '/liff?mockPreset=no_group');
 
     await renderStateProbe();
 

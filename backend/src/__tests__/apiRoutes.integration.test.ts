@@ -16,12 +16,6 @@ const mockIsCloudTasksEnabled = jest.fn();
 const mockEnqueueHarnessRun = jest.fn();
 const mockCreateLLMProvider = jest.fn();
 const mockExecuteHarness = jest.fn();
-const mockListWaterMembersForAdmin = jest.fn();
-const mockResetMemberTodayWater = jest.fn();
-const mockSetWaterGroupEnabled = jest.fn();
-const mockResolveWaterSession = jest.fn();
-const mockEnsureIdentity = jest.fn();
-const mockGetTodayLeaderboard = jest.fn();
 
 jest.mock('firebase-admin', () => ({
   apps: [],
@@ -30,7 +24,7 @@ jest.mock('firebase-admin', () => ({
   auth: () => ({ verifyIdToken: mockVerifyIdToken }),
   firestore: {
     Timestamp: {
-      now: () => ({ _seconds: 1_700_000_000, _nanoseconds: 0, toMillis: () => 1_700_000_000_000 }),
+      now: () => ({ _seconds: 1_700_000_000, _nanoseconds: 0, seconds: 1_700_000_000, toMillis: () => 1_700_000_000_000 }),
       fromDate: (date: Date) => ({ _seconds: Math.floor(date.getTime() / 1000), _nanoseconds: 0 }),
       fromMillis: (ms: number) => ({ _seconds: Math.floor(ms / 1000), _nanoseconds: 0, toMillis: () => ms }),
     },
@@ -84,16 +78,6 @@ jest.mock('../services/llmProvider', () => ({
 
 jest.mock('../services/harnessOrchestrator', () => ({
   executeHarness: (...args: unknown[]) => mockExecuteHarness(...args),
-}));
-
-jest.mock('../services/waterService', () => ({
-  listWaterMembersForAdmin: (...args: unknown[]) => mockListWaterMembersForAdmin(...args),
-  resetMemberTodayWater: (...args: unknown[]) => mockResetMemberTodayWater(...args),
-  setWaterGroupEnabled: (...args: unknown[]) => mockSetWaterGroupEnabled(...args),
-  resolveWaterSession: (...args: unknown[]) => mockResolveWaterSession(...args),
-  ensureIdentity: (...args: unknown[]) => mockEnsureIdentity(...args),
-  getTodayLeaderboard: (...args: unknown[]) => mockGetTodayLeaderboard(...args),
-  TAUNT_MESSAGES: [],
 }));
 
 import { createApp } from '../app';
@@ -249,234 +233,6 @@ describe('backend API route integration safety net', () => {
     expect(res.body).toEqual({ error: 'Group not found' });
   });
 
-  it('returns owned group water members for backend admin operations', async () => {
-    mockGetDb.mockReturnValue({
-      collection: jest.fn(() => ({
-        doc: jest.fn(() => ({
-          get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }),
-        })),
-      })),
-    });
-    mockListWaterMembersForAdmin.mockResolvedValue([
-      { lineUserId: 'U1', displayName: 'Amy', pictureUrl: '', todayMl: 0, weekMl: 200, totalMl: 500, streak: 2, rank: 1, lastDrinkAt: null },
-    ]);
-
-    const res = await request(server, 'GET', '/api/groups/group_a/water-members');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      groupName: 'VIP group',
-      members: [expect.objectContaining({ lineUserId: 'U1', rank: 1 })],
-    });
-    expect(mockListWaterMembersForAdmin).toHaveBeenCalled();
-  });
-
-  it('resets an owned group member water total for today', async () => {
-    mockGetDb.mockReturnValue({
-      collection: jest.fn(() => ({
-        doc: jest.fn(() => ({
-          get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }),
-        })),
-      })),
-    });
-    mockResetMemberTodayWater.mockResolvedValue({
-      member: {
-        lineUserId: 'U1',
-        displayName: 'Amy',
-        pictureUrl: '',
-        todayMl: 0,
-        weekMl: 200,
-        totalMl: 500,
-        streak: 2,
-        achievements: [],
-        lastDrinkAt: null,
-      },
-      removedMl: 300,
-      removedRecordCount: 2,
-    });
-
-    const res = await request(server, 'POST', '/api/groups/group_a/water-members/U1/reset-today');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      groupName: 'VIP group',
-      member: expect.objectContaining({ lineUserId: 'U1', todayMl: 0 }),
-      removedMl: 300,
-      removedRecordCount: 2,
-    });
-    expect(mockResetMemberTodayWater).toHaveBeenCalled();
-  });
-
-  it('returns owned group water config including the dedicated LIFF entry URL', async () => {
-    process.env.LIFF_ID = '2010457997-AsUbpde2';
-    process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
-    mockGetDb.mockReturnValue({
-      collection: jest.fn((name: string) => ({
-        doc: jest.fn(() => ({
-          get: jest.fn().mockResolvedValue(
-            name === 'groups'
-              ? { exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }
-              : { exists: true, data: () => ({ isEnabled: true }) }
-          ),
-        })),
-      })),
-    });
-
-    const res = await request(server, 'GET', '/api/groups/group_a/water-config');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      groupId: 'group_a',
-      groupName: 'VIP group',
-      enabled: true,
-      entryUrl: 'https://liff.line.me/2010457997-AsUbpde2?wg=group_a',
-    });
-  });
-
-  it('falls back to the default LIFF deep link when water entry env is missing', async () => {
-    delete process.env.LIFF_ID;
-    delete process.env.VITE_LIFF_ID;
-    delete process.env.WATER_LIFF_BASE_URL;
-    delete process.env.LIFF_BASE_URL;
-    delete process.env.FIREBASE_HOSTING_URL;
-    delete process.env.LIFF_PATH;
-    mockGetDb.mockReturnValue({
-      collection: jest.fn((name: string) => ({
-        doc: jest.fn(() => ({
-          get: jest.fn().mockResolvedValue(
-            name === 'groups'
-              ? { exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }
-              : { exists: true, data: () => ({ isEnabled: false }) }
-          ),
-        })),
-      })),
-    });
-
-    const res = await request(server, 'GET', '/api/groups/group_a/water-config');
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({
-      groupId: 'group_a',
-      groupName: 'VIP group',
-      enabled: false,
-      entryUrl: 'https://liff.line.me/2010457997-AsUbpde2?wg=group_a',
-    });
-  });
-
-  it('uses displayNameOverride only as the LIFF session display-name fallback', async () => {
-    const groupId = 'C36f826d26cf8adefe4d214993742c230';
-    process.env.LIFF_CHANNEL_ID = '1234567890';
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        sub: 'Uline1',
-        aud: '1234567890',
-        exp: Math.floor(Date.now() / 1000) + 3600,
-      }),
-    }) as typeof fetch;
-    const db = { marker: 'db' };
-    mockGetDb.mockReturnValue(db);
-    mockResolveWaterSession.mockResolvedValue({ groupId, groupName: '救援群' });
-    mockEnsureIdentity.mockResolvedValue({
-      isNewUser: true,
-      user: {
-        lineUserId: 'Uline1',
-        displayName: 'Fallback Amy',
-        pictureUrl: '',
-        firstSeenAt: { _seconds: 0, _nanoseconds: 0 },
-        lastSeenAt: { _seconds: 0, _nanoseconds: 0 },
-        lastGroupId: groupId,
-        groupIds: [groupId],
-      },
-      member: {
-        lineUserId: 'Uline1',
-        displayName: 'Fallback Amy',
-        pictureUrl: '',
-        todayMl: 0,
-        weekMl: 0,
-        totalMl: 0,
-        streak: 0,
-        achievements: [],
-        lastDrinkAt: null,
-      },
-    });
-    mockGetTodayLeaderboard.mockResolvedValue({
-      groupName: '救援群',
-      memberCount: 1,
-      members: [],
-      me: {
-        lineUserId: 'Uline1',
-        rank: 1,
-        todayMl: 0,
-        gapToAbove: null,
-        leadOverSecond: null,
-        aboveDisplayName: null,
-        aboveLastDrinkAt: null,
-        belowDisplayName: null,
-      },
-      group: {
-        todayMl: 0,
-        goalMl: 1500,
-        goalReached: false,
-        perMemberBaselineMl: 1500,
-        firstLoggerDisplayName: null,
-      },
-      pulse: [],
-    });
-
-    const res = await request(server, 'POST', '/api/water/session', {
-      entryGroupId: groupId,
-      displayNameOverride: 'Fallback Amy',
-    });
-
-    expect(res.status).toBe(200);
-    expect(mockEnsureIdentity).toHaveBeenCalledWith(
-      db,
-      { groupId, groupName: '救援群' },
-      { userId: 'Uline1', displayName: 'Fallback Amy', pictureUrl: '' }
-    );
-    expect(res.body).toEqual(expect.objectContaining({
-      status: 'ready',
-      activeGroup: expect.objectContaining({ groupId, groupName: '救援群' }),
-    }));
-  });
-
-  it('enables water competition for an owned group and auto-sends the entry URL', async () => {
-    process.env.LIFF_ID = '2010457997-AsUbpde2';
-    process.env.WATER_LIFF_BASE_URL = 'https://wippy-mvp.web.app/liff/water';
-    process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
-    const { Client } = require('@line/bot-sdk');
-    const mockPushMessage = jest.fn().mockResolvedValue({ messageId: 'line_msg_2' });
-    Client.mockImplementation(() => ({ pushMessage: mockPushMessage }));
-    mockGetDb.mockReturnValue({
-      collection: jest.fn(() => ({
-        doc: jest.fn(() => ({
-          get: jest.fn().mockResolvedValue({ exists: true, data: () => ({ userId: 'user_a', name: 'VIP group' }) }),
-        })),
-      })),
-    });
-    mockSetWaterGroupEnabled.mockResolvedValue({
-      groupId: 'group_a',
-      groupName: 'VIP group',
-      isEnabled: true,
-    });
-
-    const res = await request(server, 'POST', '/api/groups/group_a/water-config', { enabled: true });
-
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual(expect.objectContaining({
-      groupId: 'group_a',
-      groupName: 'VIP group',
-      enabled: true,
-      entryUrl: 'https://liff.line.me/2010457997-AsUbpde2?wg=group_a',
-      messageSent: true,
-      messageError: null,
-    }));
-    expect(mockPushMessage).toHaveBeenCalledWith('group_a', expect.objectContaining({
-      type: 'text',
-      text: expect.stringContaining('https://liff.line.me/2010457997-AsUbpde2?wg=group_a'),
-    }));
-  });
   it('covers activity list, create, update, approve, and request-revision route contracts', async () => {
     const db = { tag: 'db' };
     const activity = {
@@ -602,101 +358,51 @@ describe('backend API route integration safety net', () => {
       extractedKnowledgeCount: 1,
     });
   });
+  it('runs /scheduler/tick for activity messages only and reports sent count', async () => {
+    const query: Record<string, jest.Mock> = {};
+    query.where = jest.fn(() => query);
+    query.orderBy = jest.fn(() => query);
+    query.limit = jest.fn(() => query);
+    query.get = jest.fn().mockResolvedValue({ empty: true, docs: [], size: 0 });
+    const collectionGroup = jest.fn(() => query);
+    mockGetDb.mockReturnValue({ collectionGroup });
 
-  async function postDeployNotify(
-    server: http.Server,
-    body: unknown,
-    secret?: string
-  ): Promise<JsonResponse> {
-    const address = server.address() as AddressInfo;
-    const payload = JSON.stringify(body);
-    return new Promise((resolve, reject) => {
-      const req = http.request({
-        host: '127.0.0.1',
-        port: address.port,
-        method: 'POST',
-        path: '/api/internal/deploy-notify',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(payload),
-          ...(secret ? { 'x-internal-secret': secret } : {}),
-        },
-      }, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => resolve({ status: res.statusCode ?? 0, body: JSON.parse(data), headers: res.headers }));
-      });
-      req.on('error', reject);
-      req.write(payload);
-      req.end();
-    });
-  }
-
-  it('rejects deploy-notify with wrong or missing secret', async () => {
-    const body = { groupId: 'C1abc', url: 'https://example.com', version: 'abc1234' };
-
-    const missing = await postDeployNotify(server, body);
-    expect(missing.status).toBe(401);
-
-    const wrong = await postDeployNotify(server, body, 'wrong-secret');
-    expect(wrong.status).toBe(401);
-  });
-
-  it('returns 400 when deploy-notify body is missing required fields', async () => {
-    const missing_url = await postDeployNotify(server, { groupId: 'C1', version: 'v1' }, 'test-secret');
-    expect(missing_url.status).toBe(400);
-
-    const missing_version = await postDeployNotify(server, { groupId: 'C1', url: 'https://x' }, 'test-secret');
-    expect(missing_version.status).toBe(400);
-
-    const missing_group = await postDeployNotify(server, { url: 'https://x', version: 'v1' }, 'test-secret');
-    expect(missing_group.status).toBe(400);
-  });
-
-  it('calls lineClient.pushMessage and returns ok on successful deploy-notify', async () => {
-    const { Client } = require('@line/bot-sdk');
-    const mockPushMessage = jest.fn().mockResolvedValue({ messageId: 'msg_1' });
-    Client.mockImplementation(() => ({ pushMessage: mockPushMessage }));
-
-    process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
-    const body = {
-      groupId: 'C140df0374a3ba2a5864bcff0cbf8befd',
-      url: 'https://wippy-mvp.web.app/liff/water?wg=C140df0374a3ba2a5864bcff0cbf8befd&v=abc1234',
-      version: 'abc1234',
-      workflowUrl: 'https://github.com/org/repo/actions/runs/999',
-    };
-
-    const res = await postDeployNotify(server, body, 'test-secret');
+    const res = await request(server, 'POST', '/scheduler/tick', undefined, '');
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ ok: true });
-    expect(mockPushMessage).toHaveBeenCalledWith(
-      'C140df0374a3ba2a5864bcff0cbf8befd',
-      expect.objectContaining({
-        type: 'text',
-        text: expect.stringContaining('abc1234'),
-      })
-    );
-    expect(mockPushMessage.mock.calls[0][1].text).toContain('https://wippy-mvp.web.app/liff/water?wg=C140df0374a3ba2a5864bcff0cbf8befd&v=abc1234');
+    expect(res.body).toEqual({ ok: true, sent: 0 });
+    expect(collectionGroup).toHaveBeenCalledTimes(1);
+    expect(collectionGroup).toHaveBeenCalledWith('activityMessages');
   });
 
-  it('returns 500 when lineClient.pushMessage throws on deploy-notify', async () => {
-    const { Client } = require('@line/bot-sdk');
-    Client.mockImplementation(() => ({
-      pushMessage: jest.fn().mockRejectedValue(new Error('LINE API error')),
-    }));
+  it('returns 500 from /scheduler/tick when the activity message query fails', async () => {
+    const query: Record<string, jest.Mock> = {};
+    query.where = jest.fn(() => query);
+    query.orderBy = jest.fn(() => query);
+    query.limit = jest.fn(() => query);
+    query.get = jest.fn().mockRejectedValue(new Error('firestore down'));
+    mockGetDb.mockReturnValue({ collectionGroup: jest.fn(() => query) });
 
-    process.env.LINE_CHANNEL_ACCESS_TOKEN = 'test-token';
-    const body = {
-      groupId: 'C1abc',
-      url: 'https://wippy-mvp.web.app/liff/water?wg=C1abc&v=abc1234',
-      version: 'abc1234',
-    };
-
-    const res = await postDeployNotify(server, body, 'test-secret');
+    const res = await request(server, 'POST', '/scheduler/tick', undefined, '');
 
     expect(res.status).toBe(500);
-    expect(res.body.ok).toBe(false);
+    expect(res.body).toMatchObject({ ok: false, error: expect.stringContaining('firestore down') });
+  });
+
+  it.each([
+    ['POST', '/scheduler/notify'],
+    ['POST', '/scheduler/water-reset'],
+    ['POST', '/api/water/session'],
+    ['GET', '/api/groups/group_a/water-config'],
+    ['GET', '/api/learning/access'],
+    ['POST', '/api/internal/deploy-notify'],
+  ])('no longer serves removed legacy endpoint %s %s', async (method, path) => {
+    const address = server.address() as AddressInfo;
+    const res = await fetch(`http://127.0.0.1:${address.port}${path}`, {
+      method,
+      headers: { Authorization: 'Bearer valid-token' },
+    });
+    expect(res.status).toBe(404);
   });
 
   it('protects /api/internal/harness/run with the internal secret', async () => {

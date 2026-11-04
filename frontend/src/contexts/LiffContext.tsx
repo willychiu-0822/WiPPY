@@ -2,8 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import liff from '@line/liff';
 import type { Liff } from '@line/liff';
 import { LiffContext, type LiffProfile } from './liff-context';
-import { getActiveLiffMockPresetId } from '../lib/liffDev';
-import { DEFAULT_GROUP_ID } from '../lib/liffMockPresets';
+import { getActiveLiffMockPresetId, LIFF_DEV_ENTRY_GROUP_ID } from '../lib/liffDev';
 import { LINE_GROUP_ID_PATTERN } from '../lib/liffEntry';
 
 // ─── Dev fallback ─────────────────────────────────────────────────────────────
@@ -82,7 +81,7 @@ function buildDevContext(): ReturnType<Liff['getContext']> {
 
   return {
     type: 'group',
-    groupId: DEFAULT_GROUP_ID,
+    groupId: LIFF_DEV_ENTRY_GROUP_ID,
     utouId: undefined,
     roomId: undefined,
     availability: DEV_AVAILABILITY,
@@ -171,7 +170,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
             ...current,
             ready: false,
             loading: false,
-            error: '需要 LINE 登入才能開啟喝水頁面。若未自動跳轉，請回到 LINE 群組重新開啟專屬連結。',
+            error: '需要 LINE 登入才能開啟此頁面。若未自動跳轉，請回到 LINE 重新開啟連結。',
             authRedirecting: true,
           }));
           liff.login({ redirectUri: window.location.href });

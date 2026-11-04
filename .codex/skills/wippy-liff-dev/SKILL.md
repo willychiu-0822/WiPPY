@@ -1,6 +1,6 @@
 ---
 name: wippy-liff-dev
-description: Develop, debug, test, or UAT WiPPY LIFF flows with mock presets, LIFF dev playground, LINE App debugging, and PM UAT handoff. Use when the user asks for LIFF feature work, LIFF bug fixes, water tracker UAT, LINE share debugging, LIFF Inspector guidance, or mock preset testing.
+description: Develop, debug, test, or UAT WiPPY LIFF flows with mock presets, LINE App debugging, and PM UAT handoff. Use when the user asks for LIFF feature work, LIFF bug fixes, LINE share debugging, LIFF Inspector guidance, or mock preset testing.
 ---
 
 # WiPPY LIFF Dev

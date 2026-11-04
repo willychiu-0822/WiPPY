@@ -68,26 +68,6 @@ export interface BroadcastPreview {
   content: string;
 }
 
-export interface WaterAdminMember {
-  lineUserId: string;
-  displayName: string;
-  pictureUrl: string;
-  todayMl: number;
-  weekMl: number;
-  totalMl: number;
-  streak: number;
-  rank: number;
-  lastDrinkAt: FirestoreTimestamp | null;
-}
-
-export interface WaterGroupConfig {
-  groupId: string;
-  groupName: string;
-  enabled: boolean;
-  entryUrl: string;
-  messageSent?: boolean;
-  messageError?: string | null;
-}
 // ─── Groups API ───────────────────────────────────────────────────────────────
 
 export const api = {
@@ -106,30 +86,6 @@ export const api = {
       }),
 
     sync: () => request<{ ok: boolean; updated: number }>('/api/groups/sync', { method: 'POST' }),
-
-    waterMembers: (groupId: string) =>
-      request<{ groupName: string; members: WaterAdminMember[] }>(
-        `/api/groups/${groupId}/water-members`
-      ),
-
-    resetWaterToday: (groupId: string, lineUserId: string) =>
-      request<{
-        groupName: string;
-        member: WaterAdminMember;
-        removedMl: number;
-        removedRecordCount: number;
-      }>(`/api/groups/${groupId}/water-members/${lineUserId}/reset-today`, {
-        method: 'POST',
-      }),
-
-    waterConfig: (groupId: string) =>
-      request<WaterGroupConfig>(`/api/groups/${groupId}/water-config`),
-
-    updateWaterConfig: (groupId: string, enabled: boolean) =>
-      request<WaterGroupConfig>(`/api/groups/${groupId}/water-config`, {
-        method: 'POST',
-        body: JSON.stringify({ enabled }),
-      }),
   },
 
   broadcast: {

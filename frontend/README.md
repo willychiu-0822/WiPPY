@@ -29,13 +29,7 @@ Start LIFF dev mode:
 npm run dev:liff
 ```
 
-Open the LIFF playground first:
-
-```text
-http://localhost:5173/dev/liff-playground
-```
-
-The playground lets PMs and agents switch mock presets, copy UAT links, reset mock state, and inspect LIFF diagnostics before opening `/liff/water`.
+`VITE_LIFF_DEV=true` makes `LiffProvider` return a dev profile and mock group context outside LINE. Use `?mockPreset=no_group` or `?mockPreset=share_unavailable` to reproduce edge cases.
 
 Full PM UAT and LINE App debugging instructions live in:
 

@@ -1,9 +1,8 @@
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
 import { Outlet, NavLink } from 'react-router-dom';
-import { useLearningAccess } from '../learning/access/useLearningAccess';
 
 export default function Layout() {
-  const learningAccess = useLearningAccess();
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Top bar */}
@@ -40,28 +39,12 @@ export default function Layout() {
           >
             記錄
           </NavLink>
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-700'
-              }`
-            }
+          <button
+            onClick={() => signOut(auth)}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 transition-colors"
           >
-            設定
-          </NavLink>
-          {learningAccess.enabled && !learningAccess.loading ? (
-            <NavLink
-              to="/learn"
-              className={({ isActive }) =>
-                `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-700'
-                }`
-              }
-            >
-              探索
-            </NavLink>
-          ) : null}
+            登出
+          </button>
         </nav>
       </header>
 

@@ -43,12 +43,3 @@ export function getLiffEntryParam(search: string, key: string, hash = typeof win
   }
   return null;
 }
-
-export function getWaterEntryGroupId(search: string, hash?: string): string {
-  return getLiffEntryParam(search, 'wg', hash)?.trim() || '';
-}
-
-export function hasWaterEntryGroup(search: string, hash?: string): boolean {
-  const groupId = getWaterEntryGroupId(search, hash);
-  return LINE_GROUP_ID_PATTERN.test(groupId) || groupId.length > 0;
-}

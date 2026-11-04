@@ -36,7 +36,10 @@ export function verifyIdToken(token: string): Promise<{ uid: string }> {
 export function hubAuth(opts: { allow: Array<'owner' | 'agent'>; via?: ActorVia }) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const header = req.headers.authorization ?? '';
-    const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+    const apiKeyHeader = req.headers['x-api-key'];
+    const token = header.startsWith('Bearer ')
+      ? header.slice(7).trim()
+      : typeof apiKeyHeader === 'string' ? apiKeyHeader.trim() : '';
     if (!token) {
       res.status(401).json({ error: 'Missing Authorization header', code: 'unauthenticated' });
       return;

@@ -1,6 +1,7 @@
 // Side-effect module: wires Agent Hub modules together (job handlers, hooks,
 // alert delivery, scheduler tasks). Imported once by the app.
 import { setLLMCallObserver } from '../services/llmProvider';
+import { onActionFailed, runActionJob } from './actions';
 import { deliverAlertDirect } from './alertDelivery';
 import { setAlertDeliverer } from './alerts';
 import type { HubJob } from './core/jobs';
@@ -25,6 +26,17 @@ setAlertDeliverer(deliverAlertDirect);
 registerJobHandler('dispatch', (ctx) => ({
   run: (job) => runDispatch(ctx, dispatchIdOf(job)),
   onFinalFailure: (job, error) => onDispatchFailed(ctx, dispatchIdOf(job), error),
+}));
+
+function actionIdOf(job: HubJob): string {
+  const id = job.payload?.['actionId'];
+  if (typeof id !== 'string') throw new PermanentError('action job without actionId');
+  return id;
+}
+
+registerJobHandler('action_execute', (ctx) => ({
+  run: (job) => runActionJob(ctx, actionIdOf(job)),
+  onFinalFailure: (job, error) => onActionFailed(ctx, actionIdOf(job), error),
 }));
 
 setMessageStoredHook(async (ctx, message) => {

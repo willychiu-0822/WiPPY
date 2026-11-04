@@ -2,6 +2,8 @@ import express, { type Express, type Request, type Response } from 'express';
 import { COLLECTIONS, type AgentDoc } from '../core/types';
 import { getHub } from '../runtime';
 import { adminRouter } from './adminRouter';
+import { agentRouter } from './agentRouter';
+import { mcpRouter } from './mcpRouter';
 import { hubAuth } from './auth';
 import { internalHubRouter } from './internalRouter';
 import { mountSchedulerRoutes } from './schedulerRoutes';
@@ -29,6 +31,8 @@ export function mountHubRoutes(app: Express): void {
     });
   }));
   app.use('/api/hub/admin', express.json({ limit: '256kb' }), hubAuth({ allow: ['owner'] }), adminRouter);
+  app.use('/api/hub/v1', express.json({ limit: '256kb' }), hubAuth({ allow: ['owner', 'agent'], via: 'rest' }), agentRouter);
+  app.use('/api/hub/mcp', express.json({ limit: '256kb' }), hubAuth({ allow: ['owner', 'agent'], via: 'mcp' }), mcpRouter);
   app.use('/api/internal/hub', express.json({ limit: '256kb' }), internalHubRouter);
   mountSchedulerRoutes(app);
   for (const mount of extraMounts) mount(app);

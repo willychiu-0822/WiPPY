@@ -16,7 +16,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      navigate('/today');
+      navigate('/groups');
     } catch {
       setError('Google 登入失敗，請再試一次');
     } finally {
@@ -34,7 +34,7 @@ export default function LoginPage() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      navigate('/today');
+      navigate('/groups');
     } catch (e: unknown) {
       const msg = (e as { code?: string }).code;
       if (msg === 'auth/user-not-found' || msg === 'auth/wrong-password') {

@@ -1,22 +1,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "slots",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "date", "order": "ASCENDING" },
-        { "fieldPath": "startTime", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "slots",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "date", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "groups",
       "queryScope": "COLLECTION",
       "fields": [

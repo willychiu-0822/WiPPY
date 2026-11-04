@@ -45,7 +45,7 @@ Add or update tests when the PR includes any of these changes:
 - Login, auth token, permission, or security behavior changes.
 - Scheduler, LINE messaging, broadcast, Cloud Tasks, or any production side effect.
 - Agent, LLM, harness, rate limit, or plan validation behavior.
-- Frontend user flows for activities, groups, message review, send logs, settings, or onboarding.
+- Frontend user flows for activities, groups, message review, or send logs.
 - Bug fixes where a regression test can reproduce the old failure.
 - Refactors of core behavior where tests are needed to prove behavior did not change.
 

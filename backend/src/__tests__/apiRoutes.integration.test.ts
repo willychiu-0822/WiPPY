@@ -24,7 +24,7 @@ jest.mock('firebase-admin', () => ({
   auth: () => ({ verifyIdToken: mockVerifyIdToken }),
   firestore: {
     Timestamp: {
-      now: () => ({ _seconds: 1_700_000_000, _nanoseconds: 0, toMillis: () => 1_700_000_000_000 }),
+      now: () => ({ _seconds: 1_700_000_000, _nanoseconds: 0, seconds: 1_700_000_000, toMillis: () => 1_700_000_000_000 }),
       fromDate: (date: Date) => ({ _seconds: Math.floor(date.getTime() / 1000), _nanoseconds: 0 }),
       fromMillis: (ms: number) => ({ _seconds: Math.floor(ms / 1000), _nanoseconds: 0, toMillis: () => ms }),
     },
@@ -358,6 +358,53 @@ describe('backend API route integration safety net', () => {
       extractedKnowledgeCount: 1,
     });
   });
+  it('runs /scheduler/tick for activity messages only and reports sent count', async () => {
+    const query: Record<string, jest.Mock> = {};
+    query.where = jest.fn(() => query);
+    query.orderBy = jest.fn(() => query);
+    query.limit = jest.fn(() => query);
+    query.get = jest.fn().mockResolvedValue({ empty: true, docs: [], size: 0 });
+    const collectionGroup = jest.fn(() => query);
+    mockGetDb.mockReturnValue({ collectionGroup });
+
+    const res = await request(server, 'POST', '/scheduler/tick', undefined, '');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, sent: 0 });
+    expect(collectionGroup).toHaveBeenCalledTimes(1);
+    expect(collectionGroup).toHaveBeenCalledWith('activityMessages');
+  });
+
+  it('returns 500 from /scheduler/tick when the activity message query fails', async () => {
+    const query: Record<string, jest.Mock> = {};
+    query.where = jest.fn(() => query);
+    query.orderBy = jest.fn(() => query);
+    query.limit = jest.fn(() => query);
+    query.get = jest.fn().mockRejectedValue(new Error('firestore down'));
+    mockGetDb.mockReturnValue({ collectionGroup: jest.fn(() => query) });
+
+    const res = await request(server, 'POST', '/scheduler/tick', undefined, '');
+
+    expect(res.status).toBe(500);
+    expect(res.body).toMatchObject({ ok: false, error: expect.stringContaining('firestore down') });
+  });
+
+  it.each([
+    ['POST', '/scheduler/notify'],
+    ['POST', '/scheduler/water-reset'],
+    ['POST', '/api/water/session'],
+    ['GET', '/api/groups/group_a/water-config'],
+    ['GET', '/api/learning/access'],
+    ['POST', '/api/internal/deploy-notify'],
+  ])('no longer serves removed legacy endpoint %s %s', async (method, path) => {
+    const address = server.address() as AddressInfo;
+    const res = await fetch(`http://127.0.0.1:${address.port}${path}`, {
+      method,
+      headers: { Authorization: 'Bearer valid-token' },
+    });
+    expect(res.status).toBe(404);
+  });
+
   it('protects /api/internal/harness/run with the internal secret', async () => {
     mockExecuteHarness.mockResolvedValue(undefined);
 

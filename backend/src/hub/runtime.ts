@@ -30,7 +30,7 @@ export function buildProductionHub(env: NodeJS.ProcessEnv): HubContext {
   let llm: LlmChat | null = null;
   if (getLLMConfigStatus(env).isConfigured) {
     let provider: LlmChat | null = null;
-    llm = { chat: (messages) => (provider ??= createLLMProvider()).chat(messages) };
+    llm = { chat: (messages) => (provider ??= createLLMProvider({ observe: false })).chat(messages) };
   }
 
   const inline = new InlineQueue();

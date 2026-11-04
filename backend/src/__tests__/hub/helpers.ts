@@ -134,3 +134,59 @@ export function textEvent(opts: { id?: string; text?: string; groupId?: string; 
 export function jsonResponse(status: number, body: unknown, headers: Record<string, string> = {}) {
   return new Response(typeof body === 'string' ? body : JSON.stringify(body), { status, headers });
 }
+
+import { encryptSecret } from '../../hub/core/crypto';
+
+export async function seedGrokAgent(hub: TestHub, overrides: Record<string, unknown> = {}) {
+  await hub.store.set('agents', 'grok_1', {
+    ownerId: hub.ownerId, name: 'Grok', kind: 'grok_bot', enabled: true,
+    allowedGroupIds: [GROUP], dailySendLimit: 20, inboxAlertHours: 24,
+    routineUrl: 'https://grok.example/routines/r1/webhook',
+    routineKeyEnc: encryptSecret('routine-secret', hub.env.encryptionKey!),
+    apiKeyHash: null, apiKeyPrefix: null, accountUid: null, accountEmail: null,
+    createdAt: hub.now(), updatedAt: hub.now(),
+    ...overrides,
+  });
+  return 'grok_1';
+}
+
+export async function seedInstinctAgent(hub: TestHub, overrides: Record<string, unknown> = {}) {
+  await hub.store.set('agents', 'instinct_1', {
+    ownerId: hub.ownerId, name: 'Instinct', kind: 'instinct', enabled: true,
+    allowedGroupIds: [GROUP], dailySendLimit: 20, inboxAlertHours: 24,
+    routineUrl: null, routineKeyEnc: null, apiKeyHash: null, apiKeyPrefix: null,
+    accountUid: 'instinct_uid', accountEmail: 'instinct@example.com',
+    createdAt: hub.now(), updatedAt: hub.now(),
+    ...overrides,
+  });
+  await hub.store.set('hubAccounts', 'instinct_uid', { role: 'agent', ownerId: hub.ownerId, agentId: 'instinct_1', disabled: false, createdAt: hub.now() });
+  return 'instinct_1';
+}
+
+export async function seedRule(hub: TestHub, id: string, overrides: Record<string, unknown> = {}) {
+  await hub.store.set('agentRules', id, {
+    ownerId: hub.ownerId, name: `rule ${id}`, enabled: true, agentId: 'grok_1', groupIds: [GROUP],
+    trigger: { type: 'keyword', keywords: ['緊急'] },
+    include: { digest: false, raw: true, media: true, contextCount: 5 },
+    instruction: '判斷是否需要預警', cooldownMinutes: 0,
+    createdAt: hub.now(), updatedAt: hub.now(),
+    ...overrides,
+  });
+}
+
+let msgSeq = 0;
+export async function seedMessage(hub: TestHub, overrides: Record<string, unknown> = {}) {
+  msgSeq += 1;
+  const id = (overrides['id'] as string) ?? `m${msgSeq}`;
+  const doc = {
+    ownerId: hub.ownerId, groupId: GROUP, webhookEventId: id, lineMessageId: `line_${id}`,
+    senderId: 'U1', senderName: 'Alice', type: 'text', text: `message ${id}`,
+    fileName: null, fileSize: null, durationMs: null, mediaAssetId: null, imageSet: null,
+    sticker: null, location: null, mentionsBot: false, quotedMessageId: null,
+    timestamp: hub.now(), createdAt: hub.now(), ttl: hub.now(),
+    ...overrides,
+  };
+  delete (doc as Record<string, unknown>)['id'];
+  await hub.store.set('groupMessages', id, doc);
+  return { id, ...doc } as any;
+}

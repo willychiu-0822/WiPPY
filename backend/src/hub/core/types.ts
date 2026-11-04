@@ -139,3 +139,108 @@ export const COLLECTIONS = {
   accounts: 'hubAccounts',
   groupStats: 'hubGroupStats',
 } as const;
+
+// ─── Rules / dispatch / inbox / digest ───────────────────────────────────────
+
+export type RuleTrigger =
+  | { type: 'keyword'; keywords: string[]; regex?: string | null }
+  | { type: 'message_type'; messageTypes: HubMessageType[] }
+  | { type: 'mention' }
+  | { type: 'volume'; windowMinutes: number; threshold: number }
+  | { type: 'schedule'; intervalMinutes: number };
+
+export interface RuleInclude {
+  digest: boolean;
+  raw: boolean;
+  media: boolean;
+  contextCount: number;
+}
+
+export interface RuleDoc {
+  ownerId: string;
+  name: string;
+  enabled: boolean;
+  agentId: string;
+  groupIds: string[];
+  trigger: RuleTrigger;
+  include: RuleInclude;
+  instruction: string;
+  cooldownMinutes: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RuleStateDoc {
+  lastFiredAt: Date | null;
+  lastScheduledAt: Date | null;
+}
+
+export type DispatchStatus = 'queued' | 'sent' | 'delivered_to_inbox' | 'completed' | 'failed';
+
+export interface DispatchDoc {
+  ownerId: string;
+  ruleId: string;
+  ruleName: string;
+  agentId: string;
+  agentKind: AgentKind;
+  groupId: string;
+  trigger: RuleTrigger['type'];
+  messageIds: string[];
+  windowStart: Date | null;
+  windowEnd: Date;
+  instruction: string;
+  include: RuleInclude;
+  status: DispatchStatus;
+  attempts: number;
+  lastError: string | null;
+  digestId: string | null;
+  createdAt: Date;
+  sentAt: Date | null;
+  completedAt: Date | null;
+  summary: string | null;
+}
+
+export interface InboxDoc {
+  ownerId: string;
+  agentId: string;
+  dispatchId: string;
+  ruleId: string;
+  ruleName: string;
+  groupId: string;
+  groupName: string;
+  instruction: string;
+  messageIds: string[];
+  digestId: string | null;
+  status: 'open' | 'done';
+  note: string | null;
+  createdAt: Date;
+  doneAt: Date | null;
+  alertedAt: Date | null;
+}
+
+export interface MediaListItem {
+  messageId: string;
+  sender: string;
+  type: HubMessageType;
+  fileName: string | null;
+  size: number | null;
+  mediaAssetId: string | null;
+  status: MediaStatus | 'unknown';
+}
+
+export interface DigestDoc {
+  ownerId: string;
+  groupId: string;
+  messageIds: string[];
+  from: Date | null;
+  to: Date | null;
+  summary: string | null;
+  points: string[];
+  tags: string[];
+  imageNotes: string[];
+  mediaList: MediaListItem[];
+  skipped: boolean;
+  skipReason: string | null;
+  createdAt: Date;
+  ttl: Date;
+}

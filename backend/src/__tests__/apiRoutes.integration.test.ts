@@ -74,6 +74,8 @@ jest.mock('../services/cloudTasksService', () => ({
 
 jest.mock('../services/llmProvider', () => ({
   createLLMProvider: () => mockCreateLLMProvider(),
+  getLLMConfigStatus: () => ({ provider: 'test', missingEnv: [], isConfigured: false }),
+  setLLMCallObserver: jest.fn(),
 }));
 
 jest.mock('../services/harnessOrchestrator', () => ({

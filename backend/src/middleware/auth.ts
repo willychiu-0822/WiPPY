@@ -28,6 +28,13 @@ export async function authMiddleware(
   try {
     ensureFirebaseApp();
     const decoded = await admin.auth().verifyIdToken(token);
+    // Only the configured owner may use the back-office API. Agent accounts
+    // (e.g. Instinct) and anyone who signs up are limited to /api/hub routes.
+    const ownerUserId = process.env.OWNER_USER_ID?.trim();
+    if (ownerUserId && decoded.uid !== ownerUserId) {
+      res.status(403).json({ error: 'Forbidden', code: 'not_owner' });
+      return;
+    }
     req.userId = decoded.uid;
     next();
   } catch {

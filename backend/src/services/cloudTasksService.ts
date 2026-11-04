@@ -6,7 +6,7 @@ import type { HarnessInput } from './harnessOrchestrator';
 
 let _accessToken: { token: string; expiresAt: number } | null = null;
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const now = Date.now();
   if (_accessToken && _accessToken.expiresAt > now + 30_000) return _accessToken.token;
 

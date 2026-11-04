@@ -182,6 +182,17 @@ describe('backend API route integration safety net', () => {
     expect(mockGetDb).not.toHaveBeenCalled();
   });
 
+  it('rejects non-owner accounts on back-office routes when OWNER_USER_ID is set', async () => {
+    process.env.OWNER_USER_ID = 'owner_uid';
+    try {
+      const res = await request(server, 'GET', '/api/groups');
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({ error: 'Forbidden', code: 'not_owner' });
+    } finally {
+      delete process.env.OWNER_USER_ID;
+    }
+  });
+
   it('queries /api/groups by authenticated owner and hides backend-only fields', async () => {
     const where = jest.fn().mockReturnThis();
     const orderBy = jest.fn().mockReturnThis();

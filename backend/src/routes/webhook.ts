@@ -9,6 +9,8 @@ import {
   updateGroupOnMessage,
   appendRecentMessage,
 } from '../services/groupService';
+import { processHubWebhookEvents } from '../hub/webhook';
+import { getHub } from '../hub/runtime';
 
 const router = express.Router();
 
@@ -19,13 +21,24 @@ const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
 // LINE SDK middleware validates signature using raw body
 if (hasLineWebhookConfig()) {
   const lineConfig = getLineMiddlewareConfig();
-  router.post('/line', middleware(lineConfig), (req: Request, res: Response) => {
-    // Respond immediately — LINE requires a response within 15 seconds
+  router.post('/line', middleware(lineConfig), async (req: Request, res: Response) => {
+    const events: WebhookEvent[] = req.body.events ?? [];
+
+    // Agent Hub: store messages of agent-enabled groups before acknowledging,
+    // so a storage failure makes LINE redeliver (event ids dedupe retries).
+    try {
+      await processHubWebhookEvents(getHub(), events);
+    } catch (err) {
+      console.error(JSON.stringify({ severity: 'ERROR', event: 'hub_webhook_ingest_error', error: String(err) }));
+      res.status(500).json({ ok: false });
+      return;
+    }
+
+    // Respond quickly — LINE requires a response within a few seconds
     res.json({ ok: true });
 
-    // Process events out-of-band
+    // Legacy group bookkeeping runs out-of-band
     setImmediate(() => {
-      const events: WebhookEvent[] = req.body.events;
       Promise.all(events.map(handleEvent)).catch((err) => {
         console.error(JSON.stringify({ event: 'webhook_error', error: String(err) }));
       });

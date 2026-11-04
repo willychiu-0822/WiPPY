@@ -1,0 +1,31 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { useAuth } from '../contexts/useAuth';
+import { HubApiError, hubApi, type HubMe } from './hubApi';
+import { HubRoleContext, type HubRoleState } from './hub-role-context';
+
+type Loaded = { uid: string; me: HubMe | null; error: string | null };
+
+export function HubRoleProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
+  const uid = user?.uid ?? null;
+
+  useEffect(() => {
+    if (!uid) return;
+    let cancelled = false;
+    hubApi.me()
+      .then((me) => { if (!cancelled) setLoaded({ uid, me, error: null }); })
+      .catch((err: unknown) => {
+        if (!cancelled) setLoaded({ uid, me: null, error: err instanceof HubApiError ? err.code ?? err.message : String(err) });
+      });
+    return () => { cancelled = true; };
+  }, [uid]);
+
+  const state: HubRoleState = !uid
+    ? { me: null, loading: false, error: null }
+    : loaded?.uid === uid
+      ? { me: loaded.me, loading: false, error: loaded.error }
+      : { me: null, loading: true, error: null };
+
+  return <HubRoleContext.Provider value={state}>{children}</HubRoleContext.Provider>;
+}

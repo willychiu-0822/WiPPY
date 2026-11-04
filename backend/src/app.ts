@@ -12,6 +12,8 @@ import { activitiesRouter } from './routes/api/activities';
 import { agentRouter } from './routes/api/agent';
 import { internalRouter } from './routes/internal/harness';
 import { ensureFirebaseApp } from './firebase';
+import { mountHubRoutes } from './hub/http/routes';
+import './hub/register';
 
 export function createApp() {
   ensureFirebaseApp();
@@ -35,6 +37,7 @@ export function createApp() {
   app.use('/api/agent', express.json(), agentRouter);
   app.use('/api/internal', express.json(), internalRouter);
 
+  mountHubRoutes(app);
   app.use('/webhook', webhookRouter);
 
   app.get('/health', (_req, res) => {

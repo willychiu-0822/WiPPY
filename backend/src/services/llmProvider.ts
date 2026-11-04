@@ -122,7 +122,30 @@ class GoogleAIProvider implements LLMProvider {
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 
-export function createLLMProvider(): LLMProvider {
+type LLMCallObserver = () => void;
+let callObserver: LLMCallObserver | null = null;
+
+/** Lets the Agent Hub count model calls made elsewhere against its shared budget. */
+export function setLLMCallObserver(observer: LLMCallObserver | null): void {
+  callObserver = observer;
+}
+
+export function createLLMProvider(opts: { observe?: boolean } = {}): LLMProvider {
+  const provider = createRawLLMProvider();
+  if (opts.observe === false) return provider;
+  return {
+    chat: async (messages) => {
+      try {
+        callObserver?.();
+      } catch {
+        // Observers must never break model calls.
+      }
+      return provider.chat(messages);
+    },
+  };
+}
+
+function createRawLLMProvider(): LLMProvider {
   const provider = getLLMProviderName();
   const config = getLLMConfigStatus();
 

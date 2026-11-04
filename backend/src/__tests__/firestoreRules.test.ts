@@ -23,6 +23,12 @@ describe('firestore.rules production ownership guardrails', () => {
     }
   });
 
+  it('keeps every Agent Hub collection closed to frontend clients', () => {
+    for (const collection of ['groupMessages', 'mediaAssets', 'agents', 'agentRules', 'hubRuleState', 'agentDispatches', 'agentInbox', 'digests', 'hubActions', 'agentRecords', 'hubSettings', 'hubCounters', 'hubQuota', 'hubAlerts', 'hubAuditLogs', 'hubAccounts', 'hubGroupStats']) {
+      expect(rules).toMatch(new RegExp(`match /${collection}/\\{id\\} \\{ allow read, write: if false; \\}`));
+    }
+  });
+
   it('requires create requests to claim the authenticated owner for client-created docs', () => {
     for (const collection of ['activityKnowledge', 'agentSessions']) {
       expect(rules).toMatch(new RegExp(`match /${collection}/\\{[^}]+\\} \\{[\\s\\S]*allow create: if request\\.auth != null && request\\.resource\\.data\\.userId == request\\.auth\\.uid`));

@@ -103,6 +103,9 @@ async function request(
       {
         host: '127.0.0.1',
         port: address.port,
+        // Every test closes and recreates its server on the same allowed port.
+        // Do not reuse a global-agent socket belonging to the previous server.
+        agent: false,
         method,
         path,
         headers: {

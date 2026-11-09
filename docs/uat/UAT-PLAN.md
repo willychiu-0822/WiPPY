@@ -49,6 +49,8 @@
 
 UAT-21 只透過 loopback Firestore emulator 的管理 REST API 準備／還原該帳號的空群組 fixture；產品 API 與畫面沒有攔截或假造回覆。
 
+UAT-14 以本機 LINE mock 暫停外部發送，先觀察真實 Firestore transaction 的 processingAt、驗證改群組被拒絕，再由同帳號的測試控制端點明確釋放發送並驗證只有一筆紀錄。控制端點只存在於 `e2e/backend.cjs`，沿用既有 `/api` 本機代理、驗證 token 與群組 owner；不進入正式 app。30 秒釋放上限用於失敗清理；Playwright timeout、0 retry 與原有驗收斷言不變。
+
 共同前置：本機 stack 運行、使用全新 emulator 測試帳號；非登入案例先經 UI 註冊。每案例證據為 `docs/uat/evidence/<執行批次>/<desktop|mobile>/UAT-xx.png`，API 驗證只補充 UI 操作，不攔截或偽造產品 API 回覆。
 
 | 編號 | 前置 | 步驟 | 預期結果／驗收標準 | 對應需求 |

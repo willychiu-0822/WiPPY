@@ -9,10 +9,17 @@ if (process.env.FIREBASE_PROJECT_ID !== 'demo-wippy-uat'
   || process.env.NODE_ENV === 'production') throw new Error('UAT backend requires local demo emulators');
 
 const line = require('../backend/src/line.ts');
+const heldLineSends = new Map();
 line.getLineClient = () => ({
   async pushMessage(_groupId, message) {
     if (message.text.includes('[模擬失敗]')) throw new Error('本機模擬：LINE 暫時無法發送，請重試');
-    if (message.text.includes('[延遲發送]')) await new Promise(resolve => setTimeout(resolve, 2500));
+    if (message.text.includes('[延遲發送]')) await new Promise(resolve => {
+      // Let the browser observe the real transaction claim before releasing LINE.
+      // The bound also prevents a failed test from holding the local scheduler forever.
+      const release = () => { clearTimeout(timer); heldLineSends.delete(_groupId); resolve(); };
+      const timer = setTimeout(release, 30_000);
+      heldLineSends.set(_groupId, release);
+    });
     return { messageId: `mock-${Date.now()}` };
   },
   async getGroupSummary() { return { groupName: 'UAT 模擬群組' }; },
@@ -65,6 +72,22 @@ app.use('/api', authMiddleware, async (req, res, next) => {
     await seeded.get(req.userId);
     next();
   } catch { res.status(500).json({ error: 'Local fixture initialization failed' }); }
+});
+app.post('/api/__uat/release-line', express.json(), authMiddleware, async (req, res) => {
+  const groupId = req.body?.groupId;
+  if (typeof groupId !== 'string' || !/^C[0-9a-f]{32}$/.test(groupId)) {
+    res.status(400).json({ error: 'Invalid local group fixture' }); return;
+  }
+  try {
+    const group = await getDb().collection('groups').doc(groupId).get();
+    if (!group.exists || group.data().userId !== req.userId) {
+      res.status(404).json({ error: 'Local group fixture not found' }); return;
+    }
+    const release = heldLineSends.get(groupId);
+    if (!release) { res.status(409).json({ error: 'No held LINE request' }); return; }
+    release();
+    res.json({ released: true });
+  } catch { res.status(500).json({ error: 'Could not release local LINE fixture' }); }
 });
 app.use(createApp());
 const server = app.listen(4122, '127.0.0.1', () => console.log('UAT backend ready (mock LINE/LLM)'));

@@ -279,7 +279,7 @@ test('UAT-11 跨帳號資料與廣播隔離', async ({ page, browser }) => {
     }, { id, victimUid, victimGroup });
     expect(forgery).toEqual({ message: 'permission-denied', ownership: 'permission-denied' });
     await b.goto(`/activities/${id}`);
-    await expect(b.getByText('找不到活動', { exact: true })).toBeVisible();
+    await expect(b.getByRole('alert')).toHaveText('找不到活動，可能已被移除或你沒有查看權限');
     expect((await api(b, `/api/activities/${id}`)).status).toBe(404);
     expect((await api(b, `/api/groups/${foreignId}/messages`)).status).toBe(404);
     expect((await api(b, '/api/broadcast/preview', 'POST', { groupIds: [foreignId], content: '越權預覽' })).status).toBe(404);
@@ -369,10 +369,16 @@ test('UAT-14 探索：更換活動群組同步待發訊息並重新審核', asyn
   await page.getByRole('button', { name: '要求修改', exact: true }).click();
   await editFirst(page, '[延遲發送] 已開始的發送', '2026-01-01T10:00:00+08:00');
   await page.getByRole('button', { name: '重新核准', exact: true }).click();
-  await expect.poll(async () => Boolean((await api(page, `/api/activities/${id}/messages`)).data.messages[0].processingAt)).toBe(true);
-  await page.getByRole('checkbox', { name: 'UAT 讀書會' }).check();
-  await expect(page.getByText(/訊息正在發送，請稍後再修改群組/)).toBeVisible();
-  await expect(page.getByRole('checkbox', { name: 'UAT 讀書會' })).not.toBeChecked();
+  try {
+    await expect.poll(async () => Boolean((await api(page, `/api/activities/${id}/messages`)).data.messages[0].processingAt)).toBe(true);
+    await page.getByRole('checkbox', { name: 'UAT 讀書會' }).check();
+    await expect(page.getByText(/訊息正在發送，請稍後再修改群組/)).toBeVisible();
+    await expect(page.getByRole('checkbox', { name: 'UAT 讀書會' })).not.toBeChecked();
+  } finally {
+    const released = await api(page, '/api/__uat/release-line', 'POST', { groupId: activity.targetGroups[0] });
+    expect(released.status).toBe(200);
+    expect(released.data.released).toBe(true);
+  }
   await expect.poll(async () => (await api(page, `/api/send-logs?activityId=${id}`)).data.logs.length).toBe(1);
 });
 

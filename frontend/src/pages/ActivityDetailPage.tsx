@@ -298,14 +298,30 @@ export default function ActivityDetailPage() {
 function SendHistoryTab({ activityId }: { activityId: string }) {
   const [logs, setLogs] = useState<Array<{ id: string; groupId: string; content: string; status: string; sentAt: { _seconds: number }; triggerType: string; errorMessage: string | null }>>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    api.sendLogs.list({ activityId, limit: 50 })
-      .then((res) => setLogs(res.logs as typeof logs))
-      .finally(() => setLoading(false));
+  const loadLogs = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.sendLogs.list({ activityId, limit: 50 });
+      setLogs(res.logs);
+    } catch {
+      setError('無法載入發送紀錄，請稍後重試');
+    } finally {
+      setLoading(false);
+    }
   }, [activityId]);
 
+  useEffect(() => { void loadLogs(); }, [loadLogs]);
+
   if (loading) return <div className="text-center py-8 text-gray-400 text-sm">載入中...</div>;
+  if (error) return (
+    <div className="text-center py-8 space-y-2">
+      <p role="alert" className="text-sm text-red-600">{error}</p>
+      <button onClick={loadLogs} className="text-sm text-blue-500 hover:underline">重試</button>
+    </div>
+  );
   if (logs.length === 0) return <p className="text-sm text-gray-400 text-center py-12">尚無發送紀錄</p>;
 
   return (

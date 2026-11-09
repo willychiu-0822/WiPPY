@@ -33,15 +33,20 @@ export default function KnowledgeEditor({ knowledge, onAdd, onUpdate, onDelete }
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   async function handleAdd() {
-    if (!addTitle.trim() || !addContent.trim()) return;
+    if (adding || !addTitle.trim() || !addContent.trim()) return;
+    setError('');
     setAdding(true);
     try {
       await onAdd({ knowledgeType: addType, title: addTitle.trim(), content: addContent.trim() });
       setAddTitle('');
       setAddContent('');
       setShowAdd(false);
+    } catch {
+      setError('新增失敗，請稍後重試');
     } finally {
       setAdding(false);
     }
@@ -49,17 +54,34 @@ export default function KnowledgeEditor({ knowledge, onAdd, onUpdate, onDelete }
 
   async function handleSaveEdit() {
     if (!editing || saving || !editing.title.trim() || !editing.content.trim()) return;
+    setError('');
     setSaving(true);
     try {
       await onUpdate(editing.id, { title: editing.title.trim(), content: editing.content.trim() });
       setEditing(null);
+    } catch {
+      setError('儲存失敗，請稍後重試');
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleDelete(id: string) {
+    if (deleting !== null) return;
+    setError('');
+    setDeleting(id);
+    try {
+      await onDelete(id);
+    } catch {
+      setError('刪除失敗，請稍後重試');
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       {knowledge.length === 0 && !showAdd && (
         <p className="text-sm text-gray-400 text-center py-8">尚無知識條目，請新增活動背景資訊，或直接在「Agent 對話」描述活動。</p>
       )}
@@ -114,7 +136,8 @@ export default function KnowledgeEditor({ knowledge, onAdd, onUpdate, onDelete }
                           編輯
                         </button>
                         <button
-                          onClick={() => onDelete(k.id)}
+                          onClick={() => handleDelete(k.id)}
+                          disabled={deleting !== null}
                           className="text-xs text-red-400 hover:text-red-600 px-1"
                         >
                           刪除

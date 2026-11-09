@@ -18,6 +18,37 @@ describe('UAT-16 — knowledge edit required fields', () => {
   });
 });
 
+describe('UAT-17 — knowledge network failure recovery', () => {
+  it('retains the add form and explains a failed add', async () => {
+    render(<KnowledgeEditor knowledge={[]} onAdd={vi.fn().mockRejectedValue(new Error('Network offline'))} onUpdate={vi.fn()} onDelete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /新增知識條目/ }));
+    fireEvent.change(screen.getByPlaceholderText(/例：主角/), { target: { value: '待新增標題' } });
+    fireEvent.change(screen.getByPlaceholderText(/詳細描述/), { target: { value: '待新增內容' } });
+    fireEvent.click(screen.getByRole('button', { name: '新增' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('新增失敗');
+    expect(screen.getByPlaceholderText(/例：主角/)).toHaveValue('待新增標題');
+    expect(screen.getByRole('button', { name: '新增' })).toBeEnabled();
+  });
+
+  it('retains edited text and explains a failed save', async () => {
+    render(<KnowledgeEditor knowledge={[makeKnowledge()]} onAdd={vi.fn()} onUpdate={vi.fn().mockRejectedValue(new Error('Network offline'))} onDelete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '編輯' }));
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: '待保存標題' } });
+    fireEvent.click(screen.getByRole('button', { name: '儲存' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('儲存失敗');
+    expect(screen.getAllByRole('textbox')[0]).toHaveValue('待保存標題');
+    expect(screen.getByRole('button', { name: '儲存' })).toBeEnabled();
+  });
+
+  it('keeps an item visible and explains a failed delete', async () => {
+    render(<KnowledgeEditor knowledge={[makeKnowledge()]} onAdd={vi.fn()} onUpdate={vi.fn()} onDelete={vi.fn().mockRejectedValue(new Error('Network offline'))} />);
+    fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('刪除失敗');
+    expect(screen.getByText('故事背景')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '刪除' })).toBeEnabled();
+  });
+});
+
 function makeKnowledge(overrides: Partial<ActivityKnowledge> = {}): ActivityKnowledge {
   return {
     id: 'k1',

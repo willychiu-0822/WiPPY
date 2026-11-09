@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api, type SendLog } from '../lib/api';
 
 const TRIGGER_LABEL: Record<string, string> = {
@@ -22,16 +22,31 @@ export default function SendHistoryPage() {
   const [logs, setLogs] = useState<SendLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    api.sendLogs.list({ limit: 30 }).then((r) => {
+  const loadLogs = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const r = await api.sendLogs.list({ limit: 30 });
       setLogs(r.logs);
       setHasMore(r.hasMore);
+    } catch {
+      setError('無法載入發送紀錄，請稍後重試');
+    } finally {
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }
   }, []);
 
+  useEffect(() => { void loadLogs(); }, [loadLogs]);
+
   if (loading) return <p className="text-center text-gray-400 text-sm mt-12">載入中...</p>;
+  if (error) return (
+    <div className="text-center mt-12 space-y-2">
+      <p role="alert" className="text-sm text-red-600">{error}</p>
+      <button onClick={loadLogs} className="text-sm text-blue-500 hover:underline">重試</button>
+    </div>
+  );
 
   return (
     <>

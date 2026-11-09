@@ -17,7 +17,7 @@ export function HubRoleProvider({ children }: { children: ReactNode }) {
     hubApi.me()
       .then((me) => { if (!cancelled) setLoaded({ uid, me, error: null, errorStatus: null, attempt }); })
       .catch((err: unknown) => {
-        if (!cancelled) setLoaded({ uid, me: null, error: err instanceof HubApiError ? err.code ?? err.message : String(err), errorStatus: err instanceof HubApiError ? err.status : null, attempt });
+        if (!cancelled) setLoaded({ uid, me: null, error: err instanceof HubApiError ? err.code ?? 'request_failed' : String(err), errorStatus: err instanceof HubApiError ? err.status : null, attempt });
       });
     return () => { cancelled = true; };
   }, [uid, attempt]);

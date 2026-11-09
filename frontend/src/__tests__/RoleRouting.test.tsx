@@ -46,6 +46,7 @@ describe('RoleGate', () => {
     new HubApiError('Unavailable', 503, 'owner_not_configured'),
     new HubApiError('Server error', 500, 'account_not_allowed'),
     new HubApiError('Forbidden', 403, 'forbidden'),
+    new HubApiError('account_not_allowed', 403, null),
   ])('offers a working retry after %s', async (error) => {
     const me = vi.spyOn(hubApi, 'me').mockRejectedValueOnce(error).mockResolvedValueOnce({
       role: 'owner', agentId: null, agentName: null, ownerConfigured: true,

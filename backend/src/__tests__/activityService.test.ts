@@ -105,7 +105,17 @@ import {
   requestRevision,
   createMessage,
   createKnowledge,
+  updateKnowledge,
 } from '../services/activityService';
+
+describe('UAT-16 knowledge edit validation', () => {
+  it.each([{ title: '   ' }, { content: '   ' }, { title: 42 }, { content: null }])('rejects invalid patch %j without changing stored data', async patch => {
+    mockUpdate.mockClear();
+    const db = buildMockDb({ userId: 'user_1', title: '既有標題', content: '既有內容' }) as any;
+    await expect(updateKnowledge(db, 'knowledge_1', 'user_1', patch as any)).rejects.toThrow(/知識.*不可為空/);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+});
 
 const USER_ID = 'user_1';
 const ACT_ID = 'act_1';

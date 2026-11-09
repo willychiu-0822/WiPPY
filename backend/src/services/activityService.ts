@@ -406,6 +406,12 @@ export async function updateKnowledge(
   const ref = db.collection('activityKnowledge').doc(knowledgeId);
   const snap = await ref.get();
   if (!snap.exists || (snap.data() as ActivityKnowledge).userId !== userId) return null;
+  if (patch.title !== undefined && (typeof patch.title !== 'string' || !patch.title.trim())) {
+    throw new ActivityInputError('知識標題不可為空');
+  }
+  if (patch.content !== undefined && (typeof patch.content !== 'string' || !patch.content.trim())) {
+    throw new ActivityInputError('知識內容不可為空');
+  }
   await ref.update({ ...patch, updatedAt: admin.firestore.Timestamp.now() });
   const updated = await ref.get();
   return updated.data() as ActivityKnowledge;

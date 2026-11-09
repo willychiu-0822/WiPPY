@@ -48,10 +48,10 @@ export default function KnowledgeEditor({ knowledge, onAdd, onUpdate, onDelete }
   }
 
   async function handleSaveEdit() {
-    if (!editing) return;
+    if (!editing || saving || !editing.title.trim() || !editing.content.trim()) return;
     setSaving(true);
     try {
-      await onUpdate(editing.id, { title: editing.title, content: editing.content });
+      await onUpdate(editing.id, { title: editing.title.trim(), content: editing.content.trim() });
       setEditing(null);
     } finally {
       setSaving(false);
@@ -89,7 +89,7 @@ export default function KnowledgeEditor({ knowledge, onAdd, onUpdate, onDelete }
                     />
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setEditing(null)} className="text-xs text-gray-500 hover:text-gray-700">取消</button>
-                      <button onClick={handleSaveEdit} disabled={saving} className="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 disabled:opacity-50">
+                      <button onClick={handleSaveEdit} disabled={saving || !editing.title.trim() || !editing.content.trim()} className="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 disabled:opacity-50">
                         {saving ? '儲存中...' : '儲存'}
                       </button>
                     </div>

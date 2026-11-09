@@ -5,6 +5,19 @@ import type { ActivityKnowledge } from '../lib/api';
 
 const now = { _seconds: 0, _nanoseconds: 0 };
 
+describe('UAT-16 — knowledge edit required fields', () => {
+  it('does not allow whitespace title or content to replace saved knowledge', () => {
+    render(<KnowledgeEditor knowledge={[makeKnowledge()]} onAdd={vi.fn()} onUpdate={vi.fn()} onDelete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '編輯' }));
+    const [title, content] = screen.getAllByRole('textbox');
+    fireEvent.change(title, { target: { value: '   ' } });
+    expect(screen.getByRole('button', { name: '儲存' })).toBeDisabled();
+    fireEvent.change(title, { target: { value: '有效標題' } });
+    fireEvent.change(content, { target: { value: '   ' } });
+    expect(screen.getByRole('button', { name: '儲存' })).toBeDisabled();
+  });
+});
+
 function makeKnowledge(overrides: Partial<ActivityKnowledge> = {}): ActivityKnowledge {
   return {
     id: 'k1',

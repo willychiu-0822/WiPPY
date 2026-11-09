@@ -295,11 +295,15 @@ test('UAT-11 跨帳號資料與廣播隔離', async ({ page, browser }) => {
 
 test('UAT-12 新手探索：無效內容時間與空企畫核准', async ({ page }) => {
   await register(page); const id = await createActivity(page, false);
-  await page.getByRole('button', { name: '核准企畫', exact: true }).click();
-  await expect(page.getByText(/請至少選擇一個目標群組/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '核准企畫', exact: true })).toHaveCount(0);
+  const withoutGroups = await api(page, `/api/activities/${id}/approve`, 'PATCH');
+  expect(withoutGroups.status).toBe(400);
+  expect(withoutGroups.data.error).toContain('請至少選擇一個目標群組');
   await page.getByRole('checkbox', { name: 'UAT 讀書會' }).check();
-  await page.getByRole('button', { name: '核准企畫', exact: true }).click();
-  await expect(page.getByText(/請先建立推播訊息/)).toBeVisible();
+  await expect(page.getByText('已選 1 個', { exact: true })).toBeVisible();
+  const withoutMessages = await api(page, `/api/activities/${id}/approve`, 'PATCH');
+  expect(withoutMessages.status).toBe(400);
+  expect(withoutMessages.data.error).toContain('請先建立推播訊息');
   await plan(page);
   await page.getByRole('button', { name: '編輯', exact: true }).first().click();
   await page.locator('textarea').fill('   ');
@@ -537,5 +541,19 @@ test('UAT-19 新手用日期時間選擇器設定推播，時區與資料保存�
   await page.getByRole('button', { name: '儲存', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('請選擇發送日期與時間');
   expect(Date.parse((await api(page, `/api/activities/${id}/messages`)).data.messages[0].triggerValue)).toBe(Date.parse('2035-11-12T18:30:17+08:00'));
+  await noOverflow(page);
+});
+
+test('UAT-20 第一個活動先引導 AI 產生企畫，再顯示核准操作', async ({ page }) => {
+  await register(page); const id = await createActivity(page);
+  await expect(page.getByRole('button', { name: '核准企畫', exact: true })).toHaveCount(0);
+  await expect(page.getByText('先建立推播企畫', { exact: true })).toBeVisible();
+  const firstPlan = page.getByRole('button', { name: '請 AI 規劃第一份推播', exact: true });
+  await expect(firstPlan).toHaveCount(1);
+  await firstPlan.click();
+  await expect(page.getByRole('button', { name: '編輯', exact: true })).toHaveCount(3);
+  await expect(page.getByRole('button', { name: '核准企畫', exact: true })).toBeVisible();
+  expect((await api(page, `/api/activities/${id}/messages`)).data.messages).toHaveLength(3);
+  expect((await api(page, `/api/send-logs?activityId=${id}`)).data.logs).toHaveLength(0);
   await noOverflow(page);
 });

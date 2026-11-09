@@ -5,6 +5,7 @@ interface Props {
   onApprove: () => void;
   onRequestRevision: () => void;
   loading?: boolean;
+  hasMessages?: boolean;
 }
 
 const STATUS_CONFIG = {
@@ -34,7 +35,13 @@ const STATUS_CONFIG = {
   },
 } as const;
 
-export default function ReviewBanner({ activity, onApprove, onRequestRevision, loading }: Props) {
+export default function ReviewBanner({ activity, onApprove, onRequestRevision, loading, hasMessages = true }: Props) {
+  if (!hasMessages && activity.reviewStatus !== 'approved') return (
+    <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+      <p className="text-sm font-semibold text-blue-900">先建立推播企畫</p>
+      <p className="text-xs text-blue-800 mt-1">在「Agent 對話」描述活動，或請 AI 規劃第一份推播。產生訊息後，確認群組、內容與時間，再核准發送。</p>
+    </div>
+  );
   const config = STATUS_CONFIG[activity.reviewStatus];
 
   return (

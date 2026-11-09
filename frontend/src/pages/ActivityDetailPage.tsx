@@ -225,6 +225,7 @@ export default function ActivityDetailPage() {
         onApprove={handleApprove}
         onRequestRevision={handleRequestRevision}
         loading={reviewLoading || groupSaving}
+        hasMessages={messages.some(message => message.status === 'pending')}
       />
 
       {/* Tabs */}

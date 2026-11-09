@@ -163,6 +163,11 @@ export default function AgentChatPanel({
         {messages.length === 0 && (
           <div className="text-center py-12 space-y-2">
             <p className="text-sm text-gray-400">向 Agent 描述活動，或直接請它規劃推播企畫</p>
+            <button
+              onClick={() => send('幫我規劃三則活動前的暖場推播訊息')}
+              disabled={isBlocked}
+              className="text-sm bg-blue-600 text-white rounded-lg px-4 py-2 disabled:opacity-50"
+            >請 AI 規劃第一份推播</button>
             <div className="flex flex-col gap-1.5 mt-4">
               {[
                 '幫我規劃三則活動前的暖場推播訊息',

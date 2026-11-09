@@ -6,18 +6,29 @@ import { getLineClient } from '../../line';
 
 const router = express.Router();
 
+async function ownsAllGroups(db: ReturnType<typeof getDb>, userId: string, groupIds: string[]) {
+  const snapshots = await Promise.all(groupIds.map(id => db.collection('groups').doc(id).get()));
+  return snapshots.every(snap => snap.exists && snap.data()!['userId'] === userId && snap.data()!['isActive'] !== false);
+}
+
+
 // POST /api/broadcast/preview
 // Returns per-group content preview before sending (supports F1-3 per-group tweak)
 router.post('/preview', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { groupIds, content } = req.body as { groupIds: string[]; content: string };
 
-    if (!groupIds?.length || !content?.trim()) {
+    if (!Array.isArray(groupIds) || !groupIds.length || groupIds.some(id => typeof id !== 'string' || !id.trim())
+      || typeof content !== 'string' || !content.trim() || content.length > 5000) {
       res.status(400).json({ error: 'groupIds and content are required' });
       return;
     }
 
     const db = getDb();
+    if (!await ownsAllGroups(db, req.userId, groupIds)) {
+      res.status(404).json({ error: 'Group not found' });
+      return;
+    }
     const previews = await Promise.all(
       groupIds.map(async (groupId) => {
         const snap = await db.collection('groups').doc(groupId).get();
@@ -42,12 +53,18 @@ router.post('/multi', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { messages } = req.body as { messages: Array<{ groupId: string; content: string }> };
 
-    if (!messages?.length) {
+    if (!Array.isArray(messages) || !messages.length || messages.some(m => !m || typeof m.groupId !== 'string'
+      || !m.groupId.trim() || typeof m.content !== 'string' || !m.content.trim() || m.content.length > 5000)) {
       res.status(400).json({ error: 'messages array is required' });
       return;
     }
 
     const db = getDb();
+    // Authorize every target before sending anything: mixed-owner batches have no side effects.
+    if (!await ownsAllGroups(db, req.userId, messages.map(m => m.groupId))) {
+      res.status(404).json({ error: 'Group not found' });
+      return;
+    }
     const results: Array<{ groupId: string; status: 'success' | 'failed'; error?: string; sendLogId?: string }> = [];
 
     // Send sequentially with small delay to avoid LINE rate limits

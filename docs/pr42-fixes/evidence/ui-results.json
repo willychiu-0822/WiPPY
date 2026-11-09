@@ -1,0 +1,66 @@
+[
+  {
+    "name": "P0-1 UI disable → reload → enable → reload preserves checked groups and settings",
+    "pass": true,
+    "detail": {
+      "allowedGroupIds": [
+        "Cbc72f2d512bd469e89d613bacde5b8e5",
+        "C0e422fd7bb1345d3853847eefcda06e6"
+      ],
+      "dailySendLimit": 5,
+      "inboxAlertHours": 48,
+      "listGroupsUnchanged": true
+    }
+  },
+  {
+    "name": "P2-2 live MCP valid disabled key returns403 agent_disabled",
+    "pass": true,
+    "detail": {
+      "status": 403,
+      "code": "agent_disabled"
+    }
+  },
+  {
+    "name": "P2-2 live MCP invalid key remains401",
+    "pass": true,
+    "detail": {
+      "status": 401
+    }
+  },
+  {
+    "name": "P2-5 Instinct hours48 persists after save and reload",
+    "pass": true,
+    "detail": {
+      "hours": 48
+    }
+  },
+  {
+    "name": "P2-1 network failure shows connection message and working retry",
+    "pass": true,
+    "detail": {}
+  },
+  {
+    "name": "P2-1 only403 account_not_allowed shows NoAccess",
+    "pass": true,
+    "detail": {}
+  },
+  {
+    "name": "P1-1 live Instinct /api/hub/me is role agent",
+    "pass": true,
+    "detail": {
+      "role": "agent"
+    }
+  },
+  {
+    "name": "P2-3 live invalid LINE signature401",
+    "pass": true,
+    "detail": {
+      "status": 401
+    }
+  },
+  {
+    "name": "Browser has no page errors",
+    "pass": true,
+    "detail": {}
+  }
+]

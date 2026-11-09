@@ -1,0 +1,83 @@
+[
+  {
+    "tag": "SELECT",
+    "label": "類型",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  },
+  {
+    "tag": "INPUT",
+    "label": "名稱",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  },
+  {
+    "tag": "INPUT",
+    "label": "Routine Webhook 網址",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.551 0.027 264.364)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 4.836368464139303
+  },
+  {
+    "tag": "INPUT",
+    "label": "Routine Webhook Key",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  },
+  {
+    "tag": "INPUT",
+    "label": "每日發送上限",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  },
+  {
+    "tag": "SELECT",
+    "label": "動作",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  },
+  {
+    "tag": "SELECT",
+    "label": "群組",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  },
+  {
+    "tag": "TEXTAREA",
+    "label": "訊息內容",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  },
+  {
+    "tag": "INPUT",
+    "label": "搜尋關鍵字",
+    "color": "oklch(0.21 0.034 264.665)",
+    "placeholder": "oklch(0.21 0.034 264.665)",
+    "background": "rgb(255, 255, 255)",
+    "textRatio": 17.74659431591738,
+    "placeholderRatio": 17.74659431591738
+  }
+]

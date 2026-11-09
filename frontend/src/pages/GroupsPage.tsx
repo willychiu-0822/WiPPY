@@ -27,16 +27,17 @@ function MessageDrawer({
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     api.groups.messages(group.groupId).then((r) => {
       setMessages(r.messages);
-      setLoading(false);
-    });
+    }).catch(() => setError('無法載入訊息，請重新開啟群組')).finally(() => setLoading(false));
   }, [group.groupId]);
 
   async function handleSend() {
-    if (!reply.trim()) return;
+    if (!reply.trim() || sending) return;
+    setError('');
     setSending(true);
     try {
       await api.groups.send(group.groupId, reply.trim());
@@ -46,6 +47,8 @@ function MessageDrawer({
       // Refresh messages
       const r = await api.groups.messages(group.groupId);
       setMessages(r.messages);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '發送失敗，請重試');
     } finally {
       setSending(false);
     }
@@ -80,6 +83,7 @@ function MessageDrawer({
         ))}
       </div>
 
+      {error && <p role="alert" className="px-4 py-2 text-sm text-red-600">{error}</p>}
       <div className="px-4 py-3 border-t border-gray-200 flex gap-2">
         <input
           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -115,6 +119,7 @@ function BroadcastComposer({
 }) {
   const [step, setStep] = useState<'compose' | 'tweak' | 'result'>('compose');
   const [baseContent, setBaseContent] = useState('');
+  const [error, setError] = useState('');
   const [previews, setPreviews] = useState<BroadcastPreview[]>([]);
   const [results, setResults] = useState<Array<{ groupId: string; status: string; error?: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -122,18 +127,23 @@ function BroadcastComposer({
   const selectedGroups = groups.filter((g) => selected.includes(g.groupId));
 
   async function handlePreview() {
-    if (!baseContent.trim()) return;
+    if (!baseContent.trim() || loading) return;
+    setError('');
     setLoading(true);
     try {
       const r = await api.broadcast.preview(selected, baseContent.trim());
       setPreviews(r.previews);
       setStep('tweak');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '無法產生預覽，請重試');
     } finally {
       setLoading(false);
     }
   }
 
   async function handleSend() {
+    if (loading) return;
+    setError('');
     setLoading(true);
     try {
       const r = await api.broadcast.multi(
@@ -141,6 +151,8 @@ function BroadcastComposer({
       );
       setResults(r.results);
       setStep('result');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '廣播失敗，請重試');
     } finally {
       setLoading(false);
     }
@@ -158,6 +170,7 @@ function BroadcastComposer({
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
+        {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
         {/* Step 1: Compose */}
         {step === 'compose' && (
           <div className="space-y-4">

@@ -1,12 +1,9 @@
 import express, { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
-import { formatInTimeZone } from 'date-fns-tz';
 import { getDb } from '../firebase';
 import { getLineClient } from '../line';
 
 const router = express.Router();
-
-const TZ = 'Asia/Taipei';
 
 // Called by Cloud Scheduler every minute: send due, approved ActivityMessages.
 router.post('/tick', async (_req: Request, res: Response) => {
@@ -24,15 +21,12 @@ router.post('/tick', async (_req: Request, res: Response) => {
 async function processScheduledActivityMessages(): Promise<number> {
   const db = getDb();
   const now = admin.firestore.Timestamp.now();
-  // triggerValue is stored as "+08:00" local strings; use the same format for comparison
-  const nowIso = formatInTimeZone(new Date(now.seconds * 1000), TZ, "yyyy-MM-dd'T'HH:mm:ssxxx");
 
   // Find pending approved scheduled messages whose triggerValue is due
   const snapshot = await db.collectionGroup('activityMessages')
     .where('status', '==', 'pending')
     .where('triggerType', '==', 'scheduled')
     .where('reviewStatus', '==', 'approved')
-    .where('triggerValue', '<=', nowIso)
     .where('processingAt', '==', null)
     .get();
 
@@ -41,22 +35,29 @@ async function processScheduledActivityMessages(): Promise<number> {
   let sent = 0;
 
   for (const doc of snapshot.docs) {
-    const msg = doc.data();
-
-    // Acquire dedup lock — skip if another tick already locked this doc
+    // Datetimes may use Z or any ISO offset. Compare instants, never string order.
+    if (Date.parse(doc.data()['triggerValue']) > now.toMillis()) continue;
+    let msg: FirebaseFirestore.DocumentData | null;
     try {
-      await doc.ref.update({
-        processingAt: now,
-        updatedAt: now,
+      msg = await db.runTransaction(async transaction => {
+        const fresh = await transaction.get(doc.ref);
+        if (!fresh.exists) return null;
+        const data = fresh.data()!;
+        if (data['status'] !== 'pending' || data['reviewStatus'] !== 'approved' || data['processingAt'] != null
+          || !Number.isFinite(Date.parse(data['triggerValue'])) || Date.parse(data['triggerValue']) > now.toMillis()) return null;
+        const activity = await transaction.get(db.collection('activities').doc(data['activityId']));
+        if (!activity.exists || activity.data()!['status'] !== 'active' || activity.data()!['reviewStatus'] !== 'approved'
+          || activity.data()!['userId'] !== data['userId']) return null;
+        transaction.update(doc.ref, { processingAt: now, updatedAt: now });
+        return data;
       });
-    } catch {
-      continue;
-    }
+    } catch { continue; }
+    if (!msg) continue;
 
     // Lifecycle gate: check parent Activity is active
     const activityId = msg['activityId'] as string;
     const activitySnap = await db.collection('activities').doc(activityId).get();
-    if (!activitySnap.exists || activitySnap.data()!['status'] !== 'active') {
+    if (!activitySnap.exists || activitySnap.data()!['status'] !== 'active' || activitySnap.data()!['reviewStatus'] !== 'approved') {
       await doc.ref.update({ processingAt: null, updatedAt: now });
       continue;
     }
@@ -91,6 +92,8 @@ async function processScheduledActivityMessages(): Promise<number> {
     // Push to each target group
     for (const groupId of targetGroups) {
       try {
+        const group = await db.collection('groups').doc(groupId).get();
+        if (!group.exists || group.data()!['userId'] !== userId || group.data()!['isActive'] === false) throw new Error('Group not found');
         const lineClient = getLineClient();
         const resp = await lineClient.pushMessage(groupId, { type: 'text', text: content });
         if (!firstLineMessageId) {

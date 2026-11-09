@@ -6,6 +6,8 @@ export interface HubRoleState {
   loading: boolean;
   /** `account_not_allowed` when the signed-in user has no WiPPY access. */
   error: string | null;
+  errorStatus?: number | null;
+  retry?: () => void;
 }
 
 export const HubRoleContext = createContext<HubRoleState>({ me: null, loading: true, error: null });

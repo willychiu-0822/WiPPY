@@ -1,0 +1,55 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-09 23:48",
+  "cases": 6,
+  "pass": 0,
+  "fail": 6,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "3 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-13",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByText('第一次辦活動，請問有什麼建議？', { exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T15-47-13-062Z/desktop/UAT-13.png"
+    },
+    {
+      "id": "UAT-14",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByText('修改中 — 待發訊息已暫停', { exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T15-47-13-062Z/desktop/UAT-14.png"
+    },
+    {
+      "id": "UAT-15",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(received).toHaveLength(expected) Expected length: 0 Received length: 1 Received array:  [{\"activityId\": \"sO6YQx2UW1ibEQNXOeqK\", \"activityMessageId\": \"xFNgiTmvnRkryljkjcZL\", \"content\": \"一小時後才發送\", \"errorMessage\": null, \"groupId\": \"C99f8d4b55d7a79ca1a4c2f710c1f48e3\", \"id\": \"ogJZVILxHBUgmqCRFRTq\", \"lineMessageId\": \"mock-1794239265272\", \"sentAt\": {\"_nanoseconds\": 272000000, \"_seconds\": 1794239265}, \"status\": \"success\", \"triggerType\": \"scheduled\", \"userId\": \"LRbHmzJYoQgaB2xb5FwTlOS2XurY\"}]",
+      "evidence": "docs/uat/evidence/2026-11-09T15-47-13-062Z/desktop/UAT-15.png"
+    },
+    {
+      "id": "UAT-13",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByText('第一次辦活動，請問有什麼建議？', { exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T15-47-13-062Z/mobile/UAT-13.png"
+    },
+    {
+      "id": "UAT-14",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByText('修改中 — 待發訊息已暫停', { exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T15-47-13-062Z/mobile/UAT-14.png"
+    },
+    {
+      "id": "UAT-15",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(received).toHaveLength(expected) Expected length: 0 Received length: 1 Received array:  [{\"activityId\": \"F43EbRC5qmgMaep28v3D\", \"activityMessageId\": \"DQDDlOPA9xFqYNDeQ22x\", \"content\": \"一小時後才發送\", \"errorMessage\": null, \"groupId\": \"C2d4f995d55a6319e0a69cbdbe74da997\", \"id\": \"Uvmhhk2fFutg5g6mcvSs\", \"lineMessageId\": \"mock-1794239297049\", \"sentAt\": {\"_nanoseconds\": 49000000, \"_seconds\": 1794239297}, \"status\": \"success\", \"triggerType\": \"scheduled\", \"userId\": \"Ids4H7nLouVjHluxW3G7EkQb73xu\"}]",
+      "evidence": "docs/uat/evidence/2026-11-09T15-47-13-062Z/mobile/UAT-15.png"
+    }
+  ]
+}

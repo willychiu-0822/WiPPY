@@ -1,0 +1,20 @@
+{
+  "updated": "2026-11-10 00:11",
+  "viewport": "mobile 390x844",
+  "mode": "system Chrome + real emulators, mock LINE/LLM",
+  "pass": true,
+  "checks": [
+    "取消建立可返回；第二群組建立活動，新增禁止事項知識",
+    "由一般對話進入「討論好了，確認排程」可建立三則待審訊息",
+    "核准、要求修改第三則、重新核准、重整仍保存且鎖定",
+    "取消廣播預覽不發送；未到期排程亦沒有發送記錄"
+  ],
+  "screenshots": [
+    "docs/uat/evidence/exploration-2026-11-09T16-11-10-281Z/01.png",
+    "docs/uat/evidence/exploration-2026-11-09T16-11-10-281Z/02.png",
+    "docs/uat/evidence/exploration-2026-11-09T16-11-10-281Z/03.png",
+    "docs/uat/evidence/exploration-2026-11-09T16-11-10-281Z/04.png"
+  ],
+  "errors": [],
+  "findings": []
+}

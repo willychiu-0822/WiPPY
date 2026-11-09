@@ -1,0 +1,11 @@
+{
+  "lostChatOnTabSwitch": true,
+  "staleMessageTargets": true,
+  "futureMessageSentEarly": true,
+  "logs": [
+    {
+      "content": "本機活動提醒 1：歡迎參加活動！",
+      "status": "success"
+    }
+  ]
+}

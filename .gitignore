@@ -45,3 +45,11 @@ backend/dist/
 .env.backup
 .env.production
 .env.local
+
+# Local UAT tools and transient Playwright output
+.uat-tools/
+test-results/
+playwright-report/
+
+# Lane-C PR42 worktree (separate git repo); ignore from main UAT tree
+pr42-fix/

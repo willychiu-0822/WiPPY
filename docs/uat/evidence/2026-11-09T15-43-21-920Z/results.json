@@ -1,0 +1,14 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-09 23:43",
+  "cases": 24,
+  "pass": 0,
+  "fail": 0,
+  "blocked": 24,
+  "ready_for_user_test": false,
+  "notes": "Error: http://127.0.0.1:4121 is already used, make sure that nothing is running on the port/url or set reuseExistingServer:true in config.webServer.；0 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [
+    "Error: http://127.0.0.1:4121 is already used, make sure that nothing is running on the port/url or set reuseExistingServer:true in config.webServer."
+  ],
+  "results": []
+}

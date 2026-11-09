@@ -1,0 +1,27 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 00:03",
+  "cases": 2,
+  "pass": 2,
+  "fail": 0,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "1 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-16",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T16-03-37-462Z/desktop/UAT-16.png"
+    },
+    {
+      "id": "UAT-16",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T16-03-37-462Z/mobile/UAT-16.png"
+    }
+  ]
+}

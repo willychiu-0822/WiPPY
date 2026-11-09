@@ -1,0 +1,12 @@
+{
+  "name": "wippy-local-uat",
+  "private": true,
+  "scripts": {
+    "uat:start": "node e2e/local-stack.mjs",
+    "test:e2e": "npm --prefix frontend run test:e2e --",
+    "test:uat-tools": "node --test e2e/report.test.mjs"
+  },
+  "devDependencies": {
+    "firebase-tools": "15.1.0"
+  }
+}

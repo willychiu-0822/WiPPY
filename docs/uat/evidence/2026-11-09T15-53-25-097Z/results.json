@@ -1,0 +1,41 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-09 23:54",
+  "cases": 4,
+  "pass": 0,
+  "fail": 4,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "2 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-11",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(received).toEqual(expected) // deep equality - Expected  - 2 + Received  + 2   Object { -   \"message\": \"permission-denied\", -   \"ownership\": \"permission-denied\",",
+      "evidence": "docs/uat/evidence/2026-11-09T15-53-25-097Z/desktop/UAT-11.png"
+    },
+    {
+      "id": "UAT-14",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByText(/訊息正在發送，請稍後再修改群組/) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T15-53-25-097Z/desktop/UAT-14.png"
+    },
+    {
+      "id": "UAT-11",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(received).toEqual(expected) // deep equality - Expected  - 2 + Received  + 2   Object { -   \"message\": \"permission-denied\", -   \"ownership\": \"permission-denied\",",
+      "evidence": "docs/uat/evidence/2026-11-09T15-53-25-097Z/mobile/UAT-11.png"
+    },
+    {
+      "id": "UAT-14",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByText(/訊息正在發送，請稍後再修改群組/) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T15-53-25-097Z/mobile/UAT-14.png"
+    }
+  ]
+}

@@ -155,7 +155,7 @@ describe('backend API route integration safety net', () => {
     delete process.env.LIFF_CHANNEL_ID;
     mockVerifyIdToken.mockResolvedValue({ uid: 'user_a' });
     mockIsNearLimit.mockReturnValue(false);
-    server = createApp().listen(0, '127.0.0.1', done);
+    server = createApp().listen(4129, '127.0.0.1', done);
   });
 
   afterEach((done) => {

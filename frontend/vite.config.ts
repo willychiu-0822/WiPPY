@@ -6,6 +6,12 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: process.env.VITE_UAT_MODE === 'true' ? {
+    proxy: {
+      '/api': 'http://127.0.0.1:4122',
+      '/scheduler': 'http://127.0.0.1:4122',
+    },
+  } : undefined,
   test: {
     environment: 'jsdom',
     globals: true,

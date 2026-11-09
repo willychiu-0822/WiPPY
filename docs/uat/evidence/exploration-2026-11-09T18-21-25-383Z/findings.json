@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-09T18:21:27.428Z",
+  "viewport": "390x844",
+  "findings": [
+    {
+      "area": "第一個活動",
+      "prematureApproval": 1,
+      "nextStep": 0
+    },
+    {
+      "area": "設定推播時間",
+      "nativeDatePicker": 0,
+      "isoInput": 1
+    },
+    {
+      "area": "LINE 設定空狀態",
+      "body": "群組\n廣播\n\n尚無群組。請先將 bot 加入 LINE 群組。"
+    }
+  ],
+  "errors": []
+}

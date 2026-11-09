@@ -1,0 +1,69 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 03:23",
+  "cases": 8,
+  "pass": 6,
+  "fail": 2,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "4 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-12",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/desktop/UAT-12.png"
+    },
+    {
+      "id": "UAT-19",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveValue(expected) failed Locator:  getByLabel('發送日期與時間') Expected: \"2035-11-12T18:30:00\" Received: \"2035-11-12T18:30\" Timeout:  10000ms Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/desktop/UAT-19.png"
+    },
+    {
+      "id": "UAT-20",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/desktop/UAT-20.png"
+    },
+    {
+      "id": "UAT-21",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/desktop/UAT-21.png"
+    },
+    {
+      "id": "UAT-12",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/mobile/UAT-12.png"
+    },
+    {
+      "id": "UAT-19",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveValue(expected) failed Locator:  getByLabel('發送日期與時間') Expected: \"2035-11-12T18:30:00\" Received: \"2035-11-12T18:30\" Timeout:  10000ms Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/mobile/UAT-19.png"
+    },
+    {
+      "id": "UAT-20",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/mobile/UAT-20.png"
+    },
+    {
+      "id": "UAT-21",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-09T19-09-50-781Z/mobile/UAT-21.png"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 02:40",
+  "cases": 6,
+  "pass": 0,
+  "fail": 6,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "3 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-19",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveAttribute(expected) failed Locator: getByLabel('發送日期與時間') Expected: \"datetime-local\" Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T18-29-03-047Z/desktop/UAT-19.png"
+    },
+    {
+      "id": "UAT-20",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveCount(expected) failed Locator:  getByRole('button', { name: '核准企畫', exact: true }) Expected: 0 Received: 1 Timeout:  10000ms Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T18-29-03-047Z/desktop/UAT-20.png"
+    },
+    {
+      "id": "UAT-21",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByRole('heading', { name: '連結 LINE 群組', exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T18-29-03-047Z/desktop/UAT-21.png"
+    },
+    {
+      "id": "UAT-19",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveAttribute(expected) failed Locator: getByLabel('發送日期與時間') Expected: \"datetime-local\" Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T18-29-03-047Z/mobile/UAT-19.png"
+    },
+    {
+      "id": "UAT-20",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveCount(expected) failed Locator:  getByRole('button', { name: '核准企畫', exact: true }) Expected: 0 Received: 1 Timeout:  10000ms Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T18-29-03-047Z/mobile/UAT-20.png"
+    },
+    {
+      "id": "UAT-21",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeVisible() failed Locator: getByRole('heading', { name: '連結 LINE 群組', exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T18-29-03-047Z/mobile/UAT-21.png"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 02:29",
+  "cases": 6,
+  "pass": 0,
+  "fail": 0,
+  "blocked": 6,
+  "ready_for_user_test": false,
+  "notes": "執行中：尚未完成所有案例與 viewport；前一次通過不代表本次完成。"
+}

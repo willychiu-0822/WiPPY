@@ -53,3 +53,7 @@ P0 UI：將 Grok 設為兩個群組、每日 5、預警 48。停用 → 重新�
 另外已在本機驗證單一來源 API/Auth/Firestore proxy 可以讓 owner 登入並開啟 Agent Hub 八分頁；因公開 tunnel 不可用，最終恢復一般 Vite 啟動。pr42-backend 使用此 clone 的編譯 dist，pr42-frontend 使用此 clone 的 Vite；Auth/Firestore/mockline 仍沿用既有 pr42 堆疊。
 
 P2-6 依要求不修；舊 UAT 旅程本輪維持擱置。真實 LINE/Grok/GCS/Cloud Tasks 不在此次本機修復重驗範圍。
+
+## 指定結果檔路徑限制
+
+嘗試寫入 `/workspace/codex-burn/notes/wippy-pr42-fixes-result.md` 時，環境回覆 `OSError: [Errno 30] Read-only file system`；該目錄不在本 session 的可寫範圍。完整報告保存在本檔，另提供 clone 根目錄同名檔供外部工作程序複製。

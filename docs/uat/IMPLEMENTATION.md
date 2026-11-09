@@ -1,0 +1,56 @@
+本檔包含歷史進度；最新交付狀態與 Git 限制以 [UAT-RESULTS.md](UAT-RESULTS.md) 為準。
+
+# 本機 UAT 執行計畫與進度
+
+**Goal:** 現有 WiPPY 使用者旅程可用瀏覽器端到端試用。
+**Architecture:** 真實 Auth/Firestore emulator + 原有 Express/Harness；e2e 入口替換 LINE/LLM provider；Vite 同源代理；Playwright 管理本機 stack 與證據。
+**Tech Stack:** Node、Java 21、Firebase CLI、React/Vite、Playwright/system Chrome。
+**Spec:** [UAT-PLAN.md](UAT-PLAN.md)。使用者已指定由 session C 全部開發與驗證，直接原地執行，不再要求設計核准、不另建 worktree。
+
+## 全域限制
+
+只在目前專案工作、只本機 commit，不 push、不修改 remote、不雲端部署、不 tunnel。伺服器埠只用 4121–4129；測試自動關閉自啟動伺服器。所有正式 env 只記名稱。
+
+## Review focus
+
+跨帳號讀寫／廣播；空白與無效時間；無目標群組／空企畫核准；外部 provider 失敗後重試；手機窄螢幕及重整持久保存。
+
+## 任務
+
+- [x] Task 1：`e2e/local-stack.mjs`、`e2e/backend.cjs`、`firebase.uat.json` 啟停 demo emulators 與 mock provider；`frontend/playwright.config.ts` 與 root/frontend scripts。驗收：全新帳號經真實 Auth token 呼叫 Express；僅 loopback demo Firestore；測試關閉所有子程序。
+- [x] Task 2：`frontend/e2e/uat.spec.ts`、`e2e/report.mjs` 建立 12 案雙 viewport 測試與每批截圖/報告/狀態。先跑出真實失敗，精確定位根因後逐個修復；提交另列 Task 5。
+- [x] Task 3：`frontend/src/uat/LiffCheck.tsx` 與限開發路由提供現有 LIFF 共用工具檢查。驗收：三 preset + liff.state，明確註明 mock。
+- [x] Task 4：全部雙 viewport 重跑與新手探索補測，執行 frontend/backend unit/build/lint；自查差異與程序清理。
+- [ ] Task 5：各修復分別建立含 UAT 編號的本機 commit。受 `.git` 唯讀掛載阻擋，未完成；提交單位與嘗試結果見 FIXES.md。
+
+## 執行紀錄
+
+- 2026-11-09：初始 HEAD 3135a4f，分支 codex/uat；無既有 UAT。保留 frontend 已安裝 Playwright 的 package 變更。Java/CLI 缺少，在 repo ignored `.uat-tools` 補齊。現有正式 LIFF 業務頁不存在，只驗證共用工具，不新增活動業務功能。
+
+- 原 12 案 24 次 E2E 全通過後，手機 Chrome 新手探索發現對話遺失、收件群組未同步、UTC 時間提前發送。新增 UAT-13～15 並先全部重現失敗；修復對話還原、群組更換需重審、時間以 instant 比較與 transaction 去重，正在跑完整 30 次回歸。
+- Git 提交遭唯讀 `.git/index.lock` 阻擋，詳 FIXES.md；不變更掛載、不建立另一個 repo、不接觸其他 checkout。
+
+- 唯讀 reviewer 提出 6 項具體問題，均已處理：dotenv 重新讀 env、viewport 假完整、舊 ready 未清除、keyword 編輯回歸、發送中更換群組競態、Firestore 客戶端偽造 owner。UAT-11/14 新測試先失敗，修後重跑；UAT-12 新 keyword 單元測試先失敗再通過。群組保存期間審核按鈕暫停，避免核准讀到保存前的群組。
+
+- 2026-11-09 23:57（台北）最終完整回歸：15 案 × 2 viewport = 30/30 pass；backend 185、frontend 81、report tools 5 全通過；兩端 build、frontend lint、git diff --check 通過。正式生產 build 不包含本機 LIFF 檢查 chunk。
+- 首次執行既有 API 單元基準時沿用了 `listen(0)` 隨機埠；發現後已改為 4129，之後所有本機服務與測試伺服器均限制在 4121–4129。
+- Finishing workflow：使用者已明確選擇只保留本機工作，不開 PR／不 push／不合併、不清除目前目錄。提交因唯讀 Git 未完成，所有差異留在原分支工作目錄。
+
+## 第 2 輪：2026-11-10 新手錯誤復原
+
+沿用既有 emulator、雙 viewport 與報告；本人執行，不另派代理。驗收依 R3/R5/R7，修復方式採既有表單必填防呆與 catch 提示，保留輸入後重試。
+
+- [x] UAT-16：`frontend/e2e/uat.spec.ts` 先驗證知識編輯空白標題／內容不能儲存、API 拒絕無效 patch；再修改 `KnowledgeEditor.tsx` 與 `activityService.ts`，驗證原資料不被覆蓋、合法修改重整後保存。
+- [x] UAT-17：以 Chrome 真實 offline 模擬（不攔截 API）重現知識新增／編輯／刪除失敗與活動記錄載入失敗；在 `KnowledgeEditor.tsx`、`ActivityDetailPage.tsx` 顯示錯誤、保留內容及允許恢復連線重試；不得產生 pageerror 或把載入失敗顯示成空記錄。全域記錄亦先用單元測試重現把失敗顯示成空清單，再同樣補 catch 與重試。
+- [x] UAT-18：新手輸入中文時，選字 Enter 不得建立活動或發送 Agent／群組訊息；Chrome composition event 先重現提前建立，再於三個 handler 加 `isComposing`／229 判斷，普通 Enter 仍只送出一次。此為瀏覽器事件驗證，未做實機輸入法測試。
+- [x] 新增案例先跑雙 viewport 失敗紀錄，再逐項修復與驗證、嘗試各自本機 commit（唯讀 Git 則記錄阻擋）。
+- [x] 完整 E2E、兩端 unit/build、frontend lint、report tools；核對每案截圖與程序清理，更新結果、狀態、修復紀錄。
+
+2026-11-10 00:10（台北）完整回歸 18 案 × 2 viewport = 36/36，36 張截圖逐一核對存在；backend 189、frontend 86、report tools 5 通過，兩端 build、frontend lint 與 diff --check 通過。00:11 再以全新手機帳號探索跨頁旅程：取消建立、第二群組與禁止事項知識、一般對話後按確認排程、修改第三則後重新核准與重整、取消廣播預覽，全部通過且無未處理例外或水平溢出。完整回歸後另重啟本機 stack 成功，探索後關閉全部自啟動服務。第 2 輪未另派代理；使用者已指定本人負責全部開發與驗證。修改保留目前分支；三項各自 commit 嘗試均受 Git 唯讀阻擋。
+
+## 第 5 輪：2026-11-10
+
+- 沿用 18 案，新增 UAT-19 日期時間選擇器、UAT-20 第一份企畫引導、UAT-21 LINE 空群組設定與離線重試，共 21 旅程 × 2 viewport。新增案例先重現 6/6 fail，修復後聚焦驗證含 UAT-12 共 8/8 pass。
+- UAT-12 配合新手引導，改驗證空企畫不顯示核准操作，另以實際 API 明確驗證無群組／無訊息均回 400；原內容、時間與 keyword 回歸斷言全部保留。沒有增加重試或放寬 timeout。
+- 原 `.git/index.lock` 仍無法建立；已通知 Product Builder。為使修復可攜，在原目錄已忽略的 `.uat-tools/uat-commits.git` 建立獨立本機提交與 bundle。原 `.git`、remote、分支 refs 均未變動，因此原預設 git status 乾淨這項驗收仍待 Product Builder 恢復寫入後匯入。
+- 本輪未另派代理，未觸碰 PR42 子目錄、既有服務、部署或 tunnel。伺服器限 4121–4127，API 單元測試 4129。

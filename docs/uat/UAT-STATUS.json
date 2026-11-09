@@ -1,10 +1,10 @@
 {
   "project": "WiPPY",
-  "updated": "2026-11-10 02:29",
-  "cases": 6,
-  "pass": 0,
+  "updated": "2026-11-10 04:37",
+  "cases": 42,
+  "pass": 42,
   "fail": 0,
-  "blocked": 6,
-  "ready_for_user_test": false,
-  "notes": "執行中：尚未完成所有案例與 viewport；前一次通過不代表本次完成。"
+  "blocked": 0,
+  "ready_for_user_test": true,
+  "notes": "21 個旅程 × desktop/mobile，完整 42/42 通過；新帳號手機探索複查通過。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。已拆分本機提交於 .uat-tools/uat-commits.git；原 .git 唯讀，原分支 refs/index 未套用且預設 status 尚有差異，待 Product Builder 恢復寫入後匯入 bundle。"
 }

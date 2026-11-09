@@ -1,0 +1,41 @@
+{
+  "updated": "2026-11-10 04:37",
+  "backend": {
+    "test_suites": 15,
+    "tests": 189,
+    "build": "pass"
+  },
+  "frontend": {
+    "test_files": 10,
+    "tests": 86,
+    "lint": "pass",
+    "build": "pass"
+  },
+  "report_tools": {
+    "tests": 5,
+    "result": "pass"
+  },
+  "e2e": {
+    "run": "2026-11-09T20-15-58-658Z",
+    "cases": 42,
+    "pass": 42,
+    "retries": 0,
+    "chrome": "system",
+    "viewports": {
+      "desktop": "1280x800",
+      "mobile": "390x844"
+    }
+  },
+  "servers": "all session-C app/emulator ports 4121-4127 closed after final exploration",
+  "secrets_scan": "no credential-pattern matches in changed/new files",
+  "git": {
+    "original_head": "3135a4fea306f39a852ba199bad27108ca0f707d",
+    "original_metadata": "read-only; original branch/index unchanged, default status remains dirty",
+    "local_commit_store": ".uat-tools/uat-commits.git",
+    "export": ".uat-tools/uat-delivery/uat-commits.bundle",
+    "remote_changes": false,
+    "push": false
+  },
+  "production_liff_check_chunk": "excluded",
+  "real_line_tested": false
+}

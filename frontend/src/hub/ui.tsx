@@ -15,7 +15,7 @@ export function Card({ title, children, actions }: { title?: string; children: R
   );
 }
 
-const inputClass = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+const inputClass = 'bg-white text-gray-900 placeholder:text-gray-500 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
 export function TextField(props: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; required?: boolean; multiline?: boolean; hint?: string }) {
   const id = useId();

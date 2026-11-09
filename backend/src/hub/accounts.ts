@@ -27,6 +27,13 @@ export async function resolveFirebaseActor(ctx: HubContext, uid: string, ownerUs
   return null;
 }
 
+export class AgentDisabledError extends Error {
+  constructor() {
+    super('此 Agent 已停用，請聯絡擁有者重新啟用');
+    this.name = 'AgentDisabledError';
+  }
+}
+
 /** Resolves a `wpy_` API key (Grok Bot) to its enabled agent. */
 export async function resolveApiKeyActor(ctx: HubContext, key: string, via: ActorVia): Promise<Actor | null> {
   const matches = await ctx.store.query<AgentDoc>(COLLECTIONS.agents, {
@@ -34,6 +41,7 @@ export async function resolveApiKeyActor(ctx: HubContext, key: string, via: Acto
     limit: 1,
   });
   const match = matches[0];
-  if (!match || !match.data.enabled || match.data.ownerId !== ctx.ownerId) return null;
+  if (!match || match.data.ownerId !== ctx.ownerId) return null;
+  if (!match.data.enabled) throw new AgentDisabledError();
   return { kind: 'agent', ownerId: ctx.ownerId, agentId: match.id, via };
 }

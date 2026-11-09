@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { ensureFirebaseApp } from '../../firebase';
-import { resolveApiKeyActor, resolveFirebaseActor } from '../accounts';
+import { AgentDisabledError, resolveApiKeyActor, resolveFirebaseActor } from '../accounts';
 import type { Actor, ActorVia } from '../core/types';
 import { getHub } from '../runtime';
 
@@ -75,6 +75,10 @@ export function hubAuth(opts: { allow: Array<'owner' | 'agent'>; via?: ActorVia 
       req.hubActor = actor;
       next();
     } catch (err) {
+      if (err instanceof AgentDisabledError) {
+        res.status(403).json({ error: err.message, code: 'agent_disabled' });
+        return;
+      }
       console.error(JSON.stringify({ severity: 'ERROR', event: 'hub_auth_error', error: String(err) }));
       res.status(500).json({ error: 'Authentication failed', code: 'auth_error' });
     }

@@ -75,6 +75,6 @@ describe('resolveApiKeyActor', () => {
     expect(await resolveApiKeyActor(hub, key, 'mcp')).toEqual({ kind: 'agent', ownerId: 'owner_1', agentId: 'grok_1', via: 'mcp' });
     expect(await resolveApiKeyActor(hub, generateApiKey(), 'rest')).toBeNull();
     await hub.store.update('agents', 'grok_1', { enabled: false });
-    expect(await resolveApiKeyActor(hub, key, 'rest')).toBeNull();
+    await expect(resolveApiKeyActor(hub, key, 'rest')).rejects.toThrow('此 Agent 已停用');
   });
 });

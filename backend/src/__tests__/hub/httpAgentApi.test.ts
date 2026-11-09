@@ -26,6 +26,17 @@ describe('agent REST API and MCP server', () => {
     process.env.OWNER_USER_ID = prevOwner;
   });
 
+  it.each(['/api/hub/v1/groups', '/api/hub/mcp'])('distinguishes disabled agents from invalid keys at %s', async (path) => {
+    await hub.store.update('agents', 'grok_1', { enabled: false });
+    const disabled = await server.call('GET', path, { token: apiKey });
+    expect(disabled).toMatchObject({ status: 403, body: { code: 'agent_disabled' } });
+    expect(disabled.body.error).toMatch(/[\u4e00-\u9fff]/);
+    expect(await server.call('GET', path, { token: generateApiKey() }))
+      .toMatchObject({ status: 401, body: { code: 'invalid_api_key' } });
+    await hub.store.update('agents', 'grok_1', { ownerId: 'other-owner' });
+    expect((await server.call('GET', path, { token: apiKey })).status).toBe(401);
+  });
+
   describe('REST', () => {
     it('authenticates Grok by API key (Bearer or x-api-key) and rejects bad keys', async () => {
       expect((await server.call('GET', '/api/hub/v1/groups', { token: generateApiKey() })).status).toBe(401);

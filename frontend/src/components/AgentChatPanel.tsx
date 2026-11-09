@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { AgentChatApiResponse, HarnessRunSnapshot } from '../lib/api';
 
@@ -27,16 +27,34 @@ export default function AgentChatPanel({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [restoring, setRestoring] = useState(Boolean(sessionId));
   const [error, setError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [rateLimitWarning, setRateLimitWarning] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const unsubRef = useRef<(() => void) | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollRef.current;
+    container?.scrollTo?.({ top: container.scrollHeight, behavior: 'smooth' });
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    getDoc(doc(db, 'agentSessions', sessionId)).then(snap => {
+      if (cancelled || !snap.exists()) return;
+      const history = (snap.data().messages ?? []) as Array<Message & { displayContent?: string }>;
+      setMessages(current => current.length ? current : history
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .map(m => ({ role: m.role, content: m.displayContent ?? m.content.split('EXTRACTED_KNOWLEDGE:')[0].trim() })));
+    }).catch(() => { if (!cancelled) setError('無法載入歷史對話，請重新開啟活動'); })
+      .finally(() => { if (!cancelled) setRestoring(false); });
+    return () => { cancelled = true; };
+  }, [sessionId]);
+
+  useEffect(() => () => unsubRef.current?.(), []);
 
   // Countdown timer for rate limit
   useEffect(() => {
@@ -82,7 +100,7 @@ export default function AgentChatPanel({
   }, [onMessagesGenerated, onKnowledgeExtracted]);
 
   async function send(text: string) {
-    if (!text || loading || countdown > 0) return;
+    if (!text || loading || restoring || countdown > 0) return;
 
     setInput('');
     setError(null);
@@ -134,12 +152,13 @@ export default function AgentChatPanel({
     }
   }
 
-  const isBlocked = loading || countdown > 0;
+  const isBlocked = loading || restoring || countdown > 0;
 
   return (
     <div className="flex flex-col h-[480px]">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-3 py-2">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-3 py-2">
+        {restoring && <p className="text-sm text-gray-400">載入歷史對話...</p>}
         {messages.length === 0 && (
           <div className="text-center py-12 space-y-2">
             <p className="text-sm text-gray-400">向 Agent 描述活動，或直接請它規劃推播企畫</p>
@@ -187,7 +206,7 @@ export default function AgentChatPanel({
           </div>
         )}
 
-        <div ref={bottomRef} />
+
       </div>
 
       {/* Status messages */}

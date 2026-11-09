@@ -113,6 +113,7 @@ export interface ActivityKnowledge {
 export type AgentSessionStatus = 'active' | 'closed';
 
 export interface AgentSessionMessage {
+  displayContent?: string; // User-facing finalized reply; content retains raw planner context.
   role: 'system' | 'user' | 'assistant';
   content: string;
   timestamp: Timestamp;

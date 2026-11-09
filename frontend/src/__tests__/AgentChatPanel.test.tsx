@@ -9,6 +9,7 @@ let capturedSnapshotCallback: ((snap: unknown) => void) | null = null;
 
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(),
+  getDoc: vi.fn().mockResolvedValue({ exists: () => false }),
   onSnapshot: vi.fn().mockImplementation((_ref: unknown, cb: (snap: unknown) => void) => {
     capturedSnapshotCallback = cb;
     return vi.fn(); // unsubscribe fn

@@ -313,12 +313,14 @@ export async function executeHarness(
       await db.collection('agentSessions').doc(session.id).update({ lastGeneratedPlanAt: now, updatedAt: now });
     }
 
+    const displayReply = matched.handler.finalize(rawReply, matched.parsed, persistResult);
+
     // Append to session history (keep last MAX_SESSION_HISTORY)
     const sessionSnap = await db.collection('agentSessions').doc(session.id).get();
     const currentMsgs = (sessionSnap.data() as AgentSession).messages;
     const newMsgs: AgentSessionMessage[] = [
       { role: 'user', content: userMessage, timestamp: now },
-      { role: 'assistant', content: rawReply, timestamp: now },
+      { role: 'assistant', content: rawReply, displayContent: displayReply, timestamp: now },
     ];
     await db.collection('agentSessions').doc(session.id).update({
       messages: [...currentMsgs, ...newMsgs].slice(-MAX_SESSION_HISTORY),
@@ -327,7 +329,6 @@ export async function executeHarness(
 
     // finalize_response
     await enterStage('finalize_response');
-    const displayReply = matched.handler.finalize(rawReply, matched.parsed, persistResult);
 
     tracer?.stageExit(currentStage);
     await finishRun(db, runId, {

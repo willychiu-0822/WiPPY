@@ -49,6 +49,14 @@ describe('resolveFirebaseActor', () => {
     expect(await resolveFirebaseActor(hub, 'uid_instinct', 'owner_uid')).toEqual({ kind: 'agent', ownerId: 'owner_1', agentId: 'instinct_1', via: 'ui' });
   });
 
+  it.each([undefined, 'uid_instinct'])('never elevates existing hubAccounts with owner=%s', async (owner) => {
+    expect(await resolveFirebaseActor(hub, 'uid_instinct', owner)).toMatchObject({ kind: 'agent' });
+    await hub.store.update('hubAccounts', 'uid_instinct', { disabled: true });
+    expect(await resolveFirebaseActor(hub, 'uid_instinct', owner)).toBeNull();
+    await hub.store.update('hubAccounts', 'uid_instinct', { disabled: false, ownerId: 'foreign' });
+    expect(await resolveFirebaseActor(hub, 'uid_instinct', owner)).toBeNull();
+  });
+
   it('rejects strangers, disabled accounts and accounts of disabled agents', async () => {
     expect(await resolveFirebaseActor(hub, 'stranger', 'owner_uid')).toBeNull();
     await hub.store.update('hubAccounts', 'uid_instinct', { disabled: true });

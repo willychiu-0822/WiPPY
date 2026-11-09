@@ -5,6 +5,8 @@ describe('hub HTTP: auth, me, group access, internal jobs', () => {
   let hub: TestHub;
   let server: HubServer;
   const prevOwner = process.env.OWNER_USER_ID;
+  const prevNodeEnv = process.env.NODE_ENV;
+  const prevService = process.env.K_SERVICE;
   const prevSecret = process.env.INTERNAL_HARNESS_SECRET;
 
   beforeEach(async () => {
@@ -21,6 +23,9 @@ describe('hub HTTP: auth, me, group access, internal jobs', () => {
     await server.close();
     process.env.OWNER_USER_ID = prevOwner;
     process.env.INTERNAL_HARNESS_SECRET = prevSecret;
+    if (prevNodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = prevNodeEnv;
+    if (prevService === undefined) delete process.env.K_SERVICE; else process.env.K_SERVICE = prevService;
+    jest.restoreAllMocks();
   });
 
   it('requires a token and rejects unknown Firebase users (no public sign-up)', async () => {
@@ -34,6 +39,31 @@ describe('hub HTTP: auth, me, group access, internal jobs', () => {
   it('reports the role of owner and agent accounts', async () => {
     expect((await server.call('GET', '/api/hub/me', { token: 'token-owner_uid' })).body).toEqual({ role: 'owner', agentId: null, agentName: null, ownerConfigured: true });
     expect((await server.call('GET', '/api/hub/me', { token: 'token-instinct_uid' })).body).toEqual({ role: 'agent', agentId: 'instinct_1', agentName: 'Instinct', ownerConfigured: true });
+  });
+
+  it.each([undefined, '', 'instinct_uid', 'owner_uid'])('keeps Instinct an agent with OWNER_USER_ID=%s', async (owner) => {
+    delete process.env.K_SERVICE;
+    process.env.NODE_ENV = 'test';
+    if (owner === undefined) delete process.env.OWNER_USER_ID; else process.env.OWNER_USER_ID = owner;
+    const me = await server.call('GET', '/api/hub/me', { token: 'token-instinct_uid' });
+    expect(me).toMatchObject({ status: 200, body: { role: 'agent', agentId: 'instinct_1' } });
+  });
+
+  it.each(['production', 'cloud-run'])('fails closed on all hub routes without owner (%s)', async (mode) => {
+    delete process.env.OWNER_USER_ID;
+    delete process.env.K_SERVICE;
+    process.env.NODE_ENV = mode === 'production' ? 'production' : 'test';
+    if (mode === 'cloud-run') process.env.K_SERVICE = 'wippy';
+    const warning = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const path of ['/api/hub/me', '/api/hub/admin/agents', '/api/hub/v1/groups', '/api/hub/mcp', '/api/hub/unknown']) {
+      expect(await server.call('GET', path, { token: 'token-owner_uid' }))
+        .toMatchObject({ status: 503, body: { code: 'owner_not_configured' } });
+    }
+    expect(warning.mock.calls.some(([line]) => JSON.parse(line).event === 'owner_not_configured')).toBe(true);
+    process.env.OWNER_USER_ID = '  ';
+    expect((await server.call('GET', '/api/hub/me')).status).toBe(503);
+    process.env.OWNER_USER_ID = 'owner_uid';
+    expect((await server.call('GET', '/api/hub/me', { token: 'token-instinct_uid' })).body.role).toBe('agent');
   });
 
   it('lets only the owner toggle group agent access', async () => {

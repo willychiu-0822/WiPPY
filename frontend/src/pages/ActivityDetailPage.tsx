@@ -173,8 +173,10 @@ export default function ActivityDetailPage() {
   if (loadError || !activity) return (
     <div className="text-center py-12 space-y-2">
       <p role="alert" className="text-red-600 text-sm">{loadError || '找不到活動，可能已被移除或你沒有查看權限'}</p>
-      <button onClick={loadAll} className="text-blue-500 text-sm hover:underline">重試</button>
-      <button onClick={() => navigate('/activities')} className="text-blue-500 text-sm hover:underline">返回活動列表</button>
+      <div className="flex flex-col items-center gap-3">
+        <button onClick={loadAll} className="bg-blue-600 text-white text-sm rounded-xl px-4 py-2 hover:bg-blue-700">重試</button>
+        <button onClick={() => navigate('/activities')} className="text-blue-500 text-sm hover:underline">返回活動列表</button>
+      </div>
     </div>
   );
 

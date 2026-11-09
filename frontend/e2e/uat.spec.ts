@@ -613,6 +613,12 @@ test('UAT-22 斷線不誤報活動消失，載入與建立都能原地重試', a
   await card.click();
   await expect(page.getByRole('alert')).toContainText('無法載入活動，請檢查網路連線後重試');
   await expect(page.getByText('找不到活動', { exact: true })).toHaveCount(0);
+  const retry = page.getByRole('button', { name: '重試', exact: true });
+  await expect(retry).toHaveCount(1);
+  const retryBox = (await retry.boundingBox())!;
+  const returnBox = (await page.getByRole('button', { name: '返回活動列表', exact: true }).boundingBox())!;
+  expect(returnBox.y >= retryBox.y + retryBox.height + 8 || returnBox.x >= retryBox.x + retryBox.width + 8,
+    '重試與返回活動列表必須分開，讓新手可辨認主要操作').toBe(true);
   await context.setOffline(false);
   await page.getByRole('button', { name: '重試', exact: true }).click();
   await expect(page.getByRole('heading', { name: '新手讀書交流活動' })).toBeVisible();

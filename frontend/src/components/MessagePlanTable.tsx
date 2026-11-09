@@ -33,7 +33,14 @@ function formatTriggerValue(v: string) {
   }
 }
 
-interface EditState { id: string; content: string; triggerValue: string; triggerType: ActivityMessage['triggerType'] }
+function localDateTime(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const part = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${part(date.getMonth() + 1)}-${part(date.getDate())}T${part(date.getHours())}:${part(date.getMinutes())}:${part(date.getSeconds())}`;
+}
+
+interface EditState { id: string; content: string; triggerValue: string; triggerType: ActivityMessage['triggerType']; advanced?: boolean }
 
 export default function MessagePlanTable({ messages, locked, onUpdate, onDelete }: Props) {
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -49,7 +56,7 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
     if (editing.content.length > 5000) { setError('訊息內容不可超過 5000 字'); return; }
     if (editing.triggerType === 'scheduled' && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/.test(editing.triggerValue)
       || !Number.isFinite(Date.parse(editing.triggerValue)))) {
-      setError('請輸入有效的 ISO 發送時間'); return;
+      setError(editing.advanced ? '請輸入有效的 ISO 發送時間' : '請選擇發送日期與時間'); return;
     }
     if (editing.triggerType === 'keyword' && !editing.triggerValue.trim()) { setError('請輸入觸發關鍵字'); return; }
     setSaving(true);
@@ -78,13 +85,31 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
         editing?.id === msg.id ? (
           <div key={msg.id} className="bg-white border border-blue-200 rounded-xl p-4 space-y-3">
             <div>
+              {msg.triggerType === 'scheduled' && <>
+                <label htmlFor={`send-at-${msg.id}`} className="text-xs text-gray-500 mb-1 block">發送日期與時間</label>
+                <input
+                  id={`send-at-${msg.id}`}
+                  type="datetime-local"
+                  step="1"
+                  className="w-full min-w-0 text-sm border border-gray-200 rounded-lg px-3 py-1.5"
+                  value={localDateTime(editing.triggerValue)}
+                  onChange={e => {
+                    const date = new Date(e.target.value);
+                    setEditing({ ...editing, triggerValue: Number.isFinite(date.getTime()) ? date.toISOString().replace(/\.\d{3}Z$/, 'Z') : '', advanced: false });
+                  }}
+                />
+                <p className="text-xs text-gray-500 mt-1">依你的裝置時區（{Intl.DateTimeFormat().resolvedOptions().timeZone}）顯示。</p>
+              </>}
+              <details open={msg.triggerType === 'keyword' ? true : undefined} className="mt-2">
+              <summary className={`text-xs text-gray-500 cursor-pointer ${msg.triggerType === 'keyword' ? 'hidden' : ''}`}>進階：輸入含時區的時間</summary>
               <label className="text-xs text-gray-500 mb-1 block">{msg.triggerType === 'keyword' ? '觸發關鍵字' : '發送時間（ISO 格式）'}</label>
               <input
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 value={editing.triggerValue}
-                onChange={(e) => setEditing({ ...editing, triggerValue: e.target.value })}
+                onChange={(e) => setEditing({ ...editing, triggerValue: e.target.value, advanced: true })}
                 placeholder={msg.triggerType === 'keyword' ? '例：報名' : '2025-05-10T10:00:00+08:00'}
               />
+              </details>
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">訊息內容</label>

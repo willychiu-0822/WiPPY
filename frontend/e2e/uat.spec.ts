@@ -57,6 +57,7 @@ async function plan(page: Page) {
 }
 async function editFirst(page: Page, content: string, when = '2035-11-12T18:00:00+08:00') {
   await page.getByRole('button', { name: '編輯', exact: true }).first().click();
+  await page.getByText('進階：輸入含時區的時間', { exact: true }).click();
   await page.getByPlaceholder('2025-05-10T10:00:00+08:00').fill(when);
   await page.locator('textarea').fill(content);
   await page.getByRole('button', { name: '儲存', exact: true }).click();
@@ -305,6 +306,7 @@ test('UAT-12 新手探索：無效內容時間與空企畫核准', async ({ page
   await page.getByRole('button', { name: '儲存', exact: true }).click();
   await expect(page.getByText('訊息內容不可為空', { exact: true })).toBeVisible();
   await page.locator('textarea').fill('合法內容');
+  await page.getByText('進階：輸入含時區的時間', { exact: true }).click();
   await page.getByPlaceholder('2025-05-10T10:00:00+08:00').fill('不是時間');
   await page.getByRole('button', { name: '儲存', exact: true }).click();
   await expect(page.getByText('請輸入有效的 ISO 發送時間', { exact: true })).toBeVisible();
@@ -515,5 +517,25 @@ test('UAT-18 探索：中文選字 Enter 不提前建立或發送', async ({ pag
   const logs = (await api(page, '/api/send-logs')).data.logs;
   expect(logs).toHaveLength(1);
   expect(logs[0].content).toBe('還在選字的群組回覆');
+  await noOverflow(page);
+});
+
+test('UAT-19 新手用日期時間選擇器設定推播，時區與資料保存正確', async ({ page }) => {
+  await register(page); const id = await createActivity(page); await plan(page);
+  await page.getByRole('button', { name: '編輯', exact: true }).first().click();
+  const picker = page.getByLabel('發送日期與時間');
+  await expect(picker).toHaveAttribute('type', 'datetime-local');
+  await picker.fill('2035-11-12T18:30:17');
+  await page.getByRole('button', { name: '儲存', exact: true }).click();
+  const messages = (await api(page, `/api/activities/${id}/messages`)).data.messages;
+  expect(Date.parse(messages[0].triggerValue)).toBe(Date.parse('2035-11-12T18:30:17+08:00'));
+  await page.reload();
+  await page.getByRole('button', { name: /推播企畫/ }).click();
+  await page.getByRole('button', { name: '編輯', exact: true }).first().click();
+  await expect(picker).toHaveValue('2035-11-12T18:30:17');
+  await picker.fill('');
+  await page.getByRole('button', { name: '儲存', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('請選擇發送日期與時間');
+  expect(Date.parse((await api(page, `/api/activities/${id}/messages`)).data.messages[0].triggerValue)).toBe(Date.parse('2035-11-12T18:30:17+08:00'));
   await noOverflow(page);
 });

@@ -33,20 +33,31 @@ function formatTriggerValue(v: string) {
   }
 }
 
-interface EditState { id: string; content: string; triggerValue: string }
+interface EditState { id: string; content: string; triggerValue: string; triggerType: ActivityMessage['triggerType'] }
 
 export default function MessagePlanTable({ messages, locked, onUpdate, onDelete }: Props) {
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const sorted = [...messages].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
 
   async function handleSave() {
     if (!editing) return;
+    setError('');
+    if (!editing.content.trim()) { setError('訊息內容不可為空'); return; }
+    if (editing.content.length > 5000) { setError('訊息內容不可超過 5000 字'); return; }
+    if (editing.triggerType === 'scheduled' && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/.test(editing.triggerValue)
+      || !Number.isFinite(Date.parse(editing.triggerValue)))) {
+      setError('請輸入有效的 ISO 發送時間'); return;
+    }
+    if (editing.triggerType === 'keyword' && !editing.triggerValue.trim()) { setError('請輸入觸發關鍵字'); return; }
     setSaving(true);
     try {
       await onUpdate(editing.id, { content: editing.content, triggerValue: editing.triggerValue });
       setEditing(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '儲存失敗，請重試');
     } finally {
       setSaving(false);
     }
@@ -62,16 +73,17 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
 
   return (
     <div className="space-y-2">
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       {sorted.map((msg) =>
         editing?.id === msg.id ? (
           <div key={msg.id} className="bg-white border border-blue-200 rounded-xl p-4 space-y-3">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">發送時間（ISO 格式）</label>
+              <label className="text-xs text-gray-500 mb-1 block">{msg.triggerType === 'keyword' ? '觸發關鍵字' : '發送時間（ISO 格式）'}</label>
               <input
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 value={editing.triggerValue}
                 onChange={(e) => setEditing({ ...editing, triggerValue: e.target.value })}
-                placeholder="2025-05-10T10:00:00+08:00"
+                placeholder={msg.triggerType === 'keyword' ? '例：報名' : '2025-05-10T10:00:00+08:00'}
               />
             </div>
             <div>
@@ -106,7 +118,7 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
                 {/* Time + badges */}
                 <div className="flex items-center gap-1.5 flex-wrap mb-1">
                   <span className="text-xs text-blue-600 font-medium">
-                    {formatTriggerValue(msg.triggerValue)}
+                    {msg.triggerType === 'keyword' ? `關鍵字：${msg.triggerValue}` : formatTriggerValue(msg.triggerValue)}
                   </span>
                   <span className={`text-xs px-1.5 py-0.5 rounded-full ${REVIEW_BADGE[msg.reviewStatus].style}`}>
                     {REVIEW_BADGE[msg.reviewStatus].label}
@@ -134,7 +146,7 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
               {!locked && msg.status === 'pending' && (
                 <div className="flex gap-1 shrink-0">
                   <button
-                    onClick={() => setEditing({ id: msg.id, content: msg.content, triggerValue: msg.triggerValue })}
+                    onClick={() => { setError(''); setEditing({ id: msg.id, content: msg.content, triggerValue: msg.triggerValue, triggerType: msg.triggerType }); }}
                     className="text-xs text-blue-500 hover:text-blue-700 px-1"
                   >
                     編輯

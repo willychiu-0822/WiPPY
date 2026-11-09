@@ -219,3 +219,14 @@ describe('MessagePlanTable — edit / delete controls', () => {
     expect(screen.queryByRole('button', { name: '儲存' })).not.toBeInTheDocument();
   });
 });
+
+describe('UAT-12 keyword message compatibility', () => {
+  it('allows editing content when triggerValue is a keyword', async () => {
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    render(<MessagePlanTable messages={[makeMessage({ triggerType: 'keyword', triggerValue: '報名' })]} locked={false} onUpdate={onUpdate} onDelete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '編輯' }));
+    fireEvent.change(screen.getByDisplayValue('活動即將開始！'), { target: { value: '關鍵字回覆內容' } });
+    fireEvent.click(screen.getByRole('button', { name: '儲存' }));
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledWith('msg_1', { content: '關鍵字回覆內容', triggerValue: '報名' }));
+  });
+});

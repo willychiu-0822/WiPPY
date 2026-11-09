@@ -17,6 +17,7 @@ import {
   updateKnowledge,
   deleteKnowledge,
 } from '../../services/activityService';
+import { ActivityInputError } from '../../services/activityValidation';
 import type { KnowledgeType, KnowledgeSourceType } from '../../types';
 
 const router = express.Router();
@@ -29,6 +30,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     const activities = await listActivities(getDb(), req.userId!);
     res.json({ activities });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'list_activities_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to fetch activities' });
   }
@@ -48,6 +50,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
     });
     res.status(201).json({ activity });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'create_activity_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to create activity' });
   }
@@ -63,6 +66,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
     }
     res.json({ activity });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'get_activity_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to fetch activity' });
   }
@@ -94,6 +98,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
     }
     res.json({ activity });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'update_activity_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to update activity' });
   }
@@ -109,6 +114,7 @@ router.patch('/:id/approve', authMiddleware, async (req: Request, res: Response)
     }
     res.json({ activity });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'approve_activity_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to approve activity' });
   }
@@ -124,6 +130,7 @@ router.patch('/:id/request-revision', authMiddleware, async (req: Request, res: 
     }
     res.json({ activity });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'request_revision_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to request revision' });
   }
@@ -137,6 +144,7 @@ router.get('/:id/messages', authMiddleware, async (req: Request, res: Response) 
     const messages = await listMessages(getDb(), req.params['id']! as string, req.userId!);
     res.json({ messages });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'list_messages_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
@@ -181,6 +189,7 @@ router.post('/:id/messages', authMiddleware, async (req: Request, res: Response)
     }
     res.status(201).json({ message });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'create_message_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to create message' });
   }
@@ -216,6 +225,7 @@ router.patch('/:id/messages/:msgId', authMiddleware, async (req: Request, res: R
     }
     res.json({ message });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'update_message_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to update message' });
   }
@@ -236,6 +246,7 @@ router.delete('/:id/messages/:msgId', authMiddleware, async (req: Request, res: 
     }
     res.json({ ok: true });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'delete_message_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to delete message' });
   }
@@ -249,6 +260,7 @@ router.get('/:id/knowledge', authMiddleware, async (req: Request, res: Response)
     const knowledge = await listKnowledge(getDb(), req.params['id']! as string, req.userId!);
     res.json({ knowledge });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'list_knowledge_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to fetch knowledge' });
   }
@@ -294,6 +306,7 @@ router.post('/:id/knowledge', authMiddleware, async (req: Request, res: Response
     }
     res.status(201).json({ knowledge });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'create_knowledge_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to create knowledge' });
   }
@@ -328,6 +341,7 @@ router.patch('/:id/knowledge/:knowledgeId', authMiddleware, async (req: Request,
     }
     res.json({ knowledge });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'update_knowledge_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to update knowledge' });
   }
@@ -347,6 +361,7 @@ router.delete('/:id/knowledge/:knowledgeId', authMiddleware, async (req: Request
     }
     res.json({ ok: true });
   } catch (err) {
+    if (err instanceof ActivityInputError) { res.status(400).json({ error: err.message }); return; }
     console.error(JSON.stringify({ event: 'delete_knowledge_error', error: String(err) }));
     res.status(500).json({ error: 'Failed to delete knowledge' });
   }

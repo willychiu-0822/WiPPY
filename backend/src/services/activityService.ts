@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { ActivityInputError, validateMessageContent, validateScheduledTime } from './activityValidation';
 import { Firestore } from 'firebase-admin/firestore';
 import type {
   Activity,
@@ -103,6 +104,8 @@ export async function approveActivity(
   const snap = await ref.get();
   if (!snap.exists || (snap.data() as Activity).userId !== userId) return null;
 
+  if (!(snap.data() as Activity).targetGroups.length) throw new ActivityInputError('請至少選擇一個目標群組');
+
   const now = admin.firestore.Timestamp.now();
   const batch = db.batch();
 
@@ -118,6 +121,13 @@ export async function approveActivity(
     .collection('activityMessages')
     .where('reviewStatus', '==', 'pending_review')
     .get();
+  if (!msgsSnap.docs.length) throw new ActivityInputError('請先建立推播訊息');
+  for (const doc of msgsSnap.docs) {
+    const message = doc.data() as ActivityMessage;
+    validateMessageContent(message.content);
+    if (message.triggerType === 'scheduled') validateScheduledTime(message.triggerValue);
+    if (!message.targetGroups.length) throw new ActivityInputError('推播訊息缺少目標群組，請重新規劃');
+  }
   msgsSnap.docs.forEach((doc) => {
     batch.update(doc.ref, {
       reviewStatus: 'approved' as MessageReviewStatus,
@@ -198,6 +208,8 @@ export async function createMessage(
 ): Promise<ActivityMessage | null> {
   const activity = await getActivity(db, activityId, userId);
   if (!activity) return null;
+  validateMessageContent(data.content);
+  if (data.triggerType === 'scheduled') validateScheduledTime(data.triggerValue);
 
   const now = admin.firestore.Timestamp.now();
   const ref = db
@@ -250,6 +262,8 @@ export async function updateMessage(
   const snap = await ref.get();
   if (!snap.exists) return null;
 
+  if (patch.content !== undefined) validateMessageContent(patch.content);
+  if (patch.triggerValue !== undefined && (snap.data() as ActivityMessage).triggerType === 'scheduled') validateScheduledTime(patch.triggerValue);
   await ref.update({ ...patch, updatedAt: admin.firestore.Timestamp.now() });
   const updated = await ref.get();
   return updated.data() as ActivityMessage;

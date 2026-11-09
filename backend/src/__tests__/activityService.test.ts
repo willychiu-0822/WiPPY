@@ -181,6 +181,14 @@ describe('listActivities', () => {
 });
 
 describe('approveActivity', () => {
+  it('UAT-12 refuses approval without target groups', async () => {
+    await expect(approveActivity(buildMockDb({ ...baseActivity, targetGroups: [] }) as any, ACT_ID, USER_ID))
+      .rejects.toThrow('請至少選擇一個目標群組');
+  });
+  it('UAT-12 refuses approval without pending messages', async () => {
+    await expect(approveActivity(buildMockDb(baseActivity) as any, ACT_ID, USER_ID))
+      .rejects.toThrow('請先建立推播訊息');
+  });
   it('returns null if activity does not belong to user', async () => {
     const db = buildMockDb(baseActivity) as any;
     const result = await approveActivity(db, ACT_ID, 'other_user');
@@ -207,7 +215,7 @@ describe('approveActivity', () => {
       update: mockUpdate,
       collection: jest.fn(() => ({
         where: jest.fn().mockReturnThis(),
-        get: jest.fn().mockResolvedValue({ docs: [] }), // no pending messages
+        get: jest.fn().mockResolvedValue({ docs: [{ ref: { id: 'pending_msg' }, data: () => ({ content: '待審核訊息', targetGroups: ['group_a'], triggerType: 'scheduled', triggerValue: '2035-01-01T10:00:00+08:00' }) }] }),
       })),
     };
 

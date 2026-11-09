@@ -45,12 +45,13 @@ interface EditState { id: string; content: string; triggerValue: string; trigger
 export default function MessagePlanTable({ messages, locked, onUpdate, onDelete }: Props) {
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   const sorted = [...messages].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
 
   async function handleSave() {
-    if (!editing) return;
+    if (!editing || saving || deleting !== null) return;
     setError('');
     if (!editing.content.trim()) { setError('訊息內容不可為空'); return; }
     if (editing.content.length > 5000) { setError('訊息內容不可超過 5000 字'); return; }
@@ -64,9 +65,24 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
       await onUpdate(editing.id, { content: editing.content, triggerValue: editing.triggerValue });
       setEditing(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '儲存失敗，請重試');
+      setError(err instanceof TypeError ? '儲存失敗，請檢查網路連線後重試'
+        : err instanceof Error ? err.message : '儲存失敗，請稍後重試');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (deleting !== null || saving) return;
+    setError('');
+    setDeleting(id);
+    try {
+      await onDelete(id);
+    } catch (err) {
+      setError(err instanceof TypeError ? '刪除失敗，請檢查網路連線後重試'
+        : err instanceof Error ? err.message : '刪除失敗，請稍後重試');
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -172,15 +188,17 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
                 <div className="flex gap-1 shrink-0">
                   <button
                     onClick={() => { setError(''); setEditing({ id: msg.id, content: msg.content, triggerValue: msg.triggerValue, triggerType: msg.triggerType }); }}
-                    className="text-xs text-blue-500 hover:text-blue-700 px-1"
+                    disabled={saving || deleting !== null}
+                    className="text-xs text-blue-500 hover:text-blue-700 px-1 disabled:opacity-50"
                   >
                     編輯
                   </button>
                   <button
-                    onClick={() => onDelete(msg.id)}
-                    className="text-xs text-red-400 hover:text-red-600 px-1"
+                    onClick={() => handleDelete(msg.id)}
+                    disabled={saving || deleting !== null}
+                    className="text-xs text-red-400 hover:text-red-600 px-1 disabled:opacity-50"
                   >
-                    刪除
+                    {deleting === msg.id ? '刪除中...' : '刪除'}
                   </button>
                 </div>
               )}

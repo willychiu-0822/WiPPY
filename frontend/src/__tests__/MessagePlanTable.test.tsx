@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import MessagePlanTable from '../components/MessagePlanTable';
 import type { ActivityMessage } from '../lib/api';
@@ -228,5 +228,41 @@ describe('UAT-12 keyword message compatibility', () => {
     fireEvent.change(screen.getByDisplayValue('活動即將開始！'), { target: { value: '關鍵字回覆內容' } });
     fireEvent.click(screen.getByRole('button', { name: '儲存' }));
     await waitFor(() => expect(onUpdate).toHaveBeenCalledWith('msg_1', { content: '關鍵字回覆內容', triggerValue: '報名' }));
+  });
+});
+
+describe('UAT-23 message failure recovery', () => {
+  it('explains a failed delete, retains the message and allows retry', async () => {
+    const onDelete = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(undefined);
+    render(<MessagePlanTable messages={[makeMessage()]} locked={false} onUpdate={vi.fn()} onDelete={onDelete} />);
+    fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('刪除失敗，請檢查網路連線後重試');
+    expect(screen.getByText('活動即將開始！')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+    expect(onDelete).toHaveBeenCalledTimes(2);
+  });
+
+  it('blocks repeated deletion and editing while a deletion is pending', async () => {
+    let finish!: () => void;
+    const onDelete = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
+    render(<MessagePlanTable messages={[makeMessage()]} locked={false} onUpdate={vi.fn()} onDelete={onDelete} />);
+    fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    expect(screen.getByRole('button', { name: '刪除中...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '編輯' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: '刪除中...' }));
+    expect(onDelete).toHaveBeenCalledTimes(1);
+    await act(async () => { finish(); });
+    expect(screen.getByRole('button', { name: '刪除' })).toBeEnabled();
+  });
+
+  it('retains an offline draft while showing a readable retry message', async () => {
+    render(<MessagePlanTable messages={[makeMessage()]} locked={false} onUpdate={vi.fn().mockRejectedValue(new TypeError('Failed to fetch'))} onDelete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '編輯' }));
+    fireEvent.change(screen.getByDisplayValue('活動即將開始！'), { target: { value: '還沒儲存的草稿' } });
+    fireEvent.click(screen.getByRole('button', { name: '儲存' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('儲存失敗，請檢查網路連線後重試');
+    expect(screen.getByDisplayValue('還沒儲存的草稿')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '儲存' })).toBeEnabled();
   });
 });

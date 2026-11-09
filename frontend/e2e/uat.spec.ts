@@ -693,3 +693,35 @@ test('UAT-23 斷線刪除與編輯企畫可復原，不遺失待發訊息或草�
   expect((await api(page, `/api/send-logs?activityId=${id}`)).data.logs).toHaveLength(0);
   await noOverflow(page);
 });
+
+test('UAT-24 首次登入的帳號資料連線失敗可理解、可重試，不停在處理中', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: '還沒有帳號？免費註冊' }).click();
+  await page.evaluate(async () => {
+    const helper = '/e2e/firestore-client.ts';
+    await (await import(helper)).setFirestoreOnline(false);
+  });
+  await page.getByPlaceholder('Email', { exact: true }).fill(`profile-${crypto.randomUUID()}@example.test`);
+  await page.getByPlaceholder('密碼', { exact: true }).fill(fixturePassword);
+  await page.getByRole('button', { name: '建立帳號', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveText('無法載入帳號資料，請檢查網路連線後重試');
+  const retry = page.getByRole('button', { name: '重試載入帳號', exact: true });
+  await expect(retry).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '處理中...', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '群組', exact: true })).toHaveCount(0);
+  await page.evaluate(async () => {
+    const helper = '/e2e/firestore-client.ts';
+    await (await import(helper)).setFirestoreOnline(true);
+  });
+  await retry.click();
+  await expect(page.getByRole('heading', { name: '群組', exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  const uid = await page.evaluate(async () => { const helper = '/e2e/firestore-client.ts'; return (await import(helper)).currentUid(); });
+  const userDoc = await page.request.get(`http://127.0.0.1:4124/v1/projects/demo-wippy-uat/databases/(default)/documents/users/${uid}`, { headers: { Authorization: 'Bearer owner' } });
+  expect(userDoc.ok()).toBe(true);
+  expect((await userDoc.json()).fields.timezone.stringValue).toBe('Asia/Taipei');
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '群組', exact: true })).toBeVisible();
+  await createActivity(page);
+  await noOverflow(page);
+});

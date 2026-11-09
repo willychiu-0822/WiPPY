@@ -1,7 +1,10 @@
 // Loaded only by browser UAT to verify the real emulator security rules.
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { disableNetwork, enableNetwork, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../src/firebase';
 export function currentUid() { return auth.currentUser!.uid; }
+export async function setFirestoreOnline(online: boolean) {
+  await (online ? enableNetwork(db) : disableNetwork(db));
+}
 export async function attemptOwnershipForgery(activityId: string, victimUid: string, groupId: string) {
   const attempt = async (write: () => Promise<void>) => {
     try { await write(); return 'allowed'; }

@@ -13,17 +13,25 @@ const LiffCheck = localUat ? lazy(() => import('./uat/LiffCheck')) : () => null;
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="flex items-center justify-center min-h-screen text-gray-400">Loading...</div>;
+  if (loading) return <div className="flex items-center justify-center min-h-screen text-gray-400">載入帳號中...</div>;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, error, retry } = useAuth();
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-400">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen text-gray-400">載入帳號中...</div>;
   }
+
+  if (error) return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <h1 className="text-xl font-bold text-blue-600">WiPPY</h1>
+      <p role="alert" className="text-sm text-red-600">{error}</p>
+      <button onClick={retry} className="rounded-xl bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">重試載入帳號</button>
+    </div>
+  );
 
   return (
     <>

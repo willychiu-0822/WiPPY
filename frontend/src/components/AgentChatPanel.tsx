@@ -146,6 +146,7 @@ export default function AgentChatPanel({
   function handleSend() { send(input.trim()); }
 
   function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();

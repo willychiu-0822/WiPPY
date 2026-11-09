@@ -103,7 +103,7 @@ export default function ActivitiesPage() {
             placeholder="活動名稱"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && e.keyCode !== 229 && handleCreate()}
             autoFocus
           />
           <div className="space-y-2">

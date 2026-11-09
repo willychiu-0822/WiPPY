@@ -25,6 +25,7 @@ export default function ActivityDetailPage() {
   const [messages, setMessages] = useState<ActivityMessage[]>([]);
   const [knowledge, setKnowledge] = useState<ActivityKnowledge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('agent');
   const [reviewLoading, setReviewLoading] = useState(false);
@@ -35,6 +36,8 @@ export default function ActivityDetailPage() {
 
   const loadAll = useCallback(async () => {
     if (!id) return;
+    setLoading(true);
+    setLoadError('');
     try {
       const [actRes, msgRes, knowRes, groupRes] = await Promise.all([
         api.activities.get(id),
@@ -57,12 +60,16 @@ export default function ActivityDetailPage() {
         if (cached) setSessionId(cached);
       }
     } catch (err) {
-      setError(String(err));
+      setLoadError(err instanceof Error && err.message === 'Activity not found'
+        ? '找不到活動，可能已被移除或你沒有查看權限'
+        : '無法載入活動，請檢查網路連線後重試');
+    } finally {
+      setLoading(false);
     }
   }, [id, lsKey]);
 
   useEffect(() => {
-    loadAll().finally(() => setLoading(false));
+    void loadAll();
   }, [loadAll]);
 
   async function handleApprove() {
@@ -163,9 +170,10 @@ export default function ActivityDetailPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) return <div className="text-center py-12 text-gray-400 text-sm">載入中...</div>;
-  if (!activity) return (
+  if (loadError || !activity) return (
     <div className="text-center py-12 space-y-2">
-      <p className="text-gray-400 text-sm">找不到活動</p>
+      <p role="alert" className="text-red-600 text-sm">{loadError || '找不到活動，可能已被移除或你沒有查看權限'}</p>
+      <button onClick={loadAll} className="text-blue-500 text-sm hover:underline">重試</button>
       <button onClick={() => navigate('/activities')} className="text-blue-500 text-sm hover:underline">返回活動列表</button>
     </div>
   );

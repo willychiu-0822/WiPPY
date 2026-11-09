@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { Activity, Group } from '../lib/api';
@@ -40,24 +40,32 @@ export default function ActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    Promise.all([api.activities.list(), api.groups.list()])
-      .then(([actRes, groupRes]) => {
-        setActivities(actRes.activities);
-        setGroups(groupRes.groups);
-      })
-      .catch((err) => setError(String(err)))
-      .finally(() => setLoading(false));
+  const loadActivities = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const [actRes, groupRes] = await Promise.all([api.activities.list(), api.groups.list()]);
+      setActivities(actRes.activities);
+      setGroups(groupRes.groups);
+    } catch {
+      setLoadError('無法載入活動列表，請檢查網路連線後重試');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => { void loadActivities(); }, [loadActivities]);
+
   async function handleCreate() {
-    if (!newName.trim()) return;
+    if (creating || !newName.trim()) return;
+    setError(null);
     setCreating(true);
     try {
       const res = await api.activities.create(newName.trim(), selectedGroupIds);
@@ -66,8 +74,8 @@ export default function ActivitiesPage() {
       setSelectedGroupIds([]);
       setShowCreate(false);
       navigate(`/activities/${res.activity.id}`);
-    } catch (err) {
-      setError(String(err));
+    } catch {
+      setError('無法建立活動，請檢查網路連線後重試；活動名稱與群組已保留');
     } finally {
       setCreating(false);
     }
@@ -76,6 +84,14 @@ export default function ActivitiesPage() {
   if (loading) {
     return <div className="text-center py-12 text-gray-400 text-sm">載入中...</div>;
   }
+
+  if (loadError) return (
+    <div className="text-center py-12 space-y-3">
+      <h1 className="text-lg font-bold text-gray-800">活動列表</h1>
+      <p role="alert" className="text-sm text-red-600">{loadError}</p>
+      <button onClick={loadActivities} className="text-sm text-blue-600 hover:underline">重試</button>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -90,7 +106,7 @@ export default function ActivitiesPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
+        <div role="alert" className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}

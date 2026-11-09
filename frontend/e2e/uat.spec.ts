@@ -557,3 +557,43 @@ test('UAT-20 第一個活動先引導 AI 產生企畫，再顯示核准操作', 
   expect((await api(page, `/api/send-logs?activityId=${id}`)).data.logs).toHaveLength(0);
   await noOverflow(page);
 });
+
+test('UAT-21 LINE 空群組提供操作指引與重新載入，失敗可復原', async ({ page, context }) => {
+  await register(page);
+  const groups = (await api(page, '/api/groups')).data.groups;
+  const fixtureDocs: Array<{ url: string; data: unknown }> = [];
+  for (const group of groups) {
+    const url = `http://127.0.0.1:4124/v1/projects/demo-wippy-uat/databases/(default)/documents/groups/${group.groupId}`;
+    const response = await page.request.get(url, { headers: { Authorization: 'Bearer owner' } });
+    expect(response.ok()).toBe(true);
+    fixtureDocs.push({ url, data: await response.json() });
+    expect((await page.request.delete(url, { headers: { Authorization: 'Bearer owner' } })).ok()).toBe(true);
+  }
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '連結 LINE 群組', exact: true })).toBeVisible();
+  await expect(page.getByText(/邀請 WiPPY 的 LINE 官方帳號加入/)).toBeVisible();
+  await expect(page.getByText(/傳送一則文字訊息/)).toBeVisible();
+  await expect(page.getByRole('button', { name: '廣播', exact: true })).toBeDisabled();
+  await page.getByRole('link', { name: '活動', exact: true }).click();
+  await page.getByRole('button', { name: '+ 新增活動' }).click();
+  await page.getByRole('link', { name: '前往群組設定', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '連結 LINE 群組', exact: true })).toBeVisible();
+  await createActivity(page, false);
+  await page.getByRole('link', { name: '前往群組設定', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '連結 LINE 群組', exact: true })).toBeVisible();
+  await context.setOffline(true);
+  await page.getByRole('button', { name: '重新載入群組', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('無法載入群組');
+  await context.setOffline(false);
+  for (const fixture of fixtureDocs) {
+    expect((await page.request.patch(fixture.url, { headers: { Authorization: 'Bearer owner' }, data: fixture.data })).ok()).toBe(true);
+  }
+  await page.getByRole('button', { name: '重新載入群組', exact: true }).click();
+  await expect(page.getByText('UAT 讀書會', { exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '廣播', exact: true })).toBeEnabled();
+  await createActivity(page, false);
+  await page.getByRole('checkbox', { name: 'UAT 讀書會' }).check();
+  await expect(page.getByText('已選 1 個', { exact: true })).toBeVisible();
+  await noOverflow(page);
+});

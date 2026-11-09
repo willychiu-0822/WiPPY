@@ -262,6 +262,7 @@ export default function GroupsPage() {
 
   const loadGroups = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const r = await api.groups.list();
       setGroups(r.groups);
@@ -286,7 +287,12 @@ export default function GroupsPage() {
   }
 
   if (loading) return <p className="text-center text-gray-400 text-sm mt-12">載入中...</p>;
-  if (error) return <p className="text-center text-red-500 text-sm mt-12">{error}</p>;
+  if (error) return (
+    <div className="text-center mt-12 space-y-3">
+      <p role="alert" className="text-red-500 text-sm">{error}</p>
+      <button onClick={loadGroups} className="text-sm text-blue-600 underline">重新載入群組</button>
+    </div>
+  );
 
   return (
     <>
@@ -328,6 +334,7 @@ export default function GroupsPage() {
           ) : (
             <button
               onClick={() => setSelectMode(true)}
+              disabled={groups.length === 0}
               className="text-sm text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100"
             >
               廣播
@@ -338,9 +345,16 @@ export default function GroupsPage() {
 
       {/* Group list */}
       {groups.length === 0 && (
-        <p className="text-center text-gray-400 text-sm mt-12">
-          尚無群組。請先將 bot 加入 LINE 群組。
-        </p>
+        <section className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 text-sm text-gray-600">
+          <h2 className="font-semibold text-gray-900">連結 LINE 群組</h2>
+          <ol className="list-decimal pl-5 space-y-2">
+            <li>邀請 WiPPY 的 LINE 官方帳號加入要接收通知的群組。找不到官方帳號時，請向 WiPPY 管理員索取。</li>
+            <li>在該 LINE 群組傳送一則文字訊息，再回到這裡。</li>
+            <li>點「重新載入群組」，出現群組後，就能在活動中選擇推播對象。</li>
+          </ol>
+          <p className="text-xs">若仍未出現，請聯絡管理員確認你的 WiPPY 帳號已連結該群組。</p>
+          <button onClick={loadGroups} className="bg-blue-600 text-white px-4 py-2 rounded-lg">重新載入群組</button>
+        </section>
       )}
 
       <div className="space-y-2">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { Activity, Group } from '../lib/api';
 
@@ -109,7 +109,7 @@ export default function ActivitiesPage() {
           <div className="space-y-2">
             <p className="text-xs text-gray-500">目標群組（可複選）</p>
             {groups.length === 0 ? (
-              <p className="text-xs text-gray-400">尚無可選群組，請先到群組頁同步。</p>
+              <p className="text-xs text-gray-500">尚無可選群組。<Link className="text-blue-600 underline" to="/groups">前往群組設定</Link>，依步驟連結 LINE 群組；也可以先建立活動、稍後選群組。</p>
             ) : (
               <div className="max-h-48 overflow-auto border border-gray-100 rounded-xl p-2 space-y-1">
                 {groups.map((group) => {

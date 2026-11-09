@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { Activity, ActivityMessage, ActivityKnowledge, AgentChatApiResponse, Group } from '../lib/api';
 import ReviewBanner from '../components/ReviewBanner';
@@ -191,7 +191,7 @@ export default function ActivityDetailPage() {
           </span>
         </div>
         {groups.length === 0 ? (
-          <p className="text-xs text-gray-400">尚無可選群組，請先到群組頁同步。</p>
+          <p className="text-xs text-gray-500">尚無可選群組。<Link className="text-blue-600 underline" to="/groups">前往群組設定</Link>，依步驟連結 LINE 群組。</p>
         ) : (
           <div className="max-h-52 overflow-auto border border-gray-100 rounded-xl p-2 space-y-1">
             {groups.map((group) => {

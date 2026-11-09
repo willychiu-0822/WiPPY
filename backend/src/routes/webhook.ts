@@ -1,5 +1,5 @@
-import express, { Request, Response } from 'express';
-import { middleware, WebhookEvent } from '@line/bot-sdk';
+import express, { Request, Response, type ErrorRequestHandler } from 'express';
+import { middleware, SignatureValidationFailed, WebhookEvent } from '@line/bot-sdk';
 import { getDb } from '../firebase';
 import { getLineClient, getLineMiddlewareConfig, hasLineWebhookConfig } from '../line';
 import {
@@ -49,6 +49,16 @@ if (hasLineWebhookConfig()) {
     res.status(503).json({ error: 'LINE webhook is not configured' });
   });
 }
+
+// Signature failures are client authentication errors, not server failures.
+const signatureErrorHandler: ErrorRequestHandler = (err, _req, res, next) => {
+  if (err instanceof SignatureValidationFailed) {
+    res.status(401).json({ error: 'Invalid LINE webhook signature', code: 'invalid_signature' });
+    return;
+  }
+  next(err);
+};
+router.use(signatureErrorHandler);
 
 async function handleEvent(event: WebhookEvent): Promise<void> {
   const db = getDb();

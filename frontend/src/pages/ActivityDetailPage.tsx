@@ -66,7 +66,8 @@ export default function ActivityDetailPage() {
   }, [loadAll]);
 
   async function handleApprove() {
-    if (!id) return;
+    if (!id || groupSaving) return;
+    setError(null);
     setReviewLoading(true);
     try {
       const res = await api.activities.approve(id);
@@ -80,7 +81,8 @@ export default function ActivityDetailPage() {
   }
 
   async function handleRequestRevision() {
-    if (!id) return;
+    if (!id || groupSaving) return;
+    setError(null);
     setReviewLoading(true);
     try {
       const res = await api.activities.requestRevision(id);
@@ -142,11 +144,16 @@ export default function ActivityDetailPage() {
       ? [...activity.targetGroups, groupId]
       : activity.targetGroups.filter((id) => id !== groupId);
 
+    const previousActivity = activity;
+    setActivity({ ...activity, targetGroups: nextTargetGroups });
     setGroupSaving(true);
     try {
       const res = await api.activities.update(id, { targetGroups: nextTargetGroups });
       setActivity(res.activity);
+      const updatedMessages = await api.activities.messages.list(id);
+      setMessages(updatedMessages.messages);
     } catch (err) {
+      setActivity(previousActivity);
       setError(String(err));
     } finally {
       setGroupSaving(false);
@@ -217,7 +224,7 @@ export default function ActivityDetailPage() {
         activity={activity}
         onApprove={handleApprove}
         onRequestRevision={handleRequestRevision}
-        loading={reviewLoading}
+        loading={reviewLoading || groupSaving}
       />
 
       {/* Tabs */}

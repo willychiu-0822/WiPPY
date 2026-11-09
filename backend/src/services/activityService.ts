@@ -90,6 +90,33 @@ export async function updateActivity(
   const ref = db.collection('activities').doc(activityId);
   const snap = await ref.get();
   if (!snap.exists || (snap.data() as Activity).userId !== userId) return null;
+  if (patch.targetGroups !== undefined) {
+    if (!Array.isArray(patch.targetGroups) || patch.targetGroups.some(id => typeof id !== 'string' || !id.trim())) {
+      throw new ActivityInputError('請選擇有效的目標群組');
+    }
+    const groups = await Promise.all(patch.targetGroups.map(id => db.collection('groups').doc(id).get()));
+    if (groups.some(group => !group.exists || group.data()!['userId'] !== userId || group.data()!['isActive'] === false)) {
+      throw new ActivityInputError('無法選擇此目標群組');
+    }
+    const previous = (snap.data() as Activity).targetGroups;
+    const changed = [...previous].sort().join(',') !== [...patch.targetGroups].sort().join(',');
+    if (changed) {
+      await db.runTransaction(async transaction => {
+        const currentActivity = await transaction.get(ref);
+        if (!currentActivity.exists || currentActivity.data()!['userId'] !== userId) throw new ActivityInputError('Activity not found');
+        const pending = await transaction.get(ref.collection('activityMessages').where('status', '==', 'pending'));
+        if (pending.docs.some(message => message.data()['processingAt'] != null)) {
+          throw new ActivityInputError('訊息正在發送，請稍後再修改群組');
+        }
+        const now = admin.firestore.Timestamp.now();
+        transaction.update(ref, { ...patch, updatedAt: now, ...(pending.size ? { reviewStatus: 'revision_requested', approvedAt: null } : {}) });
+        for (const message of pending.docs) {
+          transaction.update(message.ref, { targetGroups: patch.targetGroups, reviewStatus: 'pending_review', updatedAt: now });
+        }
+      });
+      return (await ref.get()).data() as Activity;
+    }
+  }
   await ref.update({ ...patch, updatedAt: admin.firestore.Timestamp.now() });
   const updated = await ref.get();
   return updated.data() as Activity;

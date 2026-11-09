@@ -14,14 +14,21 @@ export class AdminInputError extends Error {
 const httpsUrl = z.string().url().refine((u) => u.startsWith('https://'), 'must start with https://');
 const common = {
   name: z.string().trim().min(1).max(60),
-  allowedGroupIds: z.array(z.string().min(1)).max(100).default([]),
-  dailySendLimit: z.number().int().min(0).max(1000).default(20),
-  inboxAlertHours: z.number().int().min(1).max(720).default(24),
+  allowedGroupIds: z.array(z.string().min(1)).max(100),
+  dailySendLimit: z.number().int().min(0).max(1000),
+  inboxAlertHours: z.number().int().min(1).max(720),
+};
+
+const createFields = {
+  ...common,
+  allowedGroupIds: common.allowedGroupIds.default([]),
+  dailySendLimit: common.dailySendLimit.default(20),
+  inboxAlertHours: common.inboxAlertHours.default(24),
 };
 
 const createSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('grok_bot'), ...common, routineUrl: httpsUrl.nullish(), routineKey: z.string().min(1).max(500).nullish() }),
-  z.object({ kind: z.literal('instinct'), ...common, email: z.string().email() }),
+  z.object({ kind: z.literal('grok_bot'), ...createFields, routineUrl: httpsUrl.nullish(), routineKey: z.string().min(1).max(500).nullish() }),
+  z.object({ kind: z.literal('instinct'), ...createFields, email: z.string().email() }),
 ]);
 
 const updateSchema = z.object({

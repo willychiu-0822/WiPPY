@@ -36,6 +36,27 @@ describe('owner admin API', () => {
     expect(JSON.stringify(list.body)).not.toMatch(/routineKeyEnc|apiKeyHash/);
   });
 
+  it.each([{ enabled: false }, { name: 'Renamed' }])('preserves omitted settings on PATCH %j', async (patch) => {
+    const created = await server.call('POST', '/api/hub/admin/agents', { ...OWNER, body: {
+      kind: 'grok_bot', name: 'Grok', allowedGroupIds: [GROUP], dailySendLimit: 5, inboxAlertHours: 48,
+    } });
+    const id = created.body.agent.id;
+    const updated = await server.call('PATCH', `/api/hub/admin/agents/${id}`, { ...OWNER, body: patch });
+    expect(updated.status).toBe(200);
+    const settings = { allowedGroupIds: [GROUP], dailySendLimit: 5, inboxAlertHours: 48 };
+    expect(updated.body.agent).toMatchObject(settings);
+    expect(hub.store.dump('agents')[id]).toMatchObject(settings);
+    const list = await server.call('GET', '/api/hub/admin/agents', OWNER);
+    expect(list.body.agents[0]).toMatchObject(settings);
+  });
+
+  it('defaults settings only on creation and accepts explicit empty groups and zero limit', async () => {
+    const created = await server.call('POST', '/api/hub/admin/agents', { ...OWNER, body: { kind: 'grok_bot', name: 'Grok' } });
+    expect(created.body.agent).toMatchObject({ allowedGroupIds: [], dailySendLimit: 20, inboxAlertHours: 24 });
+    const updated = await server.call('PATCH', `/api/hub/admin/agents/${created.body.agent.id}`, { ...OWNER, body: { allowedGroupIds: [], dailySendLimit: 0, inboxAlertHours: 48 } });
+    expect(updated.body.agent).toMatchObject({ allowedGroupIds: [], dailySendLimit: 0, inboxAlertHours: 48 });
+  });
+
   it('validates agent input (https routine URL, owned groups)', async () => {
     expect((await server.call('POST', '/api/hub/admin/agents', { ...OWNER, body: { kind: 'grok_bot', name: 'G', routineUrl: 'http://x', allowedGroupIds: [] } })).status).toBe(400);
     expect((await server.call('POST', '/api/hub/admin/agents', { ...OWNER, body: { kind: 'grok_bot', name: 'G', allowedGroupIds: ['Cnotmine'] } })).status).toBe(400);

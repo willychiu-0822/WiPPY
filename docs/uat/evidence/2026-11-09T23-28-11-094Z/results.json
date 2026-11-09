@@ -1,0 +1,27 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 07:32",
+  "cases": 2,
+  "pass": 0,
+  "fail": 2,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "1 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-24",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Test timeout of 45000ms exceeded.",
+      "evidence": "docs/uat/evidence/2026-11-09T23-28-11-094Z/desktop/UAT-24.png"
+    },
+    {
+      "id": "UAT-24",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveText(expected) failed Locator: getByRole('alert') Expected: \"無法載入帳號資料，請檢查網路連線後重試\" Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-09T23-28-11-094Z/mobile/UAT-24.png"
+    }
+  ]
+}

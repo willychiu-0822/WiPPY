@@ -1,0 +1,14 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 05:12",
+  "cases": 46,
+  "pass": 0,
+  "fail": 0,
+  "blocked": 46,
+  "ready_for_user_test": false,
+  "notes": "Error: Timed out waiting 180000ms from config.webServer.；0 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [
+    "Error: Timed out waiting 180000ms from config.webServer."
+  ],
+  "results": []
+}

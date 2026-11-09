@@ -54,3 +54,23 @@
 - UAT-12 配合新手引導，改驗證空企畫不顯示核准操作，另以實際 API 明確驗證無群組／無訊息均回 400；原內容、時間與 keyword 回歸斷言全部保留。沒有增加重試或放寬 timeout。
 - 原 `.git/index.lock` 仍無法建立；已通知 Product Builder。為使修復可攜，在原目錄已忽略的 `.uat-tools/uat-commits.git` 建立獨立本機提交與 bundle。原 `.git`、remote、分支 refs 均未變動，因此原預設 git status 乾淨這項驗收仍待 Product Builder 恢復寫入後匯入。
 - 本輪未另派代理，未觸碰 PR42 子目錄、既有服務、部署或 tunnel。伺服器限 4121–4127，API 單元測試 4129。
+
+## 第 6 輪：2026-11-10
+
+接續既有 21 個旅程與已拆分的本機提交，不重建工作區。仍由 session C 本人完成開發與驗證。
+
+- [x] 檢視原工作區 status/diff/log，確認 portable commit tree 與原有工作檔一致。原 `.git` 仍為唯讀掛載，`git add --dry-run .gitignore` 回覆 index.lock: Read-only file system；不變更掛載或 remote。
+- [x] 完整重跑 backend unit/build、frontend lint/unit/build、報告工具；通過數分別 189、86、5。
+- [x] 標準 `npm run test:e2e` 重跑既有 42 次桌面／手機案例，核對全部截圖與結果。
+- [x] 完整綠燈後使用新手機帳號探索第一次活動與網路中斷操作；每個缺陷先補失敗案例，再作最小修復、雙 viewport 驗證並各自本機提交。
+- [x] 完整重跑最終案例與受影響檢查；更新結果／狀態、提交清單與 bundle，核對交付樹無差異、無暫存／secret，關閉自啟動服務。
+
+探索根因與修復規格：
+
+- UAT-22：`ActivitiesPage` 把載入失敗保留為空陣列並顯示原始錯誤；`ActivityDetailPage` 在 catch 後仍以 null 判斷不存在。沿用發送紀錄頁的載入／錯誤／重試狀態，獨立保存 loadError；新增表單失敗保留既有 state、顯示中文提示並清除舊錯誤。API 真正的 404 仍顯示不存在／權限說明。驗收為手機與桌面完整離線→線上旅程，確認建立筆數與原活動未遺失。
+- UAT-23：`MessagePlanTable` 刪除直接呼叫 async callback、沒有 catch；儲存則直接顯示瀏覽器 TypeError。沿用 `KnowledgeEditor` 的 deleting/catch/finally，請求中禁止重複刪除／編輯，網路錯誤用可讀中文、保留既有草稿與 API 驗證訊息。先加三個單元回歸與雙 viewport 端到端案例，驗收指定訊息才被刪除、原始時間／內容未被失敗操作覆蓋，重試後重整仍正確、無未處理例外。
+- UAT-24：完整回歸追出 `AuthProvider` 在 profile 載入失敗後沒有 catch/finally，使用者停在處理中。以真實 Firebase SDK disableNetwork／enableNetwork 補首次登入復原案例，再加帳號失敗重試與舊請求不得恢復已登出使用者兩項單元回歸，先失敗後修復；以全域可讀錯誤畫面與唯一重試按鈕復原，profile 完成後才顯示主畫面。
+
+原分支乾淨的驗收取決於原 `.git` 恢復可寫，目前不可宣稱完成。既有 `.uat-tools/uat-commits.git` 與 `.uat-tools/uat-delivery/` 僅作本機可搬移交付；原 refs/index 不變。
+
+第 6 輪最終：2026-11-10 07:57，24 旅程 × 2 = 48/48 通過；backend 189、frontend 91、report tools 5，兩端 build、frontend lint 全通過。新帳號手機探索與重試主按鈕複查通過。全部工作檔封存至既有本機交付 Git／bundle，服務已關閉；原 `.git` 唯讀，原分支乾淨驗收仍未達成。完整提交清單見 UAT-RESULTS.md。

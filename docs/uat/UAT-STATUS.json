@@ -1,10 +1,10 @@
 {
   "project": "WiPPY",
-  "updated": "2026-11-10 04:37",
-  "cases": 42,
-  "pass": 42,
+  "updated": "2026-11-10 07:57",
+  "cases": 48,
+  "pass": 48,
   "fail": 0,
   "blocked": 0,
   "ready_for_user_test": true,
-  "notes": "21 個旅程 × desktop/mobile，完整 42/42 通過；新帳號手機探索複查通過。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。已拆分本機提交於 .uat-tools/uat-commits.git；原 .git 唯讀，原分支 refs/index 未套用且預設 status 尚有差異，待 Product Builder 恢復寫入後匯入 bundle。"
+  "notes": "24 個旅程 × desktop/mobile，完整 48/48 通過；新手機帳號首次活動與斷線畫面複查通過。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。所有工作檔已封存於 .uat-tools/uat-commits.git 與 bundle；原 .git 唯讀、原分支 refs/index 未套用且預設 status 不乾淨，Git 驗收仍待 Product Builder 在可寫環境匯入。"
 }

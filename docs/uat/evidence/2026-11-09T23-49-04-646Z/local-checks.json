@@ -1,0 +1,50 @@
+{
+  "updated": "2026-11-10 07:57",
+  "backend": {
+    "suites": 15,
+    "tests": 189,
+    "build": "pass"
+  },
+  "frontend": {
+    "files": 11,
+    "tests": 91,
+    "lint": "pass",
+    "build": "pass"
+  },
+  "report_tools": {
+    "tests": 5,
+    "result": "pass"
+  },
+  "e2e": {
+    "run": "2026-11-09T23-49-04-646Z",
+    "cases": 48,
+    "pass": 48,
+    "retries": 0,
+    "timeout_ms": 45000,
+    "expect_timeout_ms": 10000,
+    "channel": "chrome",
+    "viewports": {
+      "desktop": "1280x800",
+      "mobile": "390x844"
+    }
+  },
+  "exploration": [
+    "exploration-2026-11-09T23-57-01-084Z",
+    "connectivity-2026-11-09T23-57-06-270Z"
+  ],
+  "servers": "session-C ports 4121-4129 closed",
+  "delivery_audit": {
+    "text_files_checked": 99,
+    "credential_pattern_matches": 0,
+    "forbidden_delivery_paths": 0
+  },
+  "git": {
+    "original_head": "3135a4f",
+    "original_metadata": "read-only; original branch/index unchanged and default status dirty",
+    "portable_store": ".uat-tools/uat-commits.git",
+    "bundle": ".uat-tools/uat-delivery/uat-commits.bundle",
+    "push": false,
+    "remote_changed": false
+  },
+  "scope": "Firebase emulators + LINE/LLM mocks; real LINE/LLM/Google OAuth/HTTPS not verified"
+}

@@ -1,0 +1,27 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 07:07",
+  "cases": 2,
+  "pass": 0,
+  "fail": 2,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "1 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-22",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: 重試與返回活動列表必須分開，讓新手可辨認主要操作 expect(received).toBe(expected) // Object.is equality Expected: true Received: false",
+      "evidence": "docs/uat/evidence/2026-11-09T23-07-24-900Z/desktop/UAT-22.png"
+    },
+    {
+      "id": "UAT-22",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: 重試與返回活動列表必須分開，讓新手可辨認主要操作 expect(received).toBe(expected) // Object.is equality Expected: true Received: false",
+      "evidence": "docs/uat/evidence/2026-11-09T23-07-24-900Z/mobile/UAT-22.png"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const liffMock = vi.hoisted(() => ({
   use: vi.fn(),
+  $mock: { set: vi.fn() },
   init: vi.fn(),
   isLoggedIn: vi.fn(),
   login: vi.fn(),
@@ -158,5 +159,21 @@ describe('LiffProvider', () => {
 
     expect(screen.getByTestId('ready')).toHaveTextContent('true');
     expect(screen.getByTestId('group-id')).toHaveTextContent('');
+  });
+});
+
+
+describe('UAT-10 mock SDK session', () => {
+  it('logs in to the mock SDK before exposing a ready profile', async () => {
+    vi.resetModules();
+    vi.stubEnv('VITE_LIFF_DEV', 'true');
+    liffMock.init.mockResolvedValue(undefined);
+    liffMock.isLoggedIn.mockReturnValue(false);
+    liffMock.login.mockClear();
+    await renderStateProbe();
+    await waitFor(() => expect(screen.getByTestId('ready')).toHaveTextContent('true'));
+    expect(liffMock.login).toHaveBeenCalled();
+    expect(screen.getByTestId('profile-name')).toHaveTextContent('Dev User');
+    vi.unstubAllEnvs();
   });
 });

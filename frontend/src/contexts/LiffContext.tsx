@@ -141,6 +141,8 @@ export function LiffProvider({ children }: { children: ReactNode }) {
             mock: true,
           } as Parameters<Liff['init']>[0] & { mock: boolean };
           await liff.init(initOptions);
+          // The mock SDK starts logged out in an external browser. Only invoke its mock login.
+          if ('$mock' in liff && !liff.isLoggedIn()) liff.login();
         } catch {
           // Expected to fail in some non-LINE browsers; proceed with the local dev stub.
         }

@@ -95,6 +95,26 @@ describe('AgentsPage', () => {
     expect(api.admin.updateAgent).toHaveBeenLastCalledWith('g1', { allowedGroupIds: ['C2'], dailySendLimit: 20, routineUrl: 'https://grok.example/r/2', routineKey: 'new-key' });
   });
 
+  it('edits and persists the existing Instinct inbox alert hours', async () => {
+    let agent = { id: 'i1', name: 'Instinct', kind: 'instinct', enabled: true, allowedGroupIds: ['C2'], dailySendLimit: 5, inboxAlertHours: 12, routineUrl: null, hasRoutineKey: false, apiKeyPrefix: null, accountUid: 'u1', accountEmail: 'i@example.com', createdAt: '' };
+    api.admin.agents.mockImplementation(async () => ({ agents: [agent] }));
+    api.admin.updateAgent.mockImplementation(async (_id, patch) => {
+      agent = { ...agent, ...patch };
+      return { agent };
+    });
+    const view = renderPage(<AgentsPage />);
+    const field = await screen.findByLabelText('收件匣逾時預警（Instinct，小時）');
+    expect(field).toHaveValue(12);
+    await userEvent.clear(field);
+    await userEvent.type(field, '48');
+    await userEvent.click(screen.getByRole('button', { name: '儲存 Instinct 設定' }));
+    expect(await screen.findByText('已儲存')).toBeInTheDocument();
+    expect(api.admin.updateAgent).toHaveBeenCalledWith('i1', { allowedGroupIds: ['C2'], dailySendLimit: 5, inboxAlertHours: 48 });
+    view.unmount();
+    renderPage(<AgentsPage />);
+    expect(await screen.findByLabelText('收件匣逾時預警（Instinct，小時）')).toHaveValue(48);
+  });
+
   it('disables an agent', async () => {
     api.admin.agents.mockResolvedValue({ agents: [{ id: 'g1', name: 'Grok', kind: 'grok_bot', enabled: true, allowedGroupIds: [], dailySendLimit: 20, inboxAlertHours: 24, routineUrl: null, hasRoutineKey: false, apiKeyPrefix: 'wpy_x', accountUid: null, accountEmail: null, createdAt: '' }] });
     api.admin.updateAgent.mockResolvedValue({ agent: {} });

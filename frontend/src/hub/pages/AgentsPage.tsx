@@ -89,12 +89,14 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
 function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; groups: HubGroup[]; onChanged: () => void; onSecret: (s: Secret) => void }) {
   const [allowed, setAllowed] = useState(agent.allowedGroupIds);
   const [limit, setLimit] = useState(String(agent.dailySendLimit));
+  const [inboxAlertHours, setHours] = useState(String(agent.inboxAlertHours));
   const [routineUrl, setRoutineUrl] = useState(agent.routineUrl ?? '');
   const [routineKey, setRoutineKey] = useState('');
   const [message, setMessage] = useState<string | null>(null);
 
   function settingsPatch(): Record<string, unknown> {
     const patch: Record<string, unknown> = { allowedGroupIds: allowed, dailySendLimit: Number(limit) };
+    if (agent.kind === 'instinct') patch['inboxAlertHours'] = Number(inboxAlertHours);
     if (agent.kind === 'grok_bot') {
       if (routineUrl.trim() !== (agent.routineUrl ?? '')) patch['routineUrl'] = routineUrl.trim() || null;
       if (routineKey.trim()) patch['routineKey'] = routineKey.trim();
@@ -131,6 +133,9 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
       </div>
       <GroupChecklist legend="允許使用的群組" groups={groups} selected={allowed} onChange={setAllowed} />
       <TextField label="每日發送上限" value={limit} onChange={setLimit} type="number" />
+      {agent.kind === 'instinct' && (
+        <TextField label={`收件匣逾時預警（${agent.name}，小時）`} value={inboxAlertHours} onChange={setHours} type="number" />
+      )}
       {agent.kind === 'grok_bot' && (
         <>
           <TextField label={`Routine 網址（${agent.name}）`} value={routineUrl} onChange={setRoutineUrl} placeholder="https://..." />

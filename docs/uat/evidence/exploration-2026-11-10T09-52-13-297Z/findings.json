@@ -1,0 +1,21 @@
+{
+  "at": "2026-11-10T09:52:16.081Z",
+  "viewport": "390x844",
+  "findings": [
+    {
+      "area": "第一個活動",
+      "prematureApproval": 0,
+      "nextStep": 1
+    },
+    {
+      "area": "設定推播時間",
+      "nativeDatePicker": 1,
+      "isoInput": 1
+    },
+    {
+      "area": "LINE 設定空狀態",
+      "body": "群組\n廣播\n連結 LINE 群組\n邀請 WiPPY 的 LINE 官方帳號加入要接收通知的群組。找不到官方帳號時，請向 WiPPY 管理員索取。\n在該 LINE 群組傳送一則文字訊息，再回到這裡。\n點「重新載入群組」，出現群組後，就能在活動中選擇推播對象。\n\n若仍未出現，請聯絡管理員確認你的 WiPPY 帳號已連結該群組。\n\n重新載入群組"
+    }
+  ],
+  "errors": []
+}

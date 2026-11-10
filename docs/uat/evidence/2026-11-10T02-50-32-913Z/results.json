@@ -1,0 +1,41 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 10:51",
+  "cases": 4,
+  "pass": 0,
+  "fail": 4,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "2 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-25",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeDisabled() failed Locator:  getByRole('button', { name: '核准企畫', exact: true }) Expected: disabled Received: enabled Timeout:  10000ms Call log:",
+      "evidence": "docs/uat/evidence/2026-11-10T02-50-32-913Z/desktop/UAT-25.png"
+    },
+    {
+      "id": "UAT-26",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveText(expected) failed Locator: getByRole('alert') Expected: \"無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留\" Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-10T02-50-32-913Z/desktop/UAT-26.png"
+    },
+    {
+      "id": "UAT-25",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toBeDisabled() failed Locator:  getByRole('button', { name: '核准企畫', exact: true }) Expected: disabled Received: enabled Timeout:  10000ms Call log:",
+      "evidence": "docs/uat/evidence/2026-11-10T02-50-32-913Z/mobile/UAT-25.png"
+    },
+    {
+      "id": "UAT-26",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveText(expected) failed Locator: getByRole('alert') Expected: \"無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留\" Timeout: 10000ms Error: element(s) not found Call log:",
+      "evidence": "docs/uat/evidence/2026-11-10T02-50-32-913Z/mobile/UAT-26.png"
+    }
+  ]
+}

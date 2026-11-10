@@ -1,0 +1,27 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 10:57",
+  "cases": 2,
+  "pass": 0,
+  "fail": 2,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "1 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-27",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Error: 輸入文字與實際背景的對比至少 4.5:1 expect(received).toBeGreaterThanOrEqual(expected) Expected: >= 4.5 Received:    1.0980511636379169",
+      "evidence": "docs/uat/evidence/2026-11-10T02-57-37-120Z/desktop/UAT-27.png"
+    },
+    {
+      "id": "UAT-27",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: 輸入文字與實際背景的對比至少 4.5:1 expect(received).toBeGreaterThanOrEqual(expected) Expected: >= 4.5 Received:    1.0980511636379169",
+      "evidence": "docs/uat/evidence/2026-11-10T02-57-37-120Z/mobile/UAT-27.png"
+    }
+  ]
+}

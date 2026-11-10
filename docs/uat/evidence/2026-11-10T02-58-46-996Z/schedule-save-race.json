@@ -1,0 +1,36 @@
+{
+  "case": "UAT-19",
+  "finding": "GET persistence assertion raced the unfinished PATCH; await successful PATCH before reading saved data.",
+  "requests": [
+    {
+      "method": "GET",
+      "status": 200,
+      "started": "2026-11-10T02:59:40.143Z",
+      "duration_ms": 24.927
+    },
+    {
+      "method": "GET",
+      "status": 200,
+      "started": "2026-11-10T02:59:40.144Z",
+      "duration_ms": 52.63999999999999
+    },
+    {
+      "method": "GET",
+      "status": 200,
+      "started": "2026-11-10T02:59:40.427Z",
+      "duration_ms": 18.361
+    },
+    {
+      "method": "GET",
+      "status": 200,
+      "started": "2026-11-10T02:59:40.696Z",
+      "duration_ms": 21.515
+    },
+    {
+      "method": "PATCH",
+      "status": 200,
+      "started": "2026-11-10T02:59:40.681Z",
+      "duration_ms": 40.151
+    }
+  ]
+}

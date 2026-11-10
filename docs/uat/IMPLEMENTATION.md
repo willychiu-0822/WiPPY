@@ -1,5 +1,19 @@
 本檔包含歷史進度；最新交付狀態與 Git 限制以 [UAT-RESULTS.md](UAT-RESULTS.md) 為準。
 
+## 第 7 輪：2026-11-10 執行計畫
+
+由 session C 本人接續既有提交與驗收計畫。以 `0924283` 為增量 bundle 的前置版本；原 `.git` 唯讀，沿用 `.uat-tools/uat-commits.git`，不重建工作區、不修改原 refs。
+
+- [x] 重跑原 24 個旅程前，檢查 status、diff、提交祖先與埠號；重跑 backend/frontend 單元、build、lint、報告工具。
+- [x] `frontend/eslint.config.js` 排除 Playwright 產生／刪除的暫存產物，修正並行 lint 的 ENOENT；產品原始碼與 E2E 原始碼仍完整 lint。
+- [x] UAT-25：`ReviewBanner` 的待審／重新審核兩種狀態，沒有目標群組時停用核准並說明要先在上方選群組。單元與真實瀏覽器先失敗；API 仍須回 400、不發送；選群後可核准與保存。
+- [x] UAT-26：`AgentChatPanel` 的 fetch 斷線錯誤改用中文與 alert，保留輸入；單元及雙 viewport 先失敗；恢復連線後原文只送出一次、清除錯誤，重整後對話保留。
+- [x] 本 checkout 缺少 `deployment/local/e2e.cjs`：補上相同路徑的本機測試入口，直接使用現有 Playwright 設定與全部 UAT 斷言，不能用替代斷言省略案例。不讀取其他部署目錄；原部署腳本未提供，這是新增的本機入口。
+- [x] UAT-27：手機截圖發現舊版淺色全域字體使表單輸入幾乎不可見。雙 viewport 量測 1.10:1 先失敗，修正共用字色後六個欄位的 4.5:1 對比門檻均通過；不加重複的 CSS 單元測試。
+- [x] 完整 27 旅程 × 2 viewport、所有單元及 build/lint；重新跑手機探索與核對截圖。每個修復獨立 commit；更新結果／狀態／提交清單，驗證增量 bundle 與交付庫乾淨，關閉自啟動服務。
+
+設計沿用現有按鈕 disabled、錯誤 role=alert、保留輸入後重試的模式；不新增產品流程或外部依賴。重點複查空群組與群組更換、離線資料不遺失、審核前不發送、錯誤清除、桌面／手機各自完整覆蓋。
+
 # 本機 UAT 執行計畫與進度
 
 **Goal:** 現有 WiPPY 使用者旅程可用瀏覽器端到端試用。

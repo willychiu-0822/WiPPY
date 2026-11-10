@@ -1,0 +1,55 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-10 10:52",
+  "cases": 6,
+  "pass": 6,
+  "fail": 0,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "3 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-17",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T02-52-06-673Z/desktop/UAT-17.png"
+    },
+    {
+      "id": "UAT-25",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T02-52-06-673Z/desktop/UAT-25.png"
+    },
+    {
+      "id": "UAT-26",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T02-52-06-673Z/desktop/UAT-26.png"
+    },
+    {
+      "id": "UAT-17",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T02-52-06-673Z/mobile/UAT-17.png"
+    },
+    {
+      "id": "UAT-25",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T02-52-06-673Z/mobile/UAT-25.png"
+    },
+    {
+      "id": "UAT-26",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T02-52-06-673Z/mobile/UAT-26.png"
+    }
+  ]
+}

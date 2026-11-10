@@ -1,0 +1,17 @@
+{
+  "at": "2026-11-10T00:09:48.406Z",
+  "viewport": "390x844",
+  "findings": [
+    {
+      "area": "01-plan-without-group",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n← 返回\n第一次辦親子讀書會\n\n活動目標群組\n\n已選 0 個\nUAT 讀書會\nUAT 工作坊\nError: 請至少選擇一個目標群組✕\n\n企畫待審核\n\n請確認推播訊息內容與時間後核准，核准後訊息將依排程自動發送。\n\n核准企畫\n知識庫\nAgent 對話\n推播企畫3\n發送紀錄\n1\n11/11 上午08:09\n待審核\nAI\n\n本機活動提醒 1：歡迎參加活動！\n\n群組：（無）\n\n編輯\n刪除\n2\n11/12 上午08:09\n待審核\nAI\n\n本機活動提醒 2：歡迎參加活動！\n\n群組：（無）\n\n編輯\n刪除\n3\n11/13 上午08:09\n待審核\nAI\n\n本機活動提醒 3：歡迎參加活動！\n\n群組：（無）\n\n編輯\n刪除",
+      "approvalDisabled": false
+    },
+    {
+      "area": "02-ai-offline",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n← 返回\n第一次辦親子讀書會\n\n活動目標群組\n\n已選 1 個\nUAT 讀書會\nUAT 工作坊\nError: 請至少選擇一個目標群組✕\n\n修改中 — 待發訊息已暫停\n\n請在「Agent 對話」重新規劃，或直接在「推播企畫」編輯後重新核准。\n\n重新核准\n知識庫\nAgent 對話\n推播企畫3\n發送紀錄\n幫我規劃三則活動前的暖場推播訊息\n已為你規劃 3 則推播訊息，請在「推播企畫」頁籤確認內容。\n\nTypeFailed to fetch\n\n✅ 討論好了，確認排程\n送出",
+      "inputPreserved": "請協助把活動說明寫得適合第一次參加的家長"
+    }
+  ],
+  "errors": []
+}

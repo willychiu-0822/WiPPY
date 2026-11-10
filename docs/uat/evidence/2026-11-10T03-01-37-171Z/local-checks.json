@@ -1,0 +1,51 @@
+{
+  "backend_test": {
+    "pass": 189,
+    "exit_code": 0
+  },
+  "backend_build": {
+    "exit_code": 0
+  },
+  "frontend_test": {
+    "pass": 94,
+    "exit_code": 0
+  },
+  "frontend_lint": {
+    "errors": 0,
+    "warnings": 1,
+    "exit_code": 0,
+    "note": "Existing AuthContext generation ref cleanup warning; no lint rule disabled."
+  },
+  "frontend_build": {
+    "exit_code": 0,
+    "note": "Existing chunk size warning."
+  },
+  "report_tools": {
+    "pass": 5,
+    "exit_code": 0
+  },
+  "e2e": {
+    "pass": 54,
+    "exit_code": 0,
+    "command": "node deployment/local/e2e.cjs",
+    "channel": "chrome",
+    "retries": 0,
+    "timeout_ms": 45000,
+    "expect_timeout_ms": 10000
+  },
+  "evidence_files_verified": 54,
+  "final_mobile_explorations": {
+    "evidence/first-plan-2026-11-10T03-03-56-558Z": {
+      "exit_code": 0,
+      "pageerrors": 0
+    },
+    "evidence/exploration-2026-11-10T03-03-56-481Z": {
+      "exit_code": 0,
+      "pageerrors": 0
+    },
+    "evidence/connectivity-2026-11-10T03-03-56-493Z": {
+      "exit_code": 0,
+      "pageerrors": 0
+    }
+  }
+}

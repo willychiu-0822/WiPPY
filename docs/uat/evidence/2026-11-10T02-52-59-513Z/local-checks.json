@@ -1,0 +1,37 @@
+{
+  "backend_test": {
+    "pass": 189,
+    "exit_code": 0
+  },
+  "backend_build": {
+    "exit_code": 0
+  },
+  "frontend_test": {
+    "pass": 94,
+    "exit_code": 0
+  },
+  "frontend_lint": {
+    "errors": 0,
+    "warnings": 1,
+    "exit_code": 0,
+    "note": "Existing AuthContext generation ref cleanup lint warning; no rule disabled."
+  },
+  "frontend_build": {
+    "exit_code": 0,
+    "note": "Existing bundle size warning."
+  },
+  "report_tools": {
+    "pass": 5,
+    "exit_code": 0
+  },
+  "e2e": {
+    "pass": 52,
+    "exit_code": 0,
+    "entrypoint": "node deployment/local/e2e.cjs",
+    "channel": "chrome",
+    "retries": 0,
+    "timeout_ms": 45000,
+    "expect_timeout_ms": 10000
+  },
+  "evidence_files_verified": 52
+}

@@ -127,14 +127,19 @@ export default function WorkbenchPage() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [doneResult, setDoneResult] = useState<ActionResult | null>(null);
+  const [doneError, setDoneError] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<MessageView[] | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
 
   async function open(item: InboxItem) {
     setSelected(item);
     setDetail(null);
     setDetailError(null);
     setDoneResult(null);
+    setDoneError(null);
     try {
       setDetail(await hubApi.agent.dispatch(item.dispatchId));
     } catch (err) {
@@ -143,19 +148,37 @@ export default function WorkbenchPage() {
   }
 
   async function complete() {
-    if (!selected) return;
-    const res = await hubApi.agent.act('complete_inbox', { itemId: selected.id, note: note.trim() });
-    setDoneResult(res);
-    if (res.status === 'done') {
-      setNote('');
-      void inbox.reload();
+    if (!selected || completing) return;
+    setCompleting(true);
+    setDoneError(null);
+    setDoneResult(null);
+    try {
+      const res = await hubApi.agent.act('complete_inbox', { itemId: selected.id, note: note.trim() });
+      setDoneResult(res);
+      if (res.status === 'done') {
+        setNote('');
+        void inbox.reload();
+      }
+    } catch (err) {
+      setDoneError(`無法標記完成，請稍後重試：${getErrorMessage(err, '連線失敗')}`);
+    } finally {
+      setCompleting(false);
     }
   }
 
   async function search(e: React.FormEvent) {
     e.preventDefault();
-    if (!query.trim()) return;
-    setHits((await hubApi.agent.search(query.trim())).messages);
+    if (!query.trim() || searching) return;
+    setSearching(true);
+    setSearchError(null);
+    setHits(null);
+    try {
+      setHits((await hubApi.agent.search(query.trim())).messages);
+    } catch (err) {
+      setSearchError(`搜尋失敗，請稍後重試：${getErrorMessage(err, '連線失敗')}`);
+    } finally {
+      setSearching(false);
+    }
   }
 
   return (
@@ -197,7 +220,8 @@ export default function WorkbenchPage() {
             </div>
           )}
           <TextField label="完成備註" value={note} onChange={setNote} multiline />
-          <Button onClick={() => void complete()}>標記完成</Button>
+          <ErrorText error={doneError} />
+          <Button onClick={() => void complete()} disabled={completing}>標記完成</Button>
           {doneResult && <p className="text-sm text-gray-600">{describeResult(doneResult)}</p>}
         </Card>
       )}
@@ -209,8 +233,10 @@ export default function WorkbenchPage() {
       <Card title="搜尋訊息">
         <form onSubmit={search} className="flex gap-2 items-end">
           <div className="flex-1"><TextField label="搜尋關鍵字" value={query} onChange={setQuery} /></div>
-          <Button type="submit" variant="secondary">搜尋</Button>
+          <Button type="submit" variant="secondary" disabled={searching}>搜尋</Button>
         </form>
+        <ErrorText error={searchError} />
+        {hits?.length === 0 && <p className="text-sm text-gray-600">沒有符合的訊息</p>}
         {hits && <MessageList messages={hits} />}
       </Card>
     </div>

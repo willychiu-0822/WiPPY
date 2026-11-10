@@ -157,6 +157,47 @@ describe('RulesPage', () => {
 });
 
 describe('WorkbenchPage', () => {
+  it('PR42-UAT-19 preserves completion notes after a failure and allows retry', async () => {
+    const item = { id: 'i1', dispatchId: 'd1', ruleName: '復原工作', groupId: 'C2', groupName: 'Beta', instruction: '讀活動', createdAt: '' };
+    let completed = false;
+    api.agent.inbox.mockImplementation(async () => ({ items: completed ? [] : [item] }));
+    api.agent.dispatch.mockResolvedValue({ messages: [], messageCount: 0, quota: {} });
+    api.agent.act.mockRejectedValueOnce(new Error('暫時無法完成，請再試一次')).mockImplementationOnce(async () => {
+      completed = true;
+      return { type: 'complete_inbox', status: 'done' };
+    });
+    renderPage(<WorkbenchPage />);
+    await userEvent.click(await screen.findByRole('button', { name: /復原工作.*Beta/ }));
+    await userEvent.type(screen.getByLabelText('完成備註'), '保留這段備註');
+    await userEvent.click(screen.getByRole('button', { name: '標記完成' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('暫時無法完成，請再試一次');
+    expect(screen.getByLabelText('完成備註')).toHaveValue('保留這段備註');
+    expect(screen.getByRole('button', { name: '標記完成' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: '標記完成' }));
+    expect(await screen.findByText('目前沒有待處理的項目')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(api.agent.act).toHaveBeenLastCalledWith('complete_inbox', { itemId: 'i1', note: '保留這段備註' });
+  });
+
+  it('PR42-UAT-19 clears stale search results, explains errors and recovers', async () => {
+    api.agent.inbox.mockResolvedValue({ items: [] });
+    api.agent.search.mockResolvedValueOnce({ messages: [{ id: 'm1', text: '先前搜尋結果' }] })
+      .mockRejectedValueOnce(new Error('搜尋暫時失敗，請重試'))
+      .mockResolvedValueOnce({ messages: [] });
+    renderPage(<WorkbenchPage />);
+    const query = await screen.findByLabelText('搜尋關鍵字');
+    await userEvent.type(query, '活動');
+    await userEvent.click(screen.getByRole('button', { name: /^搜尋$/ }));
+    expect(await screen.findByText('先前搜尋結果')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^搜尋$/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('搜尋暫時失敗，請重試');
+    expect(query).toHaveValue('活動');
+    expect(screen.queryByText('先前搜尋結果')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^搜尋$/ }));
+    expect(await screen.findByText('沒有符合的訊息')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('opens an inbox item, sends a message and completes the item', async () => {
     api.agent.inbox.mockResolvedValue({ items: [{ id: 'i1', agentId: 'instinct_1', dispatchId: 'd1', ruleName: '每日摘要', groupId: 'C2', groupName: 'Beta', instruction: '整理今天重點', messageIds: ['m1'], status: 'open', note: null, createdAt: '2026-11-04T02:00:00.000Z' }] });
     api.agent.dispatch.mockResolvedValue({ jobId: 'd1', rule: { id: 'r', name: '每日摘要', trigger: 'schedule', instruction: '整理今天重點' }, group: { id: 'C2', name: 'Beta', memberCount: 1 }, digest: { summary: '大家在討論退款', points: ['退款'], tags: [], skipped: false, skipReason: null, mediaList: [] }, messageCount: 1, messages: [{ id: 'm1', groupId: 'C2', at: '2026-11-04T01:00:00.000Z', sender: 'Alice', senderId: 'U1', type: 'text', text: '我要退款', fileName: null, fileSize: null, durationMs: null, mentionsBot: false, media: null }], quota: { lineRemaining: 100, lineReserve: 10, agentDailyRemaining: 19 } });

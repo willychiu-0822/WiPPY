@@ -57,7 +57,11 @@ export function hubAuth(opts: { allow: Array<'owner' | 'agent'>; via?: ActorVia 
         let uid: string;
         try {
           uid = (await verifier(token)).uid;
-        } catch {
+        } catch (err) {
+          if ((err as { code?: string })?.code === 'auth/user-disabled') {
+            res.status(403).json({ error: '此登入帳號已停用，請聯絡擁有者重新啟用', code: 'account_disabled' });
+            return;
+          }
           res.status(401).json({ error: 'Invalid or expired token', code: 'invalid_token' });
           return;
         }

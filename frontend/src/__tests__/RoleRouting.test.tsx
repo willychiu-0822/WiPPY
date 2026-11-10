@@ -41,6 +41,14 @@ describe('RoleGate', () => {
     renderAt('/groups', { me: null, loading: false, error: 'account_not_allowed', errorStatus: 403 });
     expect(screen.getByText('此帳號沒有 WiPPY 存取權限')).toBeInTheDocument();
   });
+  it.each(['agent_disabled', 'account_disabled'])('PR42-UAT-08 explains %s and lets the user retry after the owner enables it', async (code) => {
+    const retry = vi.fn();
+    renderAt('/workbench', { me: null, loading: false, error: code, errorStatus: 403, retry });
+    expect(screen.getByRole('alert')).toHaveTextContent('此帳號已停用');
+    expect(screen.getByRole('alert')).toHaveTextContent('請聯絡擁有者重新啟用');
+    await userEvent.click(screen.getByRole('button', { name: '重試' }));
+    expect(retry).toHaveBeenCalledOnce();
+  });
   it.each([
     new TypeError('Failed to fetch'),
     new HubApiError('Unavailable', 503, 'owner_not_configured'),

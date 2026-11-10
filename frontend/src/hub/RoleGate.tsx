@@ -21,10 +21,12 @@ export function RoleGate({ children, allow, agentHome = '/workbench' }: { childr
   const { me, loading, error, errorStatus, retry } = useHubRole();
   if (loading) return <div className="flex items-center justify-center min-h-[50vh] text-gray-400">Loading...</div>;
   if (errorStatus === 403 && error === 'account_not_allowed') return <NoAccess />;
+  const disabled = errorStatus === 403 && (error === 'agent_disabled' || error === 'account_disabled');
   if (error || !me) return (
     <div className="min-h-[50vh] flex items-center justify-center px-4">
       <div className="max-w-sm text-center space-y-3" role="alert">
-        <p className="text-lg font-semibold text-gray-900">暫時連不上 WiPPY</p>
+        <p className="text-lg font-semibold text-gray-900">{disabled ? '此帳號已停用' : '暫時連不上 WiPPY'}</p>
+        {disabled && <p className="text-sm text-gray-500">請聯絡擁有者重新啟用，再按重試。</p>}
         <button type="button" onClick={retry} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm">重試</button>
       </div>
     </div>

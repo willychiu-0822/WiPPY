@@ -15,9 +15,10 @@ export async function resolveFirebaseActor(ctx: HubContext, uid: string, ownerUs
   // An explicit agent account always takes precedence, even if OWNER_USER_ID
   // accidentally names that uid or is absent in local development.
   if (account) {
-    if (account.disabled || account.ownerId !== ctx.ownerId) return null;
+    if (account.ownerId !== ctx.ownerId) return null;
     const agent = await ctx.store.get<AgentDoc>(COLLECTIONS.agents, account.agentId);
-    if (!agent?.enabled || agent.ownerId !== ctx.ownerId) return null;
+    if (!agent || agent.ownerId !== ctx.ownerId) return null;
+    if (account.disabled || !agent.enabled) throw new AgentDisabledError();
     return { kind: 'agent', ownerId: ctx.ownerId, agentId: account.agentId, via: 'ui' };
   }
   const owner = ownerUserId?.trim();

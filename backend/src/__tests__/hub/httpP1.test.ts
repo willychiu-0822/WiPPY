@@ -1,5 +1,6 @@
 import { GROUP, makeTestHub, seedGroup, type TestHub } from './helpers';
 import { startHubServer, type HubServer } from './httpHelpers';
+import { setIdTokenVerifier } from '../../hub/http/auth';
 
 describe('hub HTTP: auth, me, group access, internal jobs', () => {
   let hub: TestHub;
@@ -39,6 +40,28 @@ describe('hub HTTP: auth, me, group access, internal jobs', () => {
   it('reports the role of owner and agent accounts', async () => {
     expect((await server.call('GET', '/api/hub/me', { token: 'token-owner_uid' })).body).toEqual({ role: 'owner', agentId: null, agentName: null, ownerConfigured: true });
     expect((await server.call('GET', '/api/hub/me', { token: 'token-instinct_uid' })).body).toEqual({ role: 'agent', agentId: 'instinct_1', agentName: 'Instinct', ownerConfigured: true });
+  });
+
+  it('PR42-UAT-08 distinguishes a Firebase-disabled account from an invalid token', async () => {
+    setIdTokenVerifier(async () => { throw Object.assign(new Error('disabled'), { code: 'auth/user-disabled' }); });
+    expect(await server.call('GET', '/api/hub/me', { token: 'previously-valid-token' }))
+      .toMatchObject({ status: 403, body: { code: 'account_disabled', error: expect.stringContaining('停用') } });
+    setIdTokenVerifier(async () => { throw Object.assign(new Error('expired'), { code: 'auth/id-token-expired' }); });
+    expect(await server.call('GET', '/api/hub/me', { token: 'expired-token' }))
+      .toMatchObject({ status: 401, body: { code: 'invalid_token' } });
+  });
+
+  it('PR42-UAT-08 tells an already signed-in Instinct that the owner disabled it', async () => {
+    await hub.store.update('agents', 'instinct_1', { enabled: false });
+    expect(await server.call('GET', '/api/hub/me', { token: 'token-instinct_uid' }))
+      .toMatchObject({ status: 403, body: { code: 'agent_disabled', error: expect.stringContaining('停用') } });
+    await hub.store.update('agents', 'instinct_1', { enabled: true });
+    await hub.store.update('hubAccounts', 'instinct_uid', { disabled: true });
+    expect(await server.call('GET', '/api/hub/me', { token: 'token-instinct_uid' }))
+      .toMatchObject({ status: 403, body: { code: 'agent_disabled' } });
+    await hub.store.update('hubAccounts', 'instinct_uid', { ownerId: 'foreign' });
+    expect(await server.call('GET', '/api/hub/me', { token: 'token-instinct_uid' }))
+      .toMatchObject({ status: 403, body: { code: 'account_not_allowed' } });
   });
 
   it.each([undefined, '', 'instinct_uid', 'owner_uid'])('keeps Instinct an agent with OWNER_USER_ID=%s', async (owner) => {

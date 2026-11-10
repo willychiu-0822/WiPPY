@@ -1,10 +1,10 @@
 {
   "project": "WiPPY",
-  "updated": "2026-11-10 17:51",
+  "updated": "2026-11-10 18:49",
   "cases": 60,
-  "pass": 60,
-  "fail": 0,
+  "pass": 58,
+  "fail": 2,
   "blocked": 0,
-  "ready_for_user_test": true,
+  "ready_for_user_test": false,
   "notes": "30 個旅程，桌面/手機分開計數；完整執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。"
 }

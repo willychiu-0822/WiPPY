@@ -1768,3 +1768,212 @@ def69fa fix(UAT-30): validate per-group broadcast drafts before sending
 手機新帳號探索：[首次活動及 LINE 空狀態](evidence/exploration-2026-11-10T09-52-13-297Z/findings.json)、[未選群組的企畫及 AI 斷線](evidence/first-plan-2026-11-10T09-52-16-439Z/findings.json)、[LINE 群組與廣播斷線](evidence/groups-2026-11-10T09-52-19-232Z/findings.json)。首次活動有一個 AI 規劃入口，未選群組時核准停用；斷線提示與重試保留草稿。本次未觀察到需新增案例的問題。
 
 以 0924283 為基底的功能和測試提交清單見「2026-11-10 16:03 本輪驗證與交付」，後續文件提交為 `82aa38f`、`06c10c1`，本次報告提交不列自身 hash。僅使用本機 Firebase emulator、LINE／AI mock 和系統 Chrome；真實 LINE、AI、OAuth、HTTPS 與實體手機輸入法尚未驗證。測試啟動的服務已關閉，未 push、部署或開 tunnel。
+
+## 2026-11-10 17:54 ～ 2026-11-10 18:02（台北）
+
+批次：`2026-11-10T09-54-40-902Z`。58 pass / 2 fail / 0 blocked；可試用：false。
+
+| 案例 | Viewport | 結果 | 失敗原因 | 證據 |
+| --- | --- | --- | --- | --- |
+| UAT-28 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-28.png) |
+| UAT-29 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-29.png) |
+| UAT-30 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-30.png) |
+| UAT-01 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-01.png) |
+| UAT-02 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-02.png) |
+| UAT-03 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-03.png) |
+| UAT-04 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-04.png) |
+| UAT-05 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-05.png) |
+| UAT-06 | desktop | fail | Test timeout of 45000ms exceeded. | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-06.png) |
+| UAT-07 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-07.png) |
+| UAT-08 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-08.png) |
+| UAT-09 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-09.png) |
+| UAT-10 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-10.png) |
+| UAT-11 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-11.png) |
+| UAT-12 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-12.png) |
+| UAT-13 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-13.png) |
+| UAT-14 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-14.png) |
+| UAT-15 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-15.png) |
+| UAT-16 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-16.png) |
+| UAT-17 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-17.png) |
+| UAT-18 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-18.png) |
+| UAT-19 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-19.png) |
+| UAT-20 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-20.png) |
+| UAT-21 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-21.png) |
+| UAT-22 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-22.png) |
+| UAT-23 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-23.png) |
+| UAT-24 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-24.png) |
+| UAT-25 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-25.png) |
+| UAT-26 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-26.png) |
+| UAT-27 | desktop | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/desktop/UAT-27.png) |
+| UAT-28 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-28.png) |
+| UAT-29 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-29.png) |
+| UAT-30 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-30.png) |
+| UAT-01 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-01.png) |
+| UAT-02 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-02.png) |
+| UAT-03 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-03.png) |
+| UAT-04 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-04.png) |
+| UAT-05 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-05.png) |
+| UAT-06 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-06.png) |
+| UAT-07 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-07.png) |
+| UAT-08 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-08.png) |
+| UAT-09 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-09.png) |
+| UAT-10 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-10.png) |
+| UAT-11 | mobile | fail | Error: expect(locator).toBeVisible() failed Locator: getByRole('heading', { name: '群組', exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log: | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-11.png) |
+| UAT-12 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-12.png) |
+| UAT-13 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-13.png) |
+| UAT-14 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-14.png) |
+| UAT-15 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-15.png) |
+| UAT-16 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-16.png) |
+| UAT-17 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-17.png) |
+| UAT-18 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-18.png) |
+| UAT-19 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-19.png) |
+| UAT-20 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-20.png) |
+| UAT-21 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-21.png) |
+| UAT-22 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-22.png) |
+| UAT-23 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-23.png) |
+| UAT-24 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-24.png) |
+| UAT-25 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-25.png) |
+| UAT-26 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-26.png) |
+| UAT-27 | mobile | pass | — | [截圖](evidence/2026-11-10T09-54-40-902Z/mobile/UAT-27.png) |
+
+## 2026-11-10 18:10 ～ 2026-11-10 18:28（台北）
+
+批次：`2026-11-10T10-10-06-942Z`。58 pass / 2 fail / 0 blocked；可試用：false。
+
+| 案例 | Viewport | 結果 | 失敗原因 | 證據 |
+| --- | --- | --- | --- | --- |
+| UAT-28 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-28.png) |
+| UAT-29 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-29.png) |
+| UAT-30 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-30.png) |
+| UAT-01 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-01.png) |
+| UAT-02 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-02.png) |
+| UAT-03 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-03.png) |
+| UAT-04 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-04.png) |
+| UAT-05 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-05.png) |
+| UAT-06 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-06.png) |
+| UAT-07 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-07.png) |
+| UAT-08 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-08.png) |
+| UAT-09 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-09.png) |
+| UAT-10 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-10.png) |
+| UAT-11 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-11.png) |
+| UAT-12 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-12.png) |
+| UAT-13 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-13.png) |
+| UAT-14 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-14.png) |
+| UAT-15 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-15.png) |
+| UAT-16 | desktop | fail | Test timeout of 45000ms exceeded. | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-16.png) |
+| UAT-17 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-17.png) |
+| UAT-18 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-18.png) |
+| UAT-19 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-19.png) |
+| UAT-20 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-20.png) |
+| UAT-21 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-21.png) |
+| UAT-22 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-22.png) |
+| UAT-23 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-23.png) |
+| UAT-24 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-24.png) |
+| UAT-25 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-25.png) |
+| UAT-26 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-26.png) |
+| UAT-27 | desktop | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/desktop/UAT-27.png) |
+| UAT-28 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-28.png) |
+| UAT-29 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-29.png) |
+| UAT-30 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-30.png) |
+| UAT-01 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-01.png) |
+| UAT-02 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-02.png) |
+| UAT-03 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-03.png) |
+| UAT-04 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-04.png) |
+| UAT-05 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-05.png) |
+| UAT-06 | mobile | fail | Error: expect(locator).toBeVisible() failed Locator: getByText('本機活動提醒 1：歡迎參加活動！', { exact: true }) Expected: visible Timeout: 10000ms Error: element(s) not found Call log: | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-06.png) |
+| UAT-07 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-07.png) |
+| UAT-08 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-08.png) |
+| UAT-09 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-09.png) |
+| UAT-10 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-10.png) |
+| UAT-11 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-11.png) |
+| UAT-12 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-12.png) |
+| UAT-13 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-13.png) |
+| UAT-14 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-14.png) |
+| UAT-15 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-15.png) |
+| UAT-16 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-16.png) |
+| UAT-17 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-17.png) |
+| UAT-18 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-18.png) |
+| UAT-19 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-19.png) |
+| UAT-20 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-20.png) |
+| UAT-21 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-21.png) |
+| UAT-22 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-22.png) |
+| UAT-23 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-23.png) |
+| UAT-24 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-24.png) |
+| UAT-25 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-25.png) |
+| UAT-26 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-26.png) |
+| UAT-27 | mobile | pass | — | [截圖](evidence/2026-11-10T10-10-06-942Z/mobile/UAT-27.png) |
+
+## 2026-11-10 18:40 ～ 2026-11-10 18:49（台北）
+
+批次：`2026-11-10T10-40-38-098Z`。58 pass / 2 fail / 0 blocked；可試用：false。
+
+| 案例 | Viewport | 結果 | 失敗原因 | 證據 |
+| --- | --- | --- | --- | --- |
+| UAT-28 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-28.png) |
+| UAT-29 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-29.png) |
+| UAT-30 | desktop | fail | Error: expect(locator).toBeVisible() failed Locator: getByRole('heading', { name: '群組', exact: true }) Expected: visible Error: element(s) not found Call log:   - Expect "toBeVisible" getByRole('heading', { name: '群組', exact: true }) with timeout 10000ms | [截圖](無截圖（啟動失敗）) |
+| UAT-01 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-01.png) |
+| UAT-02 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-02.png) |
+| UAT-03 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-03.png) |
+| UAT-04 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-04.png) |
+| UAT-05 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-05.png) |
+| UAT-06 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-06.png) |
+| UAT-07 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-07.png) |
+| UAT-08 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-08.png) |
+| UAT-09 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-09.png) |
+| UAT-10 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-10.png) |
+| UAT-11 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-11.png) |
+| UAT-12 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-12.png) |
+| UAT-13 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-13.png) |
+| UAT-14 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-14.png) |
+| UAT-15 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-15.png) |
+| UAT-16 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-16.png) |
+| UAT-17 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-17.png) |
+| UAT-18 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-18.png) |
+| UAT-19 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-19.png) |
+| UAT-20 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-20.png) |
+| UAT-21 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-21.png) |
+| UAT-22 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-22.png) |
+| UAT-23 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-23.png) |
+| UAT-24 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-24.png) |
+| UAT-25 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-25.png) |
+| UAT-26 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-26.png) |
+| UAT-27 | desktop | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/desktop/UAT-27.png) |
+| UAT-28 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-28.png) |
+| UAT-29 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-29.png) |
+| UAT-30 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-30.png) |
+| UAT-01 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-01.png) |
+| UAT-02 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-02.png) |
+| UAT-03 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-03.png) |
+| UAT-04 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-04.png) |
+| UAT-05 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-05.png) |
+| UAT-06 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-06.png) |
+| UAT-07 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-07.png) |
+| UAT-08 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-08.png) |
+| UAT-09 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-09.png) |
+| UAT-10 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-10.png) |
+| UAT-11 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-11.png) |
+| UAT-12 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-12.png) |
+| UAT-13 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-13.png) |
+| UAT-14 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-14.png) |
+| UAT-15 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-15.png) |
+| UAT-16 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-16.png) |
+| UAT-17 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-17.png) |
+| UAT-18 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-18.png) |
+| UAT-19 | mobile | fail | Test timeout of 45000ms exceeded. | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-19.png) |
+| UAT-20 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-20.png) |
+| UAT-21 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-21.png) |
+| UAT-22 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-22.png) |
+| UAT-23 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-23.png) |
+| UAT-24 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-24.png) |
+| UAT-25 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-25.png) |
+| UAT-26 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-26.png) |
+| UAT-27 | mobile | pass | — | [截圖](evidence/2026-11-10T10-40-38-098Z/mobile/UAT-27.png) |
+
+## 本輪重新驗收補充（2026-11-10）
+
+本輪三次完整執行均為 58/60，狀態維持不開放使用者驗收。第一次桌面 UAT-06 和手機 UAT-11 等待帳號載入逾時；第二次桌面 UAT-16 在超過四分鐘停頓後逾時，手機 UAT-06 等待 AI 回應逾時；第三次桌面 UAT-30 的 Chrome 記錄 D-Bus 連線中斷而退出，手機 UAT-19 在超過七分鐘停頓後等待帳號載入逾時。失敗原因尚未完全釐清，不應僅以後續單次通過認定問題解決。逐案截圖與結果見上述批次。
+
+本輪 backend 15 suites／189 tests、frontend 12 files／97 tests、報告工具 5 tests 通過；兩端 build 通過，frontend lint 零錯誤、一項既有 Hook 警告。尚待穩定環境下重新完整驗收、完成新手探索並確認所有缺陷；本輪未宣稱 ready。執行使用本機 emulator 與 LINE／AI mock，未驗證真實服務。服務已結束。
+
+0924283 之後的功能與測試提交清單見 16:03 交付段落；後續報告提交為 `82aa38f`、`06c10c1`、`5b4c540`。本報告提交不列自身 hash。

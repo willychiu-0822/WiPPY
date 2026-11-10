@@ -1,6 +1,6 @@
 # 安裝路徑 UAT 結果
 
-時間：2026-11-10 18:42（Asia/Taipei）。56/57 PASS。
+時間：2026-11-10 19:46（Asia/Taipei）。57/57 PASS。
 
 真實 WiPPY + Auth/Firestore emulator，外部 LINE/Routine mock；Chrome 桌面 1280×800／手機 390×844。每次執行覆寫本表，完整驗收需 19 個案例 × 3 projects = 57 次且都有本次截圖；ready 僅表示可做本機瀏覽器 UAT。
 
@@ -14,7 +14,7 @@
 | UAT-06 | desktop | PASS | — | [截圖](evidence/UAT-06-desktop.png) |
 | UAT-07 | desktop | PASS | — | [截圖](evidence/UAT-07-desktop.png) |
 | UAT-08 | desktop | PASS | — | [截圖](evidence/UAT-08-desktop.png) |
-| UAT-11 | desktop | FAIL | Error: page.screenshot: Target page, context or browser has been closed Browser logs: <launching> /opt/google/chrome/chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-ex | 未產生本次截圖 |
+| UAT-11 | desktop | PASS | — | [截圖](evidence/UAT-11-desktop.png) |
 | UAT-09 | desktop | PASS | — | [截圖](evidence/UAT-09-desktop.png) |
 | UAT-10 | desktop | PASS | — | [截圖](evidence/UAT-10-desktop.png) |
 | UAT-12 | desktop | PASS | — | [截圖](evidence/UAT-12-desktop.png) |

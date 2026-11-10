@@ -198,3 +198,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 19:26 完整執行為 56/57：API UAT-17 在 `beforeEach` 前置階段逾時，產品斷言未執行；同輪桌面 UAT-11 通過。19:46 再次完整執行為 **57/57 PASS**，桌面、手機及 API 各 19 案，無測試重試；指南的 19 條 curl 也由 API 案例執行。`npm run verify:uat` 驗證 57 張截圖、32 筆對比與 9 份修復 patch；`git diff --check` 通過。最新逐項結果與證據見 [UAT 結果](../uat/UAT-RESULTS.md) 和 [狀態](../uat/UAT-STATUS.json)。
 
 本輪逾時與前輪瀏覽器截圖逾時發生在不同階段，根因仍未釐清；重跑成功不是根因修復。測試期間瀏覽器仍出現 Firestore transport 警告。`ready_for_user_test` 指本機 emulator/mock 瀏覽器旅程已通過，真實 Grok、Instinct、LINE、HTTPS 與雲端同步仍未驗證。未進行新一輪完整通過後的人工探索；現有 UAT-11～19 為先前探索結果。本輪沒有產品修復；既有修復 commit 列於上表。本輪啟動的 4141–4143 已關閉；依後段指示不 push、不部署，不寫入工作目錄外的摘要。
+
+### 2026-11-11 00:39 接續驗證
+
+既有服務未運行，本次在隔離的 Auth／Firestore emulator 和 LINE／Routine mock 上，使用系統 Chrome 完整執行 19 案 × 桌面、手機、API：**57/57 PASS，無重試**；指南範例包含於 API 案例。驗證證據為 57 張截圖、32 筆對比數值及 9 份修復 patch。後端單元測試 367/367、前端 107/107，前端 lint/build 通過；build 提示大型 chunk。最新案例及證據見 [UAT 結果](../uat/UAT-RESULTS.md)與 [狀態](../uat/UAT-STATUS.json)。
+
+完整通過後以桌面及手機視窗探索建立表單，可切換 Grok Bot／Instinct 並顯示相應欄位；未發現新缺陷，此次探索範圍僅限表單切換。此前數輪間歇逾時根因仍未釐清，本輪未重現；瀏覽器 Firestore transport 警告仍存在，真實雲端同步未驗證。真實 Grok、Instinct、LINE 與 HTTPS 均未驗證，`ready_for_user_test` 僅指本機 mock/emulator 流程。
+
+本輪測試暫時將既有腳本的 emulator 連線改至 4144／4145，測後已還原；本次啟動服務已關閉。Firestore 首次啟動短暫佔用預設 9150，立即停止並改用 4148。既有產品修復的 commit 清單見上方「2026-11-10 17:51 接續驗證與提交」；本輪沒有產品修復。依後段規則未 push、部署或寫入工作目錄外的摘要。

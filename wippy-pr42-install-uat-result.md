@@ -27,3 +27,7 @@
 
 2026-11-10 第 2 輪：兩次完整重跑均 56/57，分別是桌面 UAT-14 登入欄位逾時及手機 UAT-19 操作逾時，根因未明；兩次詳細報告保存在 docs/uat/。最新狀態以 docs/uat/UAT-STATUS.json 為準；本機 Firestore profile 連線仍有警告。未 push 或部署。
 第三次完整重跑 18:42 為 56/57：桌面 UAT-11 截圖時逾時；最新狀態未達可供使用者測試。測試服務已關閉。
+
+### 2026-11-11 00:39 接續
+
+隔離 emulator／mock 的 Chrome 桌面、手機及 API 安裝旅程 57/57 通過；後端 367、前端 107 項測試，以及前端 lint/build 通過。57 張截圖、32 筆對比及 9 份 patch 已驗證。通過後新手探索限於兩種視窗切換 Grok／Instinct 建立表單。先前間歇逾時根因與 Firestore transport 警告仍未釐清；真實外部 Agent、LINE、雲端同步和 HTTPS 未驗證。測試服務已關閉。本輪依後段規則不 push，也不寫入工作目錄外。詳見 `docs/pr42-fixes/RESULTS.md`。

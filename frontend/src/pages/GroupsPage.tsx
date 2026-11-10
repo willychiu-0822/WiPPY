@@ -28,27 +28,38 @@ function MessageDrawer({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
 
-  useEffect(() => {
-    api.groups.messages(group.groupId).then((r) => {
+  const loadMessages = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const r = await api.groups.messages(group.groupId);
       setMessages(r.messages);
-    }).catch(() => setError('無法載入訊息，請重新開啟群組')).finally(() => setLoading(false));
+    } catch {
+      setLoadError('無法載入訊息，請檢查網路連線後重新載入');
+    } finally {
+      setLoading(false);
+    }
   }, [group.groupId]);
+
+  useEffect(() => { void loadMessages(); }, [loadMessages]);
 
   async function handleSend() {
     if (!reply.trim() || sending) return;
     setError('');
+    setSent(false);
     setSending(true);
     try {
       await api.groups.send(group.groupId, reply.trim());
       setReply('');
       setSent(true);
-      setTimeout(() => setSent(false), 2000);
-      // Refresh messages
-      const r = await api.groups.messages(group.groupId);
-      setMessages(r.messages);
+      // A history refresh failure must not turn confirmed delivery into a send failure.
+      await loadMessages();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '發送失敗，請重試');
+      setError(err instanceof TypeError
+        ? '無法連線，請檢查網路連線後重新發送；輸入內容已保留'
+        : err instanceof Error ? err.message : '發送失敗，請重試');
     } finally {
       setSending(false);
     }
@@ -67,7 +78,13 @@ function MessageDrawer({
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {loading && <p className="text-center text-gray-400 text-sm mt-8">載入中...</p>}
-        {!loading && messages.length === 0 && (
+        {loadError && (
+          <div className="space-y-3 text-center mt-8">
+            <p role="alert" className="text-sm text-red-600">{loadError}</p>
+            <button onClick={loadMessages} disabled={loading} className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-40">重新載入訊息</button>
+          </div>
+        )}
+        {!loading && !loadError && messages.length === 0 && (
           <p className="text-center text-gray-400 text-sm mt-8">尚無訊息記錄</p>
         )}
         {[...messages].reverse().map((msg) => (
@@ -84,12 +101,13 @@ function MessageDrawer({
       </div>
 
       {error && <p role="alert" className="px-4 py-2 text-sm text-red-600">{error}</p>}
+      {sent && <p role="status" className="px-4 py-2 text-sm text-green-700">訊息已送出</p>}
       <div className="px-4 py-3 border-t border-gray-200 flex gap-2">
         <input
           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="輸入訊息..."
           value={reply}
-          onChange={(e) => setReply(e.target.value)}
+          onChange={(e) => { setReply(e.target.value); setSent(false); }}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229 && handleSend()}
         />
         <button
@@ -97,7 +115,7 @@ function MessageDrawer({
           disabled={sending || !reply.trim()}
           className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg disabled:opacity-40 hover:bg-blue-700"
         >
-          {sent ? '✓' : sending ? '...' : '發送'}
+          {sending ? '發送中...' : '發送'}
         </button>
       </div>
     </div>

@@ -75,6 +75,38 @@ async function addKnowledge(page: Page, title: string, content: string) {
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
 
+test('UAT-28 群組載入與回覆斷線可原地重試，不誤報空對話或遺失草稿', async ({ page }) => {
+  await register(page);
+  const context = page.context();
+  await context.setOffline(true);
+  await page.getByText('UAT 讀書會', { exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('無法載入訊息');
+  await expect(page.getByText('尚無訊息記錄', { exact: true })).toHaveCount(0);
+  const reply = page.getByPlaceholder('輸入訊息...', { exact: true });
+  await reply.fill('第一次辦讀書會，請大家帶一本書');
+  await expect(page.getByRole('button', { name: '重新載入訊息', exact: true })).toHaveCount(1);
+  await context.setOffline(false);
+  await page.getByRole('button', { name: '重新載入訊息', exact: true }).click();
+  await expect(page.getByText('測試夥伴', { exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(reply).toHaveValue('第一次辦讀書會，請大家帶一本書');
+  await context.setOffline(true);
+  await page.getByRole('button', { name: '發送', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText(/無法連線.*輸入內容已保留/);
+  await expect(reply).toHaveValue('第一次辦讀書會，請大家帶一本書');
+  await expect(page.getByText('測試夥伴', { exact: true })).toBeVisible();
+  await context.setOffline(false);
+  expect((await api(page, '/api/send-logs')).data.logs).toHaveLength(0);
+  await page.getByRole('button', { name: '發送', exact: true }).click();
+  await expect(reply).toHaveValue('');
+  await expect(page.getByRole('status')).toContainText('訊息已送出');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  const logs = (await api(page, '/api/send-logs')).data.logs;
+  expect(logs).toHaveLength(1);
+  expect(logs[0]).toMatchObject({ content: '第一次辦讀書會，請大家帶一本書', status: 'success', triggerType: 'manual' });
+  await noOverflow(page);
+});
+
 test('UAT-01 註冊、登入、登出與路由保護', async ({ page }) => {
   await page.goto('/activities/private');
   await expect(page).toHaveURL(/\/login$/);

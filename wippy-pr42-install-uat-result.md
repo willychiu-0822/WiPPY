@@ -33,3 +33,5 @@
 隔離 emulator／mock 的 Chrome 桌面、手機及 API 安裝旅程 57/57 通過；後端 367、前端 107 項測試，以及前端 lint/build 通過。57 張截圖、32 筆對比及 9 份 patch 已驗證。通過後新手探索限於兩種視窗切換 Grok／Instinct 建立表單。先前間歇逾時根因與 Firestore transport 警告仍未釐清；真實外部 Agent、LINE、雲端同步和 HTTPS 未驗證。測試服務已關閉。本輪依後段規則不 push，也不寫入工作目錄外。詳見 `docs/pr42-fixes/RESULTS.md`。
 
 2026-11-11 04:16 接續：隔離 emulator 執行桌面、手機與 API 共 57/57 PASS；證據檢查通過。表單類型切換探索通過；Firestore transport 警告及先前間歇逾時根因仍待確認。未測真實外部服務、HTTPS 或雲端同步；未 push。詳見 docs/pr42-fixes/RESULTS.md。
+
+2026-11-11 05:22 接續：隔離 emulator 完整重跑 57/57 PASS，證據檢查及桌面／手機表單切換探索通過。此前 04:22 手機 UAT-07 逾時（56/57），根因未確認；Firestore transport 警告仍存在。真實外部服務、HTTPS、雲端同步未驗證。未 push；服務已停止。詳見 docs/pr42-fixes/RESULTS.md。

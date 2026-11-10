@@ -386,3 +386,5 @@ firebase deploy --only firestore
 ## License
 
 MIT
+
+本機完整驗收也可執行 `node deployment/local/e2e.cjs`；與 `npm run test:e2e` 共用桌面／手機案例、系統 Chrome 與 UAT 證據報告。僅使用 4121–4127 的 emulator/mock，不存取部署環境。

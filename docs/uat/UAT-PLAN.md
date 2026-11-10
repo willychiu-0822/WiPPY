@@ -22,7 +22,7 @@
 4. 新增活動，選擇群組，輸入一般問題、含「萃取知識」的敘述，或「幫我規劃三則活動前的暖場推播訊息」。mock LLM 回傳固定可辨識的本機內容，仍經過實際 parser、validator、Firestore persistence。
 5. 發送時間可改為過去時間，再核准企畫；本機 scheduler 每秒檢查，LINE mock 接收後寫入真實 sendLogs。內容含 `[模擬失敗]` 可測 LINE/LLM 失敗。沒有真的 LINE 收件人。
 6. Ctrl+C 關閉整個本機 stack；Playwright 自動啟停自己啟動的 stack。資料預設只在 emulator 記憶體，重啟清空。
-7. `npm run test:e2e` 跑所有案例。可用 `npm --prefix frontend run test:e2e -- --grep UAT-xx` 聚焦；結果會明確記錄該次只跑部分案例，不把未跑項目算通過。
+7. `npm run test:e2e` 或 `node deployment/local/e2e.cjs` 跑所有案例；兩者共用同一份 Playwright 設定、空群組指引與未選群組禁止核准的完整斷言。可用 `npm --prefix frontend run test:e2e -- --grep UAT-xx` 聚焦；結果會明確記錄該次只跑部分案例，不把未跑項目算通過。
 
 ### 缺少的正式環境設定（僅名稱，不含值）
 

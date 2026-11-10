@@ -43,12 +43,16 @@ export default function ReviewBanner({ activity, onApprove, onRequestRevision, l
     </div>
   );
   const config = STATUS_CONFIG[activity.reviewStatus];
+  const needsGroup = activity.targetGroups.length === 0;
 
   return (
     <div className={`rounded-xl border px-4 py-3 flex items-start gap-3 ${config.bg}`}>
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold ${config.text}`}>{config.label}</p>
         <p className={`text-xs mt-0.5 ${config.text} opacity-80`}>{config.desc}</p>
+        {config.primary && needsGroup && (
+          <p className={`text-xs mt-1 ${config.text}`}>請先在上方選擇至少一個目標群組，再核准企畫。</p>
+        )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {config.secondary && (
@@ -63,7 +67,7 @@ export default function ReviewBanner({ activity, onApprove, onRequestRevision, l
         {config.primary && (
           <button
             onClick={config.primary.action === 'approve' ? onApprove : onRequestRevision}
-            disabled={loading}
+            disabled={loading || needsGroup}
             className={`text-xs px-3 py-1.5 rounded-lg font-medium ${config.primary.style} disabled:opacity-50`}
           >
             {loading ? '處理中...' : config.primary.label}

@@ -725,3 +725,28 @@ test('UAT-24 首次登入的帳號資料連線失敗可理解、可重試，不�
   await createActivity(page);
   await noOverflow(page);
 });
+
+test('UAT-25 無群組企畫先引導選擇收件群組，選妥才可核准或重新核准', async ({ page }) => {
+  await register(page); const id = await createActivity(page, false); await plan(page);
+  for (const label of ['核准企畫', '重新核准']) {
+    await expect(page.getByRole('button', { name: label, exact: true })).toBeDisabled();
+    await expect(page.getByText('請先在上方選擇至少一個目標群組，再核准企畫。', { exact: true })).toBeVisible();
+    const rejected = await api(page, `/api/activities/${id}/approve`, 'PATCH');
+    expect(rejected.status).toBe(400);
+    expect(rejected.data.error).toContain('請至少選擇一個目標群組');
+    expect((await api(page, `/api/send-logs?activityId=${id}`)).data.logs).toHaveLength(0);
+    await page.getByRole('checkbox', { name: 'UAT 讀書會' }).check();
+    await expect(page.getByText('已選 1 個', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /核准/, exact: false })).toBeEnabled();
+    await page.getByRole('button', { name: /核准/, exact: false }).click();
+    await expect(page.getByText('企畫已核准', { exact: true })).toBeVisible();
+    if (label === '核准企畫') {
+      await page.getByRole('checkbox', { name: 'UAT 讀書會' }).uncheck();
+      await expect(page.getByText('修改中 — 待發訊息已暫停', { exact: true })).toBeVisible();
+    }
+  }
+  await page.reload();
+  await expect(page.getByText('企畫已核准', { exact: true })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'UAT 讀書會' })).toBeChecked();
+  await noOverflow(page);
+});

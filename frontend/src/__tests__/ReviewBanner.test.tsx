@@ -18,6 +18,25 @@ const baseActivity: Activity = {
   updatedAt: { _seconds: 0, _nanoseconds: 0 },
 };
 
+describe('UAT-25 — approval needs a destination', () => {
+  it.each(['pending_review', 'revision_requested'] as const)('guides an ungrouped %s plan before approval', (reviewStatus) => {
+    const onApprove = vi.fn();
+    const props = { onApprove, onRequestRevision: vi.fn(), hasMessages: true };
+    const activity = { ...baseActivity, reviewStatus, targetGroups: [] };
+    const view = render(<ReviewBanner {...props} activity={activity} />);
+    const approve = screen.getByRole('button', { name: /核准/ });
+    expect(approve).toBeDisabled();
+    expect(screen.getByText('請先在上方選擇至少一個目標群組，再核准企畫。')).toBeVisible();
+    fireEvent.click(approve);
+    expect(onApprove).not.toHaveBeenCalled();
+    view.rerender(<ReviewBanner {...props} activity={{ ...activity, targetGroups: ['g1'] }} />);
+    expect(screen.getByRole('button', { name: /核准/ })).toBeEnabled();
+    expect(screen.queryByText('請先在上方選擇至少一個目標群組，再核准企畫。')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /核准/ }));
+    expect(onApprove).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('ReviewBanner — pending_review', () => {
   it('shows 企畫待審核 label', () => {
     render(

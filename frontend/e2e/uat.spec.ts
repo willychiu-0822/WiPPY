@@ -750,3 +750,32 @@ test('UAT-25 無群組企畫先引導選擇收件群組，選妥才可核准或�
   await expect(page.getByRole('checkbox', { name: 'UAT 讀書會' })).toBeChecked();
   await noOverflow(page);
 });
+
+test('UAT-26 AI 斷線用中文說明並保留草稿，重試僅保存一份對話', async ({ page, context }) => {
+  await register(page); await createActivity(page);
+  const text = '請協助把活動說明寫得適合第一次參加的家長';
+  const input = page.getByPlaceholder('輸入訊息... (Enter 送出，Shift+Enter 換行)');
+  await input.fill(text);
+  try {
+    await context.setOffline(true);
+    const failed = page.waitForEvent('requestfailed', request => request.method() === 'POST' && request.url().includes('/agent/'));
+    await page.getByRole('button', { name: '送出', exact: true }).click();
+    await failed;
+    await expect(page.getByRole('alert')).toHaveText('無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留');
+    await expect(input).toHaveValue(text);
+    await expect(page.getByText('TypeFailed to fetch', { exact: true })).toHaveCount(0);
+    await context.setOffline(false);
+    let sends = 0;
+    page.on('request', request => { if (request.method() === 'POST' && request.url().includes('/agent/')) sends++; });
+    await page.getByRole('button', { name: '送出', exact: true }).click();
+    await expect(page.getByText(/你好！我可以協助整理活動資訊/)).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(input).toHaveValue('');
+    await expect(page.getByText(text, { exact: true })).toHaveCount(1);
+    expect(sends).toBe(1);
+    await page.reload();
+    await expect(page.getByText(text, { exact: true })).toHaveCount(1);
+    await expect(page.getByText(/你好！我可以協助整理活動資訊/)).toBeVisible();
+    await noOverflow(page);
+  } finally { await context.setOffline(false); }
+});

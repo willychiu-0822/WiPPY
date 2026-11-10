@@ -240,4 +240,21 @@ describe('AgentChatPanel — input behavior', () => {
     await waitFor(() => expect(screen.getByText(/Agent request failed/)).toBeInTheDocument());
     expect(textarea.value).toBe('失敗的訊息');
   });
+
+  it('UAT-26 explains an offline send, retains the draft and retries once without duplicate messages', async () => {
+    const send = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(makeSyncResponse({ reply: '活動建議已準備好' }));
+    renderPanel(send);
+    const input = screen.getByPlaceholderText(/輸入訊息/);
+    fireEvent.change(input, { target: { value: '請幫我整理親子活動說明' } });
+    fireEvent.click(screen.getByRole('button', { name: '送出' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留');
+    expect(input).toHaveValue('請幫我整理親子活動說明');
+    expect(screen.queryByText('Failed to fetch')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '送出' }));
+    expect(await screen.findByText('活動建議已準備好')).toBeVisible();
+    expect(screen.getAllByText('請幫我整理親子活動說明')).toHaveLength(1);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(input).toHaveValue('');
+  });
 });

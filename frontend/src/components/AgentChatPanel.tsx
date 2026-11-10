@@ -136,7 +136,9 @@ export default function AgentChatPanel({
         subscribeToRun(result.runId);
       }
     } catch (err) {
-      setError(String(err).replace('Error: ', ''));
+      setError(err instanceof TypeError
+        ? '無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留'
+        : String(err).replace(/^Error:\s*/, ''));
       setMessages((prev) => prev.slice(0, -1));
       setInput(text);
       setLoading(false);
@@ -217,7 +219,7 @@ export default function AgentChatPanel({
 
       {/* Status messages */}
       {error && (
-        <p className="text-xs text-red-500 px-1 pb-1">{error}</p>
+        <p role="alert" className="text-xs text-red-500 px-1 pb-1">{error}</p>
       )}
       {rateLimitWarning && !error && (
         <p className="text-xs text-amber-500 px-1 pb-1">{rateLimitWarning}</p>

@@ -40,6 +40,11 @@ describe('MessagePlanTable — empty state', () => {
 });
 
 describe('MessagePlanTable — rendering', () => {
+  it('shows group names and explains unavailable names without exposing identifiers', () => {
+    render(<MessagePlanTable messages={[makeMessage({ targetGroups: ['group_a', 'missing'] })]} groups={[{ groupId: 'group_a', name: '讀書會' }]} locked={false} onUpdate={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByText('群組：讀書會、無法取得名稱的群組')).toBeInTheDocument();
+    expect(screen.queryByText(/missing|group_a/)).not.toBeInTheDocument();
+  });
   it('renders message content', () => {
     render(
       <MessagePlanTable

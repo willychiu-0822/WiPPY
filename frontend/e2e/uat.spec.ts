@@ -75,6 +75,17 @@ async function addKnowledge(page: Page, title: string, content: string) {
   await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
 
+test('UAT-31 推播企畫用群組名稱顯示收件對象', async ({ page }) => {
+  await register(page);
+  await createActivity(page);
+  await plan(page);
+  await expect(page.getByText('群組：UAT 讀書會', { exact: true })).toHaveCount(3);
+  await page.reload();
+  await page.getByRole('button', { name: /推播企畫/ }).click();
+  await expect(page.getByText('群組：UAT 讀書會', { exact: true })).toHaveCount(3);
+  await noOverflow(page);
+});
+
 test('UAT-28 群組載入與回覆斷線可原地重試，不誤報空對話或遺失草稿', async ({ page }) => {
   await register(page);
   const context = page.context();

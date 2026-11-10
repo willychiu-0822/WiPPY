@@ -290,6 +290,7 @@ export default function ActivityDetailPage() {
         {tab === 'plan' && (
           <MessagePlanTable
             messages={messages}
+            groups={groups}
             locked={planLocked}
             onUpdate={handleUpdateMessage}
             onDelete={handleDeleteMessage}

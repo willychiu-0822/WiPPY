@@ -3,6 +3,7 @@ import type { ActivityMessage } from '../lib/api';
 
 interface Props {
   messages: ActivityMessage[];
+  groups?: { groupId: string; name: string }[];
   locked: boolean;
   onUpdate: (id: string, patch: { content?: string; triggerValue?: string; sequenceOrder?: number }) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -42,7 +43,7 @@ function localDateTime(value: string) {
 
 interface EditState { id: string; content: string; triggerValue: string; triggerType: ActivityMessage['triggerType']; advanced?: boolean }
 
-export default function MessagePlanTable({ messages, locked, onUpdate, onDelete }: Props) {
+export default function MessagePlanTable({ messages, groups = [], locked, onUpdate, onDelete }: Props) {
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -179,7 +180,7 @@ export default function MessagePlanTable({ messages, locked, onUpdate, onDelete 
 
                 {/* Target groups */}
                 <p className="text-xs text-gray-400 mt-1">
-                  群組：{msg.targetGroups.join(', ') || '（無）'}
+                  群組：{msg.targetGroups.map(id => groups.find(group => group.groupId === id)?.name?.trim() || '無法取得名稱的群組').join('、') || '（無）'}
                 </p>
               </div>
 

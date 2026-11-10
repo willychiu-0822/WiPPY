@@ -206,3 +206,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 完整通過後以桌面及手機視窗探索建立表單，可切換 Grok Bot／Instinct 並顯示相應欄位；未發現新缺陷，此次探索範圍僅限表單切換。此前數輪間歇逾時根因仍未釐清，本輪未重現；瀏覽器 Firestore transport 警告仍存在，真實雲端同步未驗證。真實 Grok、Instinct、LINE 與 HTTPS 均未驗證，`ready_for_user_test` 僅指本機 mock/emulator 流程。
 
 本輪測試暫時將既有腳本的 emulator 連線改至 4144／4145，測後已還原；本次啟動服務已關閉。Firestore 首次啟動短暫佔用預設 9150，立即停止並改用 4148。既有產品修復的 commit 清單見上方「2026-11-10 17:51 接續驗證與提交」；本輪沒有產品修復。依後段規則未 push、部署或寫入工作目錄外的摘要。
+
+### 2026-11-11 04:16 接續驗證
+
+在隔離的 Auth 4144／Firestore 4145 emulator，以系統 Chrome 執行完整 `npm run test:e2e`：桌面、手機及 API 各 19 案，**57/57 PASS**，無重試；`npm run verify:uat` 核對 57 張截圖、32 筆對比與 9 份修復 patch。API 案例包含安裝指南 curl 範例。完整逐項結果及最新證據見 [UAT 結果](../uat/UAT-RESULTS.md)。
+
+完整通過後，以兩種視窗探索新增 Agent 表單的 Grok Bot／Instinct 類型切換，欄位可見；探索範圍僅限此表單。測試仍出現 Firestore transport 警告，以往間歇逾時根因亦未確認。真實 Grok、Instinct、LINE、HTTPS 與雲端同步未驗證，狀態僅代表本機 mock/emulator 旅程。
+
+接續既有未提交的測試設定，使 emulator host 可由環境變數指定（`4628965`）。本輪沒有產品修復；先前修復 commit 清單見上方「2026-11-10 17:51 接續驗證與提交」。依後段規則沒有 push、部署或寫入工作目錄外的摘要。

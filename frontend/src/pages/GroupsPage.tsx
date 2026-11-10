@@ -153,7 +153,9 @@ function BroadcastComposer({
       setPreviews(r.previews);
       setStep('tweak');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '無法產生預覽，請重試');
+      setError(err instanceof TypeError
+        ? '無法連線，請檢查網路連線後重新產生預覽；輸入內容已保留'
+        : err instanceof Error ? err.message : '無法產生預覽，請重試');
     } finally {
       setLoading(false);
     }
@@ -170,7 +172,9 @@ function BroadcastComposer({
       setResults(r.results);
       setStep('result');
     } catch (err) {
-      setError(err instanceof Error ? err.message : '廣播失敗，請重試');
+      setError(err instanceof TypeError
+        ? '無法連線，請檢查網路連線後重新發送；各群組內容已保留'
+        : err instanceof Error ? err.message : '廣播失敗，請重試');
     } finally {
       setLoading(false);
     }

@@ -107,6 +107,41 @@ test('UAT-28 群組載入與回覆斷線可原地重試，不誤報空對話或�
   await noOverflow(page);
 });
 
+test('UAT-29 廣播預覽與發送斷線用中文說明，保留各群草稿後重試一次', async ({ page }) => {
+  await register(page);
+  await page.getByRole('button', { name: '廣播', exact: true }).click();
+  await page.getByText('UAT 讀書會', { exact: true }).click();
+  await page.getByText('UAT 工作坊', { exact: true }).click();
+  await page.getByRole('button', { name: '廣播 (2)', exact: true }).click();
+  const draft = page.getByPlaceholder('輸入訊息內容...');
+  await draft.fill('我們改在社區圖書館集合');
+  await page.context().setOffline(true);
+  await page.getByRole('button', { name: '下一步：各群組微調 →', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText(/無法連線.*內容已保留/);
+  await expect(draft).toHaveValue('我們改在社區圖書館集合');
+  await page.context().setOffline(false);
+  await page.getByRole('button', { name: '下一步：各群組微調 →', exact: true }).click();
+  await expect(page.locator('textarea')).toHaveCount(2);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.locator('textarea').first().fill('讀書會帶一本書，在社區圖書館集合');
+  await page.context().setOffline(true);
+  await page.getByRole('button', { name: '確認發送至 2 個群組', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText(/無法連線.*內容已保留/);
+  await expect(page.locator('textarea').first()).toHaveValue('讀書會帶一本書，在社區圖書館集合');
+  await expect(page.locator('textarea').nth(1)).toHaveValue('我們改在社區圖書館集合');
+  await page.context().setOffline(false);
+  expect((await api(page, '/api/send-logs')).data.logs).toHaveLength(0);
+  await page.getByRole('button', { name: '確認發送至 2 個群組', exact: true }).click();
+  await expect(page.getByText('✓ 成功', { exact: true })).toHaveCount(2);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  const logs = (await api(page, '/api/send-logs')).data.logs;
+  expect(logs).toHaveLength(2);
+  expect(new Set(logs.map((log: { groupId: string }) => log.groupId)).size).toBe(2);
+  expect(logs.map((log: { content: string }) => log.content).sort()).toEqual(['我們改在社區圖書館集合', '讀書會帶一本書，在社區圖書館集合'].sort());
+  expect(logs.every((log: { status: string; triggerType: string }) => log.status === 'success' && log.triggerType === 'broadcast')).toBe(true);
+  await noOverflow(page);
+});
+
 test('UAT-01 註冊、登入、登出與路由保護', async ({ page }) => {
   await page.goto('/activities/private');
   await expect(page).toHaveURL(/\/login$/);

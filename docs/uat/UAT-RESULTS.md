@@ -1616,3 +1616,80 @@ def69fa fix(UAT-30): validate per-group broadcast drafts before sending
 ```
 
 原工作目錄 `.git` 為唯讀，原 HEAD 仍為 3135a4f，原始 git status 未乾淨；可攜交付庫與增量 bundle 供 Product Builder 匯入，不能視為原分支已提交。未 push、修改 remote 或部署。
+
+## 2026-11-10 16:15 ～ 2026-11-10 16:29（台北）
+
+批次：`2026-11-10T08-15-35-801Z`。60 pass / 0 fail / 0 blocked；可試用：true。
+
+| 案例 | Viewport | 結果 | 失敗原因 | 證據 |
+| --- | --- | --- | --- | --- |
+| UAT-28 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-28.png) |
+| UAT-29 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-29.png) |
+| UAT-30 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-30.png) |
+| UAT-01 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-01.png) |
+| UAT-02 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-02.png) |
+| UAT-03 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-03.png) |
+| UAT-04 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-04.png) |
+| UAT-05 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-05.png) |
+| UAT-06 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-06.png) |
+| UAT-07 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-07.png) |
+| UAT-08 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-08.png) |
+| UAT-09 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-09.png) |
+| UAT-10 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-10.png) |
+| UAT-11 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-11.png) |
+| UAT-12 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-12.png) |
+| UAT-13 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-13.png) |
+| UAT-14 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-14.png) |
+| UAT-15 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-15.png) |
+| UAT-16 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-16.png) |
+| UAT-17 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-17.png) |
+| UAT-18 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-18.png) |
+| UAT-19 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-19.png) |
+| UAT-20 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-20.png) |
+| UAT-21 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-21.png) |
+| UAT-22 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-22.png) |
+| UAT-23 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-23.png) |
+| UAT-24 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-24.png) |
+| UAT-25 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-25.png) |
+| UAT-26 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-26.png) |
+| UAT-27 | desktop | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/desktop/UAT-27.png) |
+| UAT-28 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-28.png) |
+| UAT-29 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-29.png) |
+| UAT-30 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-30.png) |
+| UAT-01 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-01.png) |
+| UAT-02 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-02.png) |
+| UAT-03 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-03.png) |
+| UAT-04 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-04.png) |
+| UAT-05 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-05.png) |
+| UAT-06 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-06.png) |
+| UAT-07 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-07.png) |
+| UAT-08 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-08.png) |
+| UAT-09 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-09.png) |
+| UAT-10 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-10.png) |
+| UAT-11 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-11.png) |
+| UAT-12 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-12.png) |
+| UAT-13 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-13.png) |
+| UAT-14 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-14.png) |
+| UAT-15 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-15.png) |
+| UAT-16 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-16.png) |
+| UAT-17 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-17.png) |
+| UAT-18 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-18.png) |
+| UAT-19 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-19.png) |
+| UAT-20 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-20.png) |
+| UAT-21 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-21.png) |
+| UAT-22 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-22.png) |
+| UAT-23 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-23.png) |
+| UAT-24 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-24.png) |
+| UAT-25 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-25.png) |
+| UAT-26 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-26.png) |
+| UAT-27 | mobile | pass | — | [截圖](evidence/2026-11-10T08-15-35-801Z/mobile/UAT-27.png) |
+
+## 2026-11-10 16:38 本輪驗證與交付
+
+`node deployment/local/e2e.cjs` 完整通過 60/60；上表為本輪逐案結果。backend 15 suites／189 tests、frontend 12 files／97 tests、報告工具 5 tests 通過；兩端 build 與 frontend lint 通過，lint 仍有一項 AuthContext Hook 警告。桌面 UAT-11 此次耗時 31.6 秒但通過，先前偶發逾時的 UAT-06 兩種 viewport 均通過。
+
+以新模擬帳號重新執行手機探索：[首次活動與 LINE 空狀態](evidence/exploration-2026-11-10T08-37-58-142Z/findings.json)、[無群組核准與 AI 斷線](evidence/first-plan-2026-11-10T08-38-01-642Z/findings.json)、[LINE 群組與廣播斷線](evidence/groups-2026-11-10T08-38-04-949Z/findings.json)。首次企畫只有一個 AI 規劃入口；未選群組時不能核准；斷線後輸入保留且可以重試。探索未發現需新增案例的問題。使用 Firebase emulator 與 LINE／AI mock，真實服務、OAuth、HTTPS 與實體手機輸入法未驗證。測試程序已關閉。
+
+以 0924283 為基底的提交清單見上一節；其後另有 `82aa38f docs(UAT-01-30): record full acceptance and mobile exploration`。本次報告提交不列自身 hash，交付 bundle 的 HEAD 即為本次報告提交。
+
+原工作目錄 `.git` 受唯讀限制，原分支仍停在 3135a4f，原始 `git status` 仍不乾淨；增量 bundle 供 Product Builder 匯入，不能宣稱原分支已提交。未 push、修改 remote 或部署。

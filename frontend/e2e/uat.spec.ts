@@ -536,7 +536,11 @@ test('UAT-19 新手用日期時間選擇器設定推播，時區與資料保存�
   const picker = page.getByLabel('發送日期與時間');
   await expect(picker).toHaveAttribute('type', 'datetime-local');
   await picker.fill('2035-11-12T18:30:17');
+  const saved = page.waitForResponse(response => response.request().method() === 'PATCH'
+    && response.url().includes(`/api/activities/${id}/messages/`));
   await page.getByRole('button', { name: '儲存', exact: true }).click();
+  expect((await saved).status()).toBe(200);
+  await expect(picker).toHaveCount(0);
   const messages = (await api(page, `/api/activities/${id}/messages`)).data.messages;
   expect(Date.parse(messages[0].triggerValue)).toBe(Date.parse('2035-11-12T18:30:17+08:00'));
   await page.reload();

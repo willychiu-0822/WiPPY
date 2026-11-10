@@ -35,3 +35,5 @@
 2026-11-11 04:16 接續：隔離 emulator 執行桌面、手機與 API 共 57/57 PASS；證據檢查通過。表單類型切換探索通過；Firestore transport 警告及先前間歇逾時根因仍待確認。未測真實外部服務、HTTPS 或雲端同步；未 push。詳見 docs/pr42-fixes/RESULTS.md。
 
 2026-11-11 05:22 接續：隔離 emulator 完整重跑 57/57 PASS，證據檢查及桌面／手機表單切換探索通過。此前 04:22 手機 UAT-07 逾時（56/57），根因未確認；Firestore transport 警告仍存在。真實外部服務、HTTPS、雲端同步未驗證。未 push；服務已停止。詳見 docs/pr42-fixes/RESULTS.md。
+
+2026-11-11 06:19 接續：隔離 emulator 完整桌面、手機及 API 57/57 PASS，證據檢查通過；通過後兩種視窗的新增 Agent 表單切換探索正常。此前間歇逾時根因未明、Firestore transport 警告仍存在；真實外部服務、HTTPS 和雲端同步尚未驗證。未 push；本次啟動的服務已停止。詳見 docs/pr42-fixes/RESULTS.md。

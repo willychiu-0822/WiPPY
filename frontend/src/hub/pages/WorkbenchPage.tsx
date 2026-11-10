@@ -166,9 +166,9 @@ export default function WorkbenchPage() {
         <ul className="space-y-2">
           {inbox.data?.map((item) => (
             <li key={item.id}>
-              <button type="button" onClick={() => void open(item)} className={`w-full text-left rounded-lg border px-3 py-2 text-sm ${selected?.id === item.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+              <button type="button" onClick={() => void open(item)} className={`w-full text-left text-gray-900 rounded-lg border px-3 py-2 text-sm ${selected?.id === item.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
                 {item.ruleName}｜{item.groupName}
-                <span className="block text-xs text-gray-400">{formatTime(item.createdAt)}</span>
+                <span className="block text-xs text-gray-600">{formatTime(item.createdAt)}</span>
               </button>
             </li>
           ))}

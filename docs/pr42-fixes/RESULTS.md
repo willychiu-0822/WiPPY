@@ -186,3 +186,9 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 | PR42-UAT-10 指南 | c921a7b |
 
 測試、證據與報告另以 `test(PR42-UAT-01)` 提交。依後段明確禁止 push 的指示未 push；目錄外摘要由 Product Builder 使用 repo 副本。部署前需要新增的 Firestore 索引。
+
+### 2026-11-10 第 2 輪接續驗證
+
+接續已提交的工作，桌面、手機與 API 完整測試兩次均為 56/57。第一輪桌面 UAT-14 在新視窗等待登入欄位逾時；第二輪此案例通過，但手機 UAT-19 發生操作逾時，錯誤未指出步驟。兩者根因尚未確定，不能將重跑通過當成修復；瀏覽器亦出現 Firestore profile transport 警告。每輪結果存於 [17:58 報告](../uat/UAT-RESULTS-2026-11-10-1758.md)及 [18:15 報告](../uat/UAT-RESULTS-2026-11-10-1815.md)，最新結果見 [UAT 結果](../uat/UAT-RESULTS.md)及 [狀態](../uat/UAT-STATUS.json)。修正證據驗證程式過時的 Git 唯讀／無 commit 敘述。依指示沒有 push、部署或操作其他 lane。
+
+第三輪完整重跑 18:42 為 56/57：桌面 UAT-11 截圖時逾時，前兩輪該案例通過。最新 `ready_for_user_test` 為 false；證據 manifest 標記為未驗證，`npm run verify:uat` 只在完整通過後重建雜湊。前兩輪保存的是結果表，表中截圖連結指向最新執行的證據，不是當時截圖的歷史副本。4141–4143 測試服務已關閉。真實 Grok、Instinct、LINE 與 HTTPS 仍未驗證。

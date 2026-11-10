@@ -179,9 +179,24 @@ export async function getQuotaFor(ctx: HubContext, actor: Actor) {
 export async function listInboxFor(ctx: HubContext, actor: Actor, status: 'open' | 'done' | 'all' = 'open') {
   const where: WhereClause[] = [{ field: 'ownerId', op: '==', value: ctx.ownerId }];
   if (status !== 'all') where.push({ field: 'status', op: '==', value: status });
-  if (actor.kind === 'agent') where.push({ field: 'agentId', op: '==', value: actor.agentId });
-  const rows = await ctx.store.query<InboxDoc>(COLLECTIONS.inbox, { where, orderBy: [{ field: 'createdAt', direction: 'desc' }], limit: 100 });
-  return rows.map((r) => ({ id: r.id, ...r.data }));
+  const orderBy = [{ field: 'createdAt', direction: 'desc' as const }];
+  if (actor.kind !== 'agent') {
+    const rows = await ctx.store.query<InboxDoc>(COLLECTIONS.inbox, { where, orderBy, limit: 100 });
+    return rows.map((r) => ({ id: r.id, ...r.data }));
+  }
+  where.push({ field: 'agentId', op: '==', value: actor.agentId });
+  const groups = await allowedGroupIds(ctx, actor);
+  // Filter before the limit so revoked work cannot crowd authorized work out.
+  // Chunk the IN query, then take the newest 100 across all allowed groups.
+  const queries = [];
+  for (let i = 0; i < groups.length; i += 10) {
+    queries.push(ctx.store.query<InboxDoc>(COLLECTIONS.inbox, {
+      where: [...where, { field: 'groupId', op: 'in', value: groups.slice(i, i + 10) }], orderBy, limit: 100,
+    }));
+  }
+  return (await Promise.all(queries)).flat()
+    .sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime() || a.id.localeCompare(b.id))
+    .slice(0, 100).map((r) => ({ id: r.id, ...r.data }));
 }
 
 export async function getDispatchFor(ctx: HubContext, actor: Actor, dispatchId: string) {
@@ -189,5 +204,6 @@ export async function getDispatchFor(ctx: HubContext, actor: Actor, dispatchId: 
   if (!dispatch || dispatch.ownerId !== ctx.ownerId || (actor.kind === 'agent' && dispatch.agentId !== actor.agentId)) {
     throw new HubAccessError('not_found', '找不到這個派送工作', 404);
   }
+  await assertGroup(ctx, actor, dispatch.groupId);
   return buildDispatchPayload(ctx, dispatchId);
 }

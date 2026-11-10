@@ -72,4 +72,35 @@ describe('agent queries', () => {
     expect((await getDispatchFor(hub, instinct, 'd1')).messages[0]).toMatchObject({ id: 'a0' });
     await expect(getDispatchFor(hub, grok, 'd1')).rejects.toMatchObject({ code: 'not_found' });
   });
+  it.each(['closed', 'unassigned'])('PR42-UAT-11 hides existing inbox and dispatch after group is %s', async (mode) => {
+    const base = { ownerId: 'owner_1', groupId: GROUP, groupName: 'Alpha', ruleName: 'r', instruction: 'private instruction', messageIds: ['a0'], digestId: null, createdAt: hub.now(), status: 'open' };
+    await hub.store.set('agentInbox', 'i1', { ...base, agentId: 'instinct_1', dispatchId: 'd1' });
+    await hub.store.set('agentDispatches', 'd1', { ...base, agentId: 'instinct_1', ruleId: 'r', trigger: 'keyword', windowStart: null, windowEnd: hub.now(), include: { digest: false, raw: true, media: false, contextCount: 1 } });
+    expect((await getDispatchFor(hub, instinct, 'd1')).messages).toHaveLength(1);
+    if (mode === 'closed') await hub.store.update('groups', GROUP, { agentEnabled: false });
+    else await hub.store.update('agents', 'instinct_1', { allowedGroupIds: [] });
+    await expect(getDispatchFor(hub, instinct, 'd1')).rejects.toMatchObject({ code: 'group_not_allowed', status: 403 });
+    expect(await listInboxFor(hub, instinct, 'all')).toEqual([]);
+    expect((await getDispatchFor(hub, owner, 'd1')).messages).toHaveLength(1);
+    expect(await listInboxFor(hub, owner, 'all')).toHaveLength(1);
+  });
+  it('PR42-UAT-11 returns older allowed inbox work even behind 100 revoked-group items', async () => {
+    const base = { ownerId: 'owner_1', agentId: 'instinct_1', groupName: 'Alpha', ruleName: 'r', instruction: 'i', messageIds: [], digestId: null, status: 'open', dispatchId: 'd1' };
+    await hub.store.set('agentInbox', 'allowed', { ...base, groupId: GROUP_B, createdAt: new Date(0) });
+    for (let n = 0; n < 100; n += 1) await hub.store.set('agentInbox', `revoked-${n}`, { ...base, groupId: GROUP, createdAt: new Date(n + 1) });
+    await hub.store.update('groups', GROUP, { agentEnabled: false });
+    expect((await listInboxFor(hub, instinct)).map(item => item.id)).toEqual(['allowed']);
+  });
+  it('PR42-UAT-11 merges allowed-group query chunks into the newest 100 inbox items', async () => {
+    const groups = Array.from({ length: 31 }, (_, n) => `allowed-${n}`);
+    for (const groupId of groups) await seedGroup(hub, groupId);
+    await hub.store.update('agents', 'instinct_1', { allowedGroupIds: groups });
+    for (let n = 0; n < 102; n += 1) await hub.store.set('agentInbox', `item-${n}`, {
+      ownerId: 'owner_1', agentId: 'instinct_1', groupId: groups[n % 31], createdAt: new Date(n), status: 'open',
+    });
+    const inbox = await listInboxFor(hub, instinct);
+    expect(inbox).toHaveLength(100);
+    expect(inbox[0].id).toBe('item-101'); expect(inbox[99].id).toBe('item-2');
+  });
+
 });

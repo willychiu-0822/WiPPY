@@ -280,6 +280,8 @@ async function perform(ctx: HubContext, actionId: string, doc: ActionDoc): Promi
       if (!dispatch || dispatch.ownerId !== ctx.ownerId || (actor.kind === 'agent' && dispatch.agentId !== actor.agentId)) {
         return blocked('not_found', '找不到這個派送工作');
       }
+      const denied = await groupAccess(ctx, actor, agent, dispatch.groupId);
+      if (denied) return denied;
       await ctx.store.update(COLLECTIONS.dispatches, p['jobId'], { status: 'completed', completedAt: ctx.now(), summary: p['summary'] ?? null });
       return { status: 'done', result: { jobId: p['jobId'] } };
     }
@@ -289,6 +291,8 @@ async function perform(ctx: HubContext, actionId: string, doc: ActionDoc): Promi
       if (!item || item.ownerId !== ctx.ownerId || (actor.kind === 'agent' && item.agentId !== actor.agentId)) {
         return blocked('not_found', '找不到這個收件匣項目');
       }
+      const denied = await groupAccess(ctx, actor, agent, item.groupId);
+      if (denied) return denied;
       await ctx.store.update(COLLECTIONS.inbox, p['itemId'], { status: 'done', doneAt: ctx.now(), note: p['note'] ?? null });
       if (item.dispatchId) {
         await ctx.store.update(COLLECTIONS.dispatches, item.dispatchId, { status: 'completed', completedAt: ctx.now(), summary: p['note'] ?? null }).catch(() => undefined);

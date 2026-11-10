@@ -143,9 +143,17 @@ function BroadcastComposer({
   const [loading, setLoading] = useState(false);
 
   const selectedGroups = groups.filter((g) => selected.includes(g.groupId));
+  const contentError = step === 'compose'
+    ? (baseContent.length > 5000 ? '訊息內容不可超過 5000 字' : '')
+    : step === 'tweak'
+      ? previews.map(p => !p.content.trim()
+        ? `${p.groupName}：訊息內容不可為空`
+        : p.content.length > 5000 ? `${p.groupName}：訊息內容不可超過 5000 字` : '')
+        .filter(Boolean).join('；')
+      : '';
 
   async function handlePreview() {
-    if (!baseContent.trim() || loading) return;
+    if (!baseContent.trim() || contentError || loading) return;
     setError('');
     setLoading(true);
     try {
@@ -162,7 +170,7 @@ function BroadcastComposer({
   }
 
   async function handleSend() {
-    if (loading) return;
+    if (loading || !previews.length || contentError) return;
     setError('');
     setLoading(true);
     try {
@@ -192,7 +200,7 @@ function BroadcastComposer({
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
+        {(contentError || error) && <p role="alert" className="mb-3 text-sm text-red-600">{contentError || error}</p>}
         {/* Step 1: Compose */}
         {step === 'compose' && (
           <div className="space-y-4">
@@ -208,7 +216,7 @@ function BroadcastComposer({
             />
             <button
               onClick={handlePreview}
-              disabled={loading || !baseContent.trim()}
+              disabled={loading || !baseContent.trim() || Boolean(contentError)}
               className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium disabled:opacity-40 hover:bg-blue-700"
             >
               {loading ? '處理中...' : '下一步：各群組微調 →'}
@@ -236,7 +244,7 @@ function BroadcastComposer({
             ))}
             <button
               onClick={handleSend}
-              disabled={loading}
+              disabled={loading || !previews.length || Boolean(contentError)}
               className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium disabled:opacity-40 hover:bg-green-700"
             >
               {loading ? '發送中...' : `確認發送至 ${previews.length} 個群組`}

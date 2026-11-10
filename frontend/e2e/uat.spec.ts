@@ -142,6 +142,46 @@ test('UAT-29 廣播預覽與發送斷線用中文說明，保留各群草稿後�
   await noOverflow(page);
 });
 
+test('UAT-30 廣播微調空白或過長時指出群組並阻止發送，修正後才送出', async ({ page }) => {
+  await register(page);
+  await page.getByRole('button', { name: '廣播', exact: true }).click();
+  await page.getByText('UAT 讀書會', { exact: true }).click();
+  await page.getByText('UAT 工作坊', { exact: true }).click();
+  await page.getByRole('button', { name: '廣播 (2)', exact: true }).click();
+  const draft = page.getByPlaceholder('輸入訊息內容...');
+  await draft.fill('字'.repeat(5001));
+  await expect(page.getByRole('button', { name: '下一步：各群組微調 →', exact: true })).toBeDisabled();
+  await expect(page.getByRole('alert')).toContainText('5000');
+  await draft.fill('請帶一本書');
+  await page.getByRole('button', { name: '下一步：各群組微調 →', exact: true }).click();
+  await expect(page.locator('textarea')).toHaveCount(2);
+  const fields = page.locator('textarea');
+  const send = page.getByRole('button', { name: '確認發送至 2 個群組', exact: true });
+  await fields.first().fill('   ');
+  await expect(send).toBeDisabled();
+  await expect(page.getByRole('alert')).toContainText(/UAT 讀書會.*不可為空/);
+  expect((await api(page, '/api/send-logs')).data.logs).toHaveLength(0);
+  const groups = (await api(page, '/api/groups')).data.groups;
+  const rejected = await api(page, '/api/broadcast/multi', 'POST', { messages: [
+    { groupId: groups[0].groupId, content: '   ' }, { groupId: groups[1].groupId, content: '合法內容' },
+  ] });
+  expect(rejected.status).toBe(400);
+  expect((await api(page, '/api/send-logs')).data.logs).toHaveLength(0);
+  await fields.first().fill('請帶一本書');
+  await fields.nth(1).fill('字'.repeat(5001));
+  await expect(send).toBeDisabled();
+  await expect(page.getByRole('alert')).toContainText(/UAT 工作坊.*5000/);
+  await fields.nth(1).fill('工作坊請帶筆記本');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(send).toBeEnabled();
+  await send.click();
+  await expect(page.getByText('✓ 成功', { exact: true })).toHaveCount(2);
+  const logs = (await api(page, '/api/send-logs')).data.logs;
+  expect(logs).toHaveLength(2);
+  expect(logs.map((log: { content: string }) => log.content).sort()).toEqual(['請帶一本書', '工作坊請帶筆記本'].sort());
+  await noOverflow(page);
+});
+
 test('UAT-01 註冊、登入、登出與路由保護', async ({ page }) => {
   await page.goto('/activities/private');
   await expect(page).toHaveURL(/\/login$/);

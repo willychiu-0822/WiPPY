@@ -45,3 +45,8 @@ backend/dist/
 .env.backup
 .env.production
 .env.local
+
+# Local UAT artifacts (credentials must never be persisted)
+test-results/
+playwright-report/
+run/install-uat/

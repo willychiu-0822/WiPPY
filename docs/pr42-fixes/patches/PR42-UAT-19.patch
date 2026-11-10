@@ -1,0 +1,142 @@
+--- a/frontend/src/hub/pages/WorkbenchPage.tsx
++++ b/frontend/src/hub/pages/WorkbenchPage.tsx
+@@ -127,14 +127,19 @@
+   const [detailError, setDetailError] = useState<string | null>(null);
+   const [note, setNote] = useState('');
+   const [doneResult, setDoneResult] = useState<ActionResult | null>(null);
++  const [doneError, setDoneError] = useState<string | null>(null);
++  const [completing, setCompleting] = useState(false);
+   const [query, setQuery] = useState('');
+   const [hits, setHits] = useState<MessageView[] | null>(null);
++  const [searchError, setSearchError] = useState<string | null>(null);
++  const [searching, setSearching] = useState(false);
+ 
+   async function open(item: InboxItem) {
+     setSelected(item);
+     setDetail(null);
+     setDetailError(null);
+     setDoneResult(null);
++    setDoneError(null);
+     try {
+       setDetail(await hubApi.agent.dispatch(item.dispatchId));
+     } catch (err) {
+@@ -143,19 +148,37 @@
+   }
+ 
+   async function complete() {
+-    if (!selected) return;
+-    const res = await hubApi.agent.act('complete_inbox', { itemId: selected.id, note: note.trim() });
+-    setDoneResult(res);
+-    if (res.status === 'done') {
+-      setNote('');
+-      void inbox.reload();
++    if (!selected || completing) return;
++    setCompleting(true);
++    setDoneError(null);
++    setDoneResult(null);
++    try {
++      const res = await hubApi.agent.act('complete_inbox', { itemId: selected.id, note: note.trim() });
++      setDoneResult(res);
++      if (res.status === 'done') {
++        setNote('');
++        void inbox.reload();
++      }
++    } catch (err) {
++      setDoneError(`無法標記完成，請稍後重試：${getErrorMessage(err, '連線失敗')}`);
++    } finally {
++      setCompleting(false);
+     }
+   }
+ 
+   async function search(e: React.FormEvent) {
+     e.preventDefault();
+-    if (!query.trim()) return;
+-    setHits((await hubApi.agent.search(query.trim())).messages);
++    if (!query.trim() || searching) return;
++    setSearching(true);
++    setSearchError(null);
++    setHits(null);
++    try {
++      setHits((await hubApi.agent.search(query.trim())).messages);
++    } catch (err) {
++      setSearchError(`搜尋失敗，請稍後重試：${getErrorMessage(err, '連線失敗')}`);
++    } finally {
++      setSearching(false);
++    }
+   }
+ 
+   return (
+@@ -197,7 +220,8 @@
+             </div>
+           )}
+           <TextField label="完成備註" value={note} onChange={setNote} multiline />
+-          <Button onClick={() => void complete()}>標記完成</Button>
++          <ErrorText error={doneError} />
++          <Button onClick={() => void complete()} disabled={completing}>標記完成</Button>
+           {doneResult && <p className="text-sm text-gray-600">{describeResult(doneResult)}</p>}
+         </Card>
+       )}
+@@ -209,8 +233,10 @@
+       <Card title="搜尋訊息">
+         <form onSubmit={search} className="flex gap-2 items-end">
+           <div className="flex-1"><TextField label="搜尋關鍵字" value={query} onChange={setQuery} /></div>
+-          <Button type="submit" variant="secondary">搜尋</Button>
++          <Button type="submit" variant="secondary" disabled={searching}>搜尋</Button>
+         </form>
++        <ErrorText error={searchError} />
++        {hits?.length === 0 && <p className="text-sm text-gray-600">沒有符合的訊息</p>}
+         {hits && <MessageList messages={hits} />}
+       </Card>
+     </div>
+diff --git a/frontend/src/__tests__/HubPages.test.tsx b/frontend/src/__tests__/HubPages.test.tsx
+index 65c0cc2..bd6961a 100644
+--- a/frontend/src/__tests__/HubPages.test.tsx
++++ b/frontend/src/__tests__/HubPages.test.tsx
+@@ -157,6 +157,47 @@ describe('RulesPage', () => {
+ });
+ 
+ describe('WorkbenchPage', () => {
++  it('PR42-UAT-19 preserves completion notes after a failure and allows retry', async () => {
++    const item = { id: 'i1', dispatchId: 'd1', ruleName: '復原工作', groupId: 'C2', groupName: 'Beta', instruction: '讀活動', createdAt: '' };
++    let completed = false;
++    api.agent.inbox.mockImplementation(async () => ({ items: completed ? [] : [item] }));
++    api.agent.dispatch.mockResolvedValue({ messages: [], messageCount: 0, quota: {} });
++    api.agent.act.mockRejectedValueOnce(new Error('暫時無法完成，請再試一次')).mockImplementationOnce(async () => {
++      completed = true;
++      return { type: 'complete_inbox', status: 'done' };
++    });
++    renderPage(<WorkbenchPage />);
++    await userEvent.click(await screen.findByRole('button', { name: /復原工作.*Beta/ }));
++    await userEvent.type(screen.getByLabelText('完成備註'), '保留這段備註');
++    await userEvent.click(screen.getByRole('button', { name: '標記完成' }));
++    expect(await screen.findByRole('alert')).toHaveTextContent('暫時無法完成，請再試一次');
++    expect(screen.getByLabelText('完成備註')).toHaveValue('保留這段備註');
++    expect(screen.getByRole('button', { name: '標記完成' })).toBeEnabled();
++    await userEvent.click(screen.getByRole('button', { name: '標記完成' }));
++    expect(await screen.findByText('目前沒有待處理的項目')).toBeInTheDocument();
++    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
++    expect(api.agent.act).toHaveBeenLastCalledWith('complete_inbox', { itemId: 'i1', note: '保留這段備註' });
++  });
++
++  it('PR42-UAT-19 clears stale search results, explains errors and recovers', async () => {
++    api.agent.inbox.mockResolvedValue({ items: [] });
++    api.agent.search.mockResolvedValueOnce({ messages: [{ id: 'm1', text: '先前搜尋結果' }] })
++      .mockRejectedValueOnce(new Error('搜尋暫時失敗，請重試'))
++      .mockResolvedValueOnce({ messages: [] });
++    renderPage(<WorkbenchPage />);
++    const query = await screen.findByLabelText('搜尋關鍵字');
++    await userEvent.type(query, '活動');
++    await userEvent.click(screen.getByRole('button', { name: /^搜尋$/ }));
++    expect(await screen.findByText('先前搜尋結果')).toBeInTheDocument();
++    await userEvent.click(screen.getByRole('button', { name: /^搜尋$/ }));
++    expect(await screen.findByRole('alert')).toHaveTextContent('搜尋暫時失敗，請重試');
++    expect(query).toHaveValue('活動');
++    expect(screen.queryByText('先前搜尋結果')).not.toBeInTheDocument();
++    await userEvent.click(screen.getByRole('button', { name: /^搜尋$/ }));
++    expect(await screen.findByText('沒有符合的訊息')).toBeInTheDocument();
++    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
++  });
++
+   it('opens an inbox item, sends a message and completes the item', async () => {
+     api.agent.inbox.mockResolvedValue({ items: [{ id: 'i1', agentId: 'instinct_1', dispatchId: 'd1', ruleName: '每日摘要', groupId: 'C2', groupName: 'Beta', instruction: '整理今天重點', messageIds: ['m1'], status: 'open', note: null, createdAt: '2026-11-04T02:00:00.000Z' }] });
+     api.agent.dispatch.mockResolvedValue({ jobId: 'd1', rule: { id: 'r', name: '每日摘要', trigger: 'schedule', instruction: '整理今天重點' }, group: { id: 'C2', name: 'Beta', memberCount: 1 }, digest: { summary: '大家在討論退款', points: ['退款'], tags: [], skipped: false, skipReason: null, mediaList: [] }, messageCount: 1, messages: [{ id: 'm1', groupId: 'C2', at: '2026-11-04T01:00:00.000Z', sender: 'Alice', senderId: 'U1', type: 'text', text: '我要退款', fileName: null, fileSize: null, durationMs: null, mentionsBot: false, media: null }], quota: { lineRemaining: 100, lineReserve: 10, agentDailyRemaining: 19 } });

@@ -56,3 +56,133 @@ P2-6 依要求不修；舊 UAT 旅程本輪維持擱置。真實 LINE/Grok/GCS/C
 ## 指定結果檔路徑限制
 
 嘗試寫入 `/workspace/codex-burn/notes/wippy-pr42-fixes-result.md` 時，環境回覆 `OSError: [Errno 30] Read-only file system`；該目錄不在本 session 的可寫範圍。完整報告保存在本檔，另提供 clone 根目錄同名檔供外部工作程序複製。
+
+## 安裝路徑 UAT
+
+更新：2026-11-10 11:14（Asia/Taipei，11:05 接續）；session B，基於 `46b5eda` 的工作樹。**19 個案例 × 桌面／手機／API = 57/57 PASS，0 FAIL，零重試**。本輪接續上一輪工作樹，先重新驗證 51/51，再以新手視角探索並新增 UAT-18／19；兩項缺陷先重現失敗，修復後完整重跑通過。
+
+驗收以新手可見流程為中心：Owner 建 Grok 與 Instinct、保存一次性憑證、REST/MCP 身分與活動訊息讀取、瀏覽器建立關鍵字規則、有效 LINE 簽章觸發、Routine／工作台處理工作、發送／紀錄／排程、停用與復原、群組撤權與每日限制。真實 WiPPY HTTP + Firebase Auth/Firestore emulator（demo-wippy-pr42）；外部 LINE／Routine 使用 mock，不讀取真實 key。
+
+| 案例 | 驗收流程 | 桌面 | 手機 | API |
+| --- | --- | --- | --- | --- |
+| UAT-01 | Owner 建立 Grok／一次性 key | PASS | PASS | PASS |
+| UAT-02 | Routine 驗證／UI 規則／簽章派送 | PASS | PASS | PASS |
+| UAT-03 | 讀活動訊息／冪等發送／紀錄／排程 | PASS | PASS | PASS |
+| UAT-04 | 停用啟用／設定保留 | PASS | PASS | PASS |
+| UAT-05 | 群組限制／零額度及用完額度 | PASS | PASS | PASS |
+| UAT-06 | Instinct 建立／登入／Owner 權限隔離 | PASS | PASS | PASS |
+| UAT-07 | Instinct 收件匣／發送／完成 | PASS | PASS | PASS |
+| UAT-08 | key 輪替／密碼重設／既有 token 停用 | PASS | PASS | PASS |
+| UAT-09 | 錯誤輸入／跨 Agent 隔離 | PASS | PASS | PASS |
+| UAT-10 | 指南 19 條 curl／REST 與 MCP | PASS | PASS | PASS |
+| UAT-11 | 舊派送／收件匣撤權及恢復 | PASS | PASS | PASS |
+| UAT-12 | 錯誤輸入復原／重複 Email | PASS | PASS | PASS |
+| UAT-13 | profile 斷線下登入登出／防止競態 | PASS | PASS | PASS |
+| UAT-14 | 撤權後禁止完成既有工作／恢復後完成 | PASS | PASS | PASS |
+| UAT-15 | 停用後重新登入指引／Owner 啟用復原 | PASS | PASS | PASS |
+| UAT-16 | REST 完成端點冪等隔離／新鍵復原 | PASS | PASS | PASS |
+| UAT-17 | 登入欄位及收件匣文字對比／名稱來源 | PASS | PASS | PASS |
+| UAT-18 | 一次性憑證新建／復原可讀性及保密 | PASS | PASS | PASS |
+| UAT-19 | 完成／搜尋失敗提示、輸入保留及重試 | PASS | PASS | PASS |
+
+Chrome 桌面 1280×800、手機 390×844（`channel: chrome`）。57 張本次截圖保存在 `docs/uat/evidence/` 與本目錄 `evidence/`，已逐一驗尺寸、SHA-256 與副本一致性。每個頁面另斷言無水平溢出。一次性憑證區／密碼欄位遮罩，不保存 trace、video 或 auth storage；API 截圖是相應 Owner 畫面，API 結果另有 HTTP、Firestore 與 mock 發送次數／內容斷言。UAT-17／18 的 32 筆桌機／手機色彩量測也有兩份 JSON 副本。
+
+- [完整計畫](../uat/UAT-PLAN.md)、[逐案例結果與截圖](../uat/UAT-RESULTS.md)、[機器狀態](../uat/UAT-STATUS.json)
+- [新手安裝指南](../agent-hub/INSTALL-GROK-BOT-AND-INSTINCT.md)：只有 placeholders；19 條 curl 實跑，含 Instinct Firebase 換 token、MCP initialize/tools/list、發送、紀錄、排程、完成工作及復原。區分 WiPPY key、Routine key、Instinct 帳密；不宣稱有草稿或 activities CRUD，排程會直接核准；Willy 的機密與設定僅列名稱。
+- [驗證統計及截圖 SHA-256](evidence/install-uat-verification.json)、[登入／工作台對比](evidence/UAT-17-desktop-contrast.json)、[憑證桌面對比](evidence/UAT-18-desktop-contrast.json)、[憑證手機對比](evidence/UAT-18-mobile-contrast.json)；`npm run verify:uat` 可重建 manifest。
+
+### 發現及修復
+
+| 編號 | 原失敗／原因 | 最終驗證 |
+| --- | --- | --- |
+| PR42-UAT-11 | 關閉／撤回群組後仍能讀舊 dispatch/inbox；先 limit 再過濾會漏掉合法工作 | 依目前授權限制 dispatch 及 inbox；分批查詢再合併最新 100；保留 100 筆撤權遮蔽、31 群組／102 筆單元測試；REST/MCP、桌機手機通過；新增兩個 Firestore 索引 |
+| PR42-UAT-08 | 停用 Instinct 的有效 token 被誤回 401 invalid_token 或網站誤顯示網路故障 | Firebase 停用回 403 account_disabled，Agent 停用回 403 agent_disabled；網站提示聯絡 Owner 啟用；Auth emulator 驗收通過 |
+| PR42-UAT-13 | 等待 profile 寫入會卡住登入；舊非同步完成回呼可能還原已登出者 | 三個單元測試 RED→GREEN；身分立即更新、profile 背景同步；瀏覽器阻斷 Firestore 時登入→登出→重新登入通過 |
+| PR42-UAT-14 | 本輪重現：已開啟的舊工作在撤權後仍能完成，改寫 inbox/dispatch | 完成前檢查目前群組授權；關閉群組／移除允許名單都 blocked group_not_allowed；原工作逐欄不變，Owner 仍可處理，恢復授權後新要求成功；單元、REST、MCP、桌機手機先 RED 後 GREEN |
+| PR42-UAT-15 | 本輪探索：Firebase 停用後重整會登出；登入頁只寫已停用，沒有復原步驟 | 登入錯誤加 role=alert，明確要求聯絡 Owner 啟用後重登；停用登入被拒、既有 token 403 無副作用、啟用後回工作台並保留群組及時數 |
+| PR42-UAT-16 | 本輪重現：dispatch/inbox ID 相同時，兩個 REST complete 共用固定鍵，回傳錯誤動作且 inbox 未完成；blocked 結果固定重播而不能復原 | 預設鍵按端點類型隔離；JSON 可提供新 idempotencyKey；兩工作皆正確完成，同鍵重播且不覆寫，新鍵恢復成功，非法鍵 400；REST 與桌機手機先 RED 後 GREEN |
+| PR42-UAT-17 | 本輪視覺探索：登入值、placeholder、收件匣標題繼承淺色文字；實測最低 1.009:1，時間也不足 | 明確設定深色文字／placeholder／時間；Chrome 實際色彩與 alpha 合成計算，8 個狀態 × 2 viewport 全部 ≥4.5:1，最低 4.8364:1；登入值 17.7466:1；先 RED 後 GREEN |
+| PR42-UAT-18 | 本輪新手探索：新建及復原的一次性 API key／MCP URL／Instinct Email／密碼繼承 body 淺色，白底對比僅 1.098:1，難以確認憑證 | 憑證區明確指定深色文字；兩種 Agent 新建／復原共 8 欄位 × 2 viewport 均 17.7466:1；新憑證可用、關閉重整不可回查、讀取 API 不含明文；桌面先 RED 後完整 GREEN |
+| PR42-UAT-19 | 本輪新手探索：工作台完成／搜尋收到 503 時沒有提示，造成未捕捉 promise rejection，搜尋還留下舊結果 | 加上錯誤提示及重試狀態，保留備註／查詢、清除舊結果，無結果顯示說明；兩個單元測試及 E2E 先 RED 後 GREEN，HTTP 拒絕不改工作、復原重試成功且無未捕捉錯誤 |
+| PR42-UAT-10 | 文件缺 REST／Instinct token 步驟，假設聊天要求等同安裝 MCP，缺依賴與錯誤復原說明 | 新手指南、README 入口及既有文件修訂；寫清平台支援性、無草稿 API、群組雙重授權、額度、停用及新冪等鍵復原；19 條 curl 實跑通過 |
+
+沒有弱化產品斷言或開啟重試。本輪修正新單元測試的 Testing Library 型別寫法（精確名稱改用正規表示式），並加強截圖前等待清單載入／結果進入 viewport，避免拍到載入中的空白畫面。前輪修正兩個測試前提：Firebase 會在停用帳號重整時登出，應測拒絕登入後復原；既有 Agent 列表的逾時欄位 label 包含 Agent 名稱，定位須完整匹配。UAT-14 的 REST 復原要求改帶新的鍵，並由 UAT-16 額外斷言原鍵仍重播 blocked、新鍵才可成功。
+
+測試只清理 `pr42-install-owner` fixture，不重設共用 emulator；mock quota 使用專用 ID。Routine mock 拒絕缺／錯 Bearer；錯 key 401→修正成功另有驗證。仍有本機 Firebase profile transport 警告；UAT-13 刻意注入斷線且證明不阻擋登入/API，沒有視為真實雲端 profile 同步已驗證。
+
+### 回歸檢查
+
+| 指令 | 最後結果 |
+| --- | --- |
+| `npm run test:e2e` | 57/57 PASS（19×3），零重試；57 張本次截圖 |
+| `npm --prefix backend test -- --runInBand` | 39 suites，367/367 PASS |
+| `npm --prefix backend run build` | PASS（test:e2e 前置編譯） |
+| `npm --prefix frontend test` | 12 files，107/107 PASS |
+| `npm --prefix frontend run lint` | PASS |
+| `npm --prefix frontend run build` | PASS；既有 >500 kB chunk 提示 |
+| `npm run verify:uat`、`git diff --check`、九份 patch 順序套用比對 | PASS；57 張截圖、32 筆對比、九份 patch；18 檔案一致 |
+
+最後完整 E2E log：本機忽略目錄 `run/install-uat/r6-final-evidence-e2e.log`；先前完整通過 `r6-final-e2e.log`，基準重驗 `r6-initial-e2e.log`。回歸：`r6-backend-test.log`、`r6-final-frontend-test.log`、`r6-final-frontend-lint.log`、`r6-final-frontend-build.log`。本輪缺陷重現：`r6-uat18-19-red.log`、`r6-uat19-unit-red.log`；修復驗證：`r6-uat18-19-green.log`、`r6-uat19-unit-green.log`。九份 patch 已從 HEAD 依提交順序套用到本機驗證副本，18 個檔案與最終工作樹逐檔一致。
+
+### Commit 清單與交付限制
+
+**本輪新增 commit：0，未 push。** `.git` 實際掛載為唯讀，`git add` 回覆 `.git/index.lock: Read-only file system`；沒有繞過保護。HEAD 仍為 `46b5eda`。九項修復都有獨立 patch，驗證可反向套用；工作樹完整保留。
+
+| 項目 | 待提交訊息／備援 | 狀態 |
+| --- | --- | --- |
+| PR42-UAT-11 | `fix(PR42-UAT-11): enforce current group access before limiting saved work`；[patch](patches/PR42-UAT-11.patch) | 待可寫 Git 環境提交 |
+| PR42-UAT-08 | `fix(PR42-UAT-08): explain disabled Instinct accounts consistently`；[patch](patches/PR42-UAT-08.patch) | 同上 |
+| PR42-UAT-13 | `fix(PR42-UAT-13): keep login state independent of profile writes`；[patch](patches/PR42-UAT-13.patch) | 同上 |
+| PR42-UAT-14 | `fix(PR42-UAT-14): deny saved work completion after group access is revoked`；[patch](patches/PR42-UAT-14.patch) | 同上 |
+| PR42-UAT-15 | `fix(PR42-UAT-15): explain how to recover a disabled Instinct login`；[patch](patches/PR42-UAT-15.patch) | 同上 |
+| PR42-UAT-16 | `fix(PR42-UAT-16): isolate completion keys and allow explicit recovery keys`；[patch](patches/PR42-UAT-16.patch) | 同上 |
+| PR42-UAT-17 | `fix(PR42-UAT-17): make login fields and inbox work labels readable`；[patch](patches/PR42-UAT-17.patch) | 同上 |
+| PR42-UAT-18 | `fix(PR42-UAT-18): make one-time Grok and Instinct credentials readable`；[patch](patches/PR42-UAT-18.patch) | 同上 |
+| PR42-UAT-19 | `fix(PR42-UAT-19): explain workbench failures and preserve retry inputs`；[patch](patches/PR42-UAT-19.patch) | 同上 |
+| PR42-UAT-10 | `docs(PR42-UAT-10): document verified Grok and Instinct installation` | 同上 |
+| PR42-UAT-01 | `test(PR42-UAT-01): automate installation journeys and preserve UAT evidence` | 同上 |
+
+[精確提交分組及交接](COMMIT-HANDOFF.md)，包含 LoginPage／WorkbenchPage 多項修復的分別暫存方式。無法建立可推的新提交，因此沒有執行 push 腳本；本訊息也同時含唯一腳本 push 授權與後段禁止 push 規則，未自行推送。請 Product Builder 在可寫 Git 環境提交並依最終授權補推。沒有 merge、開 PR、修改 remote、雲端部署或 tunnel。
+
+指定摘要 `/workspace/codex-burn/notes/wippy-pr42-install-uat-result.md` 在可寫範圍外，且任務要求只在目前目錄寫入；摘要保存在 [repo 內副本](../../wippy-pr42-install-uat-result.md)，請 Product Builder 複製。
+
+`ready_for_user_test=true` 只代表本機 emulator/mock 的瀏覽器流程可驗收。指南附手動啟動 `node e2e/stack.cjs` 及 Owner fixture 來源；沒有留下正在跑的測試服務。真實 Grok／Instinct 平台、LINE 推播、GCS、Cloud Tasks、HTTPS 仍待後續驗證；雲端部署須包含兩個新 Firestore agentInbox 索引。本輪自啟 4141／4142／4143 均已關閉，沿用的 emulator 與原有堆疊／其他 lane 保留。
+
+### 2026-11-10 16:05 接續驗證
+
+接續先前未提交的工作樹，重新執行完整 `npm run test:e2e`：桌面、手機、API 共 57/57 PASS，無重試；前次桌面 UAT-08 失敗本次通過，僅憑重跑不能確定前次失敗根因。最新逐項結果和狀態見 [UAT 結果](../uat/UAT-RESULTS.md)與 [狀態](../uat/UAT-STATUS.json)。`npm run verify:uat` 驗證 57 張截圖、32 筆對比值與九份可反向檢查的 patch，`git diff --check` 通過。後端 367/367、前端 107/107 測試及前端 lint/build 通過；瀏覽器 profile transport 警告仍存在，真實雲端同步未驗證。本次啟動的 4141–4143 已關閉。
+
+再次執行 `git add backend/src/hub/queries.ts`，因 `.git/index.lock: Read-only file system` 失敗；本次沒有新增 commit。依後段明確禁止 push 的指示，沒有執行 push；摘要仍保留於 repo 內，沒有寫入目錄外的 notes。
+
+### 2026-11-10 16:08 接續驗證
+
+重新執行完整旅程，桌面、手機及 API 共 57/57 PASS，沒有重試；`npm run verify:uat` 核對 57 張截圖、32 筆對比與九份修復 patch。後端 367/367、前端 107/107 測試，以及前端 lint/build、`git diff --check` 均通過。測試後 4141–4143 已關閉。Firebase profile 傳輸警告仍有出現；真實雲端同步及外部服務未驗證。
+
+再次確認 `git add -n README.md` 因 `.git/index.lock: Read-only file system` 失敗；修復仍在工作樹，沒有新增 commit。遵照後段禁止 push 規則，未執行 push；提交分組及目錄外摘要限制仍見上方交接。
+
+### 2026-11-10 16:37 接續驗證
+
+完整 `npm run test:e2e` 57/57 PASS（桌面、手機、API，各 19 案），包含指南 curl 範例；`npm run verify:uat` 驗證 57 張截圖、32 筆對比和九份修復 patch。後端 367/367、前端 107/107，前端 lint/build 通過。測試使用本機 emulator 與 mock；真實外部平台、LINE 和 HTTPS 尚未驗證。
+
+`git add backend/src/hub/queries.ts` 再次因 `.git/index.lock: Read-only file system` 失敗，沒有新 commit；遵循後段禁止 push 的指示，沒有 push。提交分組見 [交接](COMMIT-HANDOFF.md)；目錄外摘要仍保留在 repo 副本。
+
+### 2026-11-10 17:51 接續驗證與提交
+
+本次完整 `npm run test:e2e` 57/57 PASS（桌面、手機、API 各 19）；先前手機 UAT-19 前置逾時未再重現，根因未確定。`npm run verify:uat` 核對 57 張截圖及 32 筆對比；後端 367/367、前端 107/107，前端 lint/build 與 `git diff --check` 通過。Firefox 未測；Chrome 使用本機 emulator/mock，真實 Grok、Instinct、LINE、HTTPS 與雲端 profile 同步仍待驗證。
+
+Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為歷史紀錄）：
+
+| 案例 | Commit |
+| --- | --- |
+| PR42-UAT-11 | a1dc0e3 |
+| PR42-UAT-08 | d1fad90 |
+| PR42-UAT-13 | f49c50e |
+| PR42-UAT-14 | b52bd60 |
+| PR42-UAT-15 | 960c8f2 |
+| PR42-UAT-16 | 5c36b0a |
+| PR42-UAT-17 | 738b48d |
+| PR42-UAT-18 | 0bed4ae |
+| PR42-UAT-19 | f8023a6 |
+| PR42-UAT-10 指南 | c921a7b |
+
+測試、證據與報告另以 `test(PR42-UAT-01)` 提交。依後段明確禁止 push 的指示未 push；目錄外摘要由 Product Builder 使用 repo 副本。部署前需要新增的 Firestore 索引。

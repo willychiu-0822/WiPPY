@@ -1,0 +1,111 @@
+diff --git a/backend/src/__tests__/hub/queries.test.ts b/backend/src/__tests__/hub/queries.test.ts
+index a259ecd..fdf38bd 100644
+--- a/backend/src/__tests__/hub/queries.test.ts
++++ b/backend/src/__tests__/hub/queries.test.ts
+@@ -72,4 +72,35 @@ describe('agent queries', () => {
+     expect((await getDispatchFor(hub, instinct, 'd1')).messages[0]).toMatchObject({ id: 'a0' });
+     await expect(getDispatchFor(hub, grok, 'd1')).rejects.toMatchObject({ code: 'not_found' });
+   });
++  it.each(['closed', 'unassigned'])('PR42-UAT-11 hides existing inbox and dispatch after group is %s', async (mode) => {
++    const base = { ownerId: 'owner_1', groupId: GROUP, groupName: 'Alpha', ruleName: 'r', instruction: 'private instruction', messageIds: ['a0'], digestId: null, createdAt: hub.now(), status: 'open' };
++    await hub.store.set('agentInbox', 'i1', { ...base, agentId: 'instinct_1', dispatchId: 'd1' });
++    await hub.store.set('agentDispatches', 'd1', { ...base, agentId: 'instinct_1', ruleId: 'r', trigger: 'keyword', windowStart: null, windowEnd: hub.now(), include: { digest: false, raw: true, media: false, contextCount: 1 } });
++    expect((await getDispatchFor(hub, instinct, 'd1')).messages).toHaveLength(1);
++    if (mode === 'closed') await hub.store.update('groups', GROUP, { agentEnabled: false });
++    else await hub.store.update('agents', 'instinct_1', { allowedGroupIds: [] });
++    await expect(getDispatchFor(hub, instinct, 'd1')).rejects.toMatchObject({ code: 'group_not_allowed', status: 403 });
++    expect(await listInboxFor(hub, instinct, 'all')).toEqual([]);
++    expect((await getDispatchFor(hub, owner, 'd1')).messages).toHaveLength(1);
++    expect(await listInboxFor(hub, owner, 'all')).toHaveLength(1);
++  });
++  it('PR42-UAT-11 returns older allowed inbox work even behind 100 revoked-group items', async () => {
++    const base = { ownerId: 'owner_1', agentId: 'instinct_1', groupName: 'Alpha', ruleName: 'r', instruction: 'i', messageIds: [], digestId: null, status: 'open', dispatchId: 'd1' };
++    await hub.store.set('agentInbox', 'allowed', { ...base, groupId: GROUP_B, createdAt: new Date(0) });
++    for (let n = 0; n < 100; n += 1) await hub.store.set('agentInbox', `revoked-${n}`, { ...base, groupId: GROUP, createdAt: new Date(n + 1) });
++    await hub.store.update('groups', GROUP, { agentEnabled: false });
++    expect((await listInboxFor(hub, instinct)).map(item => item.id)).toEqual(['allowed']);
++  });
++  it('PR42-UAT-11 merges allowed-group query chunks into the newest 100 inbox items', async () => {
++    const groups = Array.from({ length: 31 }, (_, n) => `allowed-${n}`);
++    for (const groupId of groups) await seedGroup(hub, groupId);
++    await hub.store.update('agents', 'instinct_1', { allowedGroupIds: groups });
++    for (let n = 0; n < 102; n += 1) await hub.store.set('agentInbox', `item-${n}`, {
++      ownerId: 'owner_1', agentId: 'instinct_1', groupId: groups[n % 31], createdAt: new Date(n), status: 'open',
++    });
++    const inbox = await listInboxFor(hub, instinct);
++    expect(inbox).toHaveLength(100);
++    expect(inbox[0].id).toBe('item-101'); expect(inbox[99].id).toBe('item-2');
++  });
++
+ });
+diff --git a/backend/src/hub/queries.ts b/backend/src/hub/queries.ts
+index b2cdc12..1831f70 100644
+--- a/backend/src/hub/queries.ts
++++ b/backend/src/hub/queries.ts
+@@ -179,9 +179,24 @@ export async function getQuotaFor(ctx: HubContext, actor: Actor) {
+ export async function listInboxFor(ctx: HubContext, actor: Actor, status: 'open' | 'done' | 'all' = 'open') {
+   const where: WhereClause[] = [{ field: 'ownerId', op: '==', value: ctx.ownerId }];
+   if (status !== 'all') where.push({ field: 'status', op: '==', value: status });
+-  if (actor.kind === 'agent') where.push({ field: 'agentId', op: '==', value: actor.agentId });
+-  const rows = await ctx.store.query<InboxDoc>(COLLECTIONS.inbox, { where, orderBy: [{ field: 'createdAt', direction: 'desc' }], limit: 100 });
+-  return rows.map((r) => ({ id: r.id, ...r.data }));
++  const orderBy = [{ field: 'createdAt', direction: 'desc' as const }];
++  if (actor.kind !== 'agent') {
++    const rows = await ctx.store.query<InboxDoc>(COLLECTIONS.inbox, { where, orderBy, limit: 100 });
++    return rows.map((r) => ({ id: r.id, ...r.data }));
++  }
++  where.push({ field: 'agentId', op: '==', value: actor.agentId });
++  const groups = await allowedGroupIds(ctx, actor);
++  // Filter before the limit so revoked work cannot crowd authorized work out.
++  // Chunk the IN query, then take the newest 100 across all allowed groups.
++  const queries = [];
++  for (let i = 0; i < groups.length; i += 10) {
++    queries.push(ctx.store.query<InboxDoc>(COLLECTIONS.inbox, {
++      where: [...where, { field: 'groupId', op: 'in', value: groups.slice(i, i + 10) }], orderBy, limit: 100,
++    }));
++  }
++  return (await Promise.all(queries)).flat()
++    .sort((a, b) => new Date(b.data.createdAt).getTime() - new Date(a.data.createdAt).getTime() || a.id.localeCompare(b.id))
++    .slice(0, 100).map((r) => ({ id: r.id, ...r.data }));
+ }
+ 
+ export async function getDispatchFor(ctx: HubContext, actor: Actor, dispatchId: string) {
+@@ -189,5 +204,6 @@ export async function getDispatchFor(ctx: HubContext, actor: Actor, dispatchId:
+   if (!dispatch || dispatch.ownerId !== ctx.ownerId || (actor.kind === 'agent' && dispatch.agentId !== actor.agentId)) {
+     throw new HubAccessError('not_found', '找不到這個派送工作', 404);
+   }
++  await assertGroup(ctx, actor, dispatch.groupId);
+   return buildDispatchPayload(ctx, dispatchId);
+ }
+diff --git a/firestore.indexes.json b/firestore.indexes.json
+index 31bfb64..006399e 100644
+--- a/firestore.indexes.json
++++ b/firestore.indexes.json
+@@ -196,6 +196,27 @@
+         { "fieldPath": "ownerId", "order": "ASCENDING" },
+         { "fieldPath": "createdAt", "order": "DESCENDING" }
+       ]
++    },
++    {
++      "collectionGroup": "agentInbox",
++      "queryScope": "COLLECTION",
++      "fields": [
++        { "fieldPath": "ownerId", "order": "ASCENDING" },
++        { "fieldPath": "agentId", "order": "ASCENDING" },
++        { "fieldPath": "groupId", "order": "ASCENDING" },
++        { "fieldPath": "status", "order": "ASCENDING" },
++        { "fieldPath": "createdAt", "order": "DESCENDING" }
++      ]
++    },
++    {
++      "collectionGroup": "agentInbox",
++      "queryScope": "COLLECTION",
++      "fields": [
++        { "fieldPath": "ownerId", "order": "ASCENDING" },
++        { "fieldPath": "agentId", "order": "ASCENDING" },
++        { "fieldPath": "groupId", "order": "ASCENDING" },
++        { "fieldPath": "createdAt", "order": "DESCENDING" }
++      ]
+     }
+   ],
+   "fieldOverrides": []

@@ -1,0 +1,12 @@
+{
+  "name": "wippy-uat",
+  "private": true,
+  "scripts": {
+    "pretest:e2e": "npm --prefix backend run build",
+    "test:e2e": "playwright test",
+    "pretest:api": "npm --prefix backend run build",
+    "test:api": "playwright test --project=api",
+    "verify:uat": "node e2e/verify-evidence.cjs"
+  },
+  "devDependencies": { "@playwright/test": "^1.58.0" }
+}

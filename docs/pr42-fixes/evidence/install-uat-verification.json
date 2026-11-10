@@ -1,0 +1,553 @@
+{
+  "updated": "2026-11-10 17:51",
+  "base": "46b5eda",
+  "e2e": {
+    "cases": 57,
+    "pass": 57,
+    "fail": 0,
+    "retries": 0,
+    "channel": "chrome",
+    "logical_cases": 19
+  },
+  "evidence": [
+    {
+      "case": "UAT-01",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-01-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "abeae9fd0b88545cfca2114894d739f134710d36cb4d71656ccf2a91f8be9079"
+    },
+    {
+      "case": "UAT-01",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-01-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "1a6a3ba82eb3913d21a90e70aa9f775f059a9dc0a597235fbbd53b3a703d6a8f"
+    },
+    {
+      "case": "UAT-01",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-01-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "e036eb15b51a1dcddf76fc2b322d75cdbbfc79335963f6a4f6808ff8bcfdcb3d"
+    },
+    {
+      "case": "UAT-02",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-02-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b75e00306ef21795043fd45629043e1eac725f0e04034e4a3756d4d4daf00d8c"
+    },
+    {
+      "case": "UAT-02",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-02-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "30103e3cb545afb48b42813f2236a56ea3fc76e2dc5a229f29a4767e4e0e7d21"
+    },
+    {
+      "case": "UAT-02",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-02-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f5af23f81a77a11b13ed9c7efdeee86509f5fa06f77c6966c71e305371bc6fa1"
+    },
+    {
+      "case": "UAT-03",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-03-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "46ac8c788664a153aae7076b1bc41aa540fd21753a213afb25c4ec4089139d48"
+    },
+    {
+      "case": "UAT-03",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-03-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "11c699ad84543e710dfb84dd13d7564047d3dc4e1924dc19ba58e197e5f16d37"
+    },
+    {
+      "case": "UAT-03",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-03-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "84f6d8908b30b64cd8816c44534696573b00134fa9b671511a731582bc692130"
+    },
+    {
+      "case": "UAT-04",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-04-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0a57ff24ba2a4eaca2dba35664b3cbaba701ef4c5f8c6e7f1cda2202f612b062"
+    },
+    {
+      "case": "UAT-04",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-04-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3f360aad53cd5371bb8e577c48e66402b59d2393c05f9e843318c203e4fa2a21"
+    },
+    {
+      "case": "UAT-04",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-04-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "2d43da6478441d82a54546ffada680e51085b963df88df0dbebc022f9df91c82"
+    },
+    {
+      "case": "UAT-05",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-05-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "38b839ab4c91975c5dc47f4879688f2d7e84f8396350dd543b7421378e94bb3b"
+    },
+    {
+      "case": "UAT-05",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-05-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "f9541318165236144b06cc8818727b1bc53f05b8757f9f4c94e9d9e2845663a1"
+    },
+    {
+      "case": "UAT-05",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-05-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f0e63ba5ed0eae4f098c37b8af1e71bb63c0c218b961fc9649d9ce9dc06b3785"
+    },
+    {
+      "case": "UAT-06",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-06-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "82c91a8905b8c8165c0815a531e0b1004b0a3e25413d15467baeef7cde06dab2"
+    },
+    {
+      "case": "UAT-06",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-06-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "7c1204945fe7aa29de8d6ca638cccc8a97e50411ec74f76f07bd2a5114a425ed"
+    },
+    {
+      "case": "UAT-06",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-06-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "221263b1f3392dd16ab885696e3a40ab3451588a5b01b2b7a15de160f8e8430c"
+    },
+    {
+      "case": "UAT-07",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-07-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "6e54341c5a80ae7497a6b6b82cd9a604032f660dd86844e6cb7492aeb8ba48bb"
+    },
+    {
+      "case": "UAT-07",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-07-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "52394f86147af30a4cfed2e0a49c4facc55d9094340a37d5fd3d0eb7f1d7ec98"
+    },
+    {
+      "case": "UAT-07",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-07-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "597dc014e446be680f9a3493a54a7d7b26809c728134f744ad51bb0315b0c02d"
+    },
+    {
+      "case": "UAT-08",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-08-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "95d0f8bcc53ce68c5a3c0910104f3917cf8af0d6796cddab226498f4f3022412"
+    },
+    {
+      "case": "UAT-08",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-08-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "78794a2c8f1a7cfee4dcf4cbb25822e76f89ad41bec4043a7999d0eff829b22c"
+    },
+    {
+      "case": "UAT-08",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-08-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "939f5a4c96a4cad497fdb4a15725cbdf42ec4c6c5c2b1fe9cfbe40ed73bc8e9a"
+    },
+    {
+      "case": "UAT-09",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-09-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "e4cb84b3d2bff3c7e603ba8e7247d3134427abc1b53f7fe0bbf04c822b7fcf59"
+    },
+    {
+      "case": "UAT-09",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-09-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "347a1aec9396ee60e6e881da555d5a28b77abca83d650ed69ac9817efc5a9d21"
+    },
+    {
+      "case": "UAT-09",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-09-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "5dda0613dd6375793b4b93c197cf91eed08a4e34224ab7033cc23e16e3662cb8"
+    },
+    {
+      "case": "UAT-10",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-10-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0f4296e4d2f168f22d8b4e68f9c76bda6ce0b7d3768ffb9d1360cced7f99cc41"
+    },
+    {
+      "case": "UAT-10",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-10-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "38454c5df6632f5674078f00fbced2f93618e7dccceb2c701e2475e1b371dc3b"
+    },
+    {
+      "case": "UAT-10",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-10-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "7b0a67f00a06201e65668ecae175a0e38eb8902b0d994793b52497dcfd39f270"
+    },
+    {
+      "case": "UAT-11",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-11-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "5a89cce8ceb0a00e5c6e295b88a05199d90da1e454ec2ea315c84cf0fe236004"
+    },
+    {
+      "case": "UAT-11",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-11-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9fef7b1b1ae8ff6cf9b5024fd524a846d257089ced4b1f4e5f6e11ab0de573c4"
+    },
+    {
+      "case": "UAT-11",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-11-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "5ebcc11784b440feaba6c5cc199df444d6c2cb7f0c53a4dea2fc226736a8ef3e"
+    },
+    {
+      "case": "UAT-12",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-12-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b94cb6611172b351576eb08153de32b94a7fae31849b85548dcdeca57802b0e3"
+    },
+    {
+      "case": "UAT-12",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-12-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ebc518f73b7888ef0a3e24f05ee52e487ebe4f68fb75ce1f8ac1b9fd77eee1c7"
+    },
+    {
+      "case": "UAT-12",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-12-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "60a1b7f3355ea55334f651b154c38873dd37f376141aa20c9b1061bfae7180f6"
+    },
+    {
+      "case": "UAT-13",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-13-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "1a5c98cad98e4a72c539f97286f1d1f1c1aeb10d79cfc579c3a6c03885ea5675"
+    },
+    {
+      "case": "UAT-13",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-13-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3064f1a6627a998eb4c7b27e9e035d0a50921800a131cfa587a52a3fc93d69d3"
+    },
+    {
+      "case": "UAT-13",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-13-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "a4471176339495cea4eed992cbac9b08a3d8f46797ee4c42628ff84ccdbe5aac"
+    },
+    {
+      "case": "UAT-14",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-14-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "21c02039b7b12e16a561c8a875f0beb43ee89eacba4d594778cc883b19b776e6"
+    },
+    {
+      "case": "UAT-14",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-14-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "1923f8d2cf3ba13d1b42b32921f074a2c2ab168413804806d83c731fb1555baf"
+    },
+    {
+      "case": "UAT-14",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-14-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b750617e7aa623872f331749dfbc238d82eee0723f0caa24aee7f6c2476fca4b"
+    },
+    {
+      "case": "UAT-15",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-15-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "8326a0c4927db51516075f1ff48a5c5543c399780f2d5e2cc07d42bd6610928b"
+    },
+    {
+      "case": "UAT-15",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-15-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ba08183e65c9bb75ae827c6d4a05832a41ec79b217114b4e277d6fb157a3b77d"
+    },
+    {
+      "case": "UAT-15",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-15-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "86aa83a6b9d245445167cdb1ec7e3f0af4a4cba60360b8a36e28d8dc2ad7058d"
+    },
+    {
+      "case": "UAT-16",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-16-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "18be1a36b587597d7449cf793c5ea01661a739d544d82640e97bf60e3ba0d00b"
+    },
+    {
+      "case": "UAT-16",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-16-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "024c986578b08b2b91be66b529e06fbb592b29f0ccafd0966c58b79eddd2ddfc"
+    },
+    {
+      "case": "UAT-16",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-16-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "281db5e333e8d6ed9cf14e70a38e39945d78948c951781e576beb2f12e2ff251"
+    },
+    {
+      "case": "UAT-17",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-17-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "7bb423b18f16bb897a775a16d8c884247e1e256a7ba006ef21d0f294f8182572"
+    },
+    {
+      "case": "UAT-17",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-17-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "e952d85c51cf18927f254e3fd0f2dc6daa56eec7b1c74f5bf821f23852fcd1c3"
+    },
+    {
+      "case": "UAT-17",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-17-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "8f58f068efbfbdd5baea8d6fff4a9dd0d40314b58d6b73871fa0fb0b55f6ff83"
+    },
+    {
+      "case": "UAT-18",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-18-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ac16da2212a4b66c231c2a8a52e560d57790e517b5d12c37a9e70b776fe0490d"
+    },
+    {
+      "case": "UAT-18",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-18-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "a3a424871adc615293e1930c0fb1686678d4512d09f7195468b5f7b9292ebdc8"
+    },
+    {
+      "case": "UAT-18",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-18-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "371239c1b689e3917e6f70b89056b35fe531558bb3f8bb877e5a5a5d95aa9f31"
+    },
+    {
+      "case": "UAT-19",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-19-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "741390a37ba456be94a75b214f1ecc13a7351e647cb0c8b9c97f7a182866d18b"
+    },
+    {
+      "case": "UAT-19",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-19-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "b7f1b7baf9ea3fd511fd0a4ba99a8a2f546578b6dae73971023f8953a9bcf3c3"
+    },
+    {
+      "case": "UAT-19",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-19-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "4e262cf29379a622bd68d14308ff9f96c487dee0da0ec2a07c1b03d52d0894bb"
+    }
+  ],
+  "contrast": {
+    "measurements": 32,
+    "minimum_ratio": 4.836368464139303,
+    "threshold": 4.5,
+    "files": [
+      "UAT-17-desktop-contrast.json",
+      "UAT-17-mobile-contrast.json",
+      "UAT-18-desktop-contrast.json",
+      "UAT-18-mobile-contrast.json"
+    ]
+  },
+  "patches": [
+    "PR42-UAT-08.patch",
+    "PR42-UAT-11.patch",
+    "PR42-UAT-13.patch",
+    "PR42-UAT-14.patch",
+    "PR42-UAT-15.patch",
+    "PR42-UAT-16.patch",
+    "PR42-UAT-17.patch",
+    "PR42-UAT-18.patch",
+    "PR42-UAT-19.patch"
+  ],
+  "commits": [],
+  "commit_status": "blocked: .git is mounted read-only; nine independent fix patches and exact commit grouping provided",
+  "push": "not attempted: cannot create commits; user message also contains conflicting push instructions",
+  "notes_summary": "repo-local copy; requested /workspace/codex-burn/notes is outside writable scope"
+}

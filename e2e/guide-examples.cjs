@@ -12,7 +12,7 @@ async function runGuideExamples(values, check) {
       index += 1;
       const isLogin = command.includes('accounts:signInWithPassword');
       const expanded = command
-        .replace('https://identitytoolkit.googleapis.com', 'http://127.0.0.1:9299/identitytoolkit.googleapis.com')
+        .replace('https://identitytoolkit.googleapis.com', `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9299'}/identitytoolkit.googleapis.com`)
         .replace(/<([A-Z_]+)>/g, (_, name) => {
           if (!values[name]) throw new Error(`Guide example ${index}: missing placeholder ${name}`);
           // All fixture substitutions must fit the single-quoted example strings.

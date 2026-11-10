@@ -12,7 +12,7 @@
 
 ## 前置與執行
 
-沿用 Auth 9299、Firestore 8285（demo-wippy-pr42），每案例先清理 `pr42-install-owner` 專用測試資料與帳號，不清除其他使用者、不重設 emulator。`npm ci --cache /tmp/wippy-install-npm-cache` 後 `npm run test:e2e`（會先編譯 backend）。設定 `use.channel=chrome`，禁止下載瀏覽器。Playwright 自動啟停 frontend 4141、backend 4142、LINE/Routine mock 4143。`npm run test:api` 可只跑整合測試。每次結果由 reporter 更新；完整通過後執行 `npm run verify:uat` 驗證證據尺寸／副本／雜湊、對比數值與 patch；API 案例以對應 Owner 瀏覽器畫面截圖佐證，API 本身仍做狀態與副作用斷言。截圖為指定 viewport，另斷言頁面無水平溢出。
+預設連線 Auth 9299、Firestore 8285（demo-wippy-pr42）；可透過 `FIREBASE_AUTH_EMULATOR_HOST` 與 `FIRESTORE_EMULATOR_HOST` 指定隔離 emulator（例如 127.0.0.1:4144 與 127.0.0.1:4145）。每案例先清理 `pr42-install-owner` 專用測試資料與帳號，不清除其他使用者、不重設 emulator。`npm ci --cache /tmp/wippy-install-npm-cache` 後 `npm run test:e2e`（會先編譯 backend）。設定 `use.channel=chrome`，禁止下載瀏覽器。Playwright 自動啟停 frontend 4141、backend 4142、LINE/Routine mock 4143。`npm run test:api` 可只跑整合測試。每次結果由 reporter 更新；完整通過後執行 `npm run verify:uat` 驗證證據尺寸／副本／雜湊、對比數值與 patch；API 案例以對應 Owner 瀏覽器畫面截圖佐證，API 本身仍做狀態與副作用斷言。截圖為指定 viewport，另斷言頁面無水平溢出。
 
 | 編號 | 前置 | 步驟 | 預期結果 | 對應需求 |
 | --- | --- | --- | --- | --- |

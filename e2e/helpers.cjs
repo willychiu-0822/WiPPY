@@ -1,6 +1,8 @@
 const { expect } = require('@playwright/test');
 const { randomUUID, createHmac } = require('node:crypto');
-Object.assign(process.env, { FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9299', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8285', METADATA_SERVER_DETECTION: 'none', PLAYWRIGHT_NO_COPY_PROMPT: '1' });
+process.env.FIREBASE_AUTH_EMULATOR_HOST ||= '127.0.0.1:9299';
+process.env.FIRESTORE_EMULATOR_HOST ||= '127.0.0.1:8285';
+Object.assign(process.env, { METADATA_SERVER_DETECTION: 'none', PLAYWRIGHT_NO_COPY_PROMPT: '1' });
 const admin = require('../backend/node_modules/firebase-admin');
 if (!admin.apps.length) admin.initializeApp({ projectId: 'demo-wippy-pr42' });
 const db = admin.firestore();
@@ -41,7 +43,7 @@ async function deletePrefix(collection, prefix) {
   for (const row of rows.docs) await row.ref.delete();
 }
 async function signIn(email, password) {
-  const r = await fetch('http://127.0.0.1:9299/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=emulator-only', {
+  const r = await fetch(`http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=emulator-only`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, returnSecureToken: true }),
   });
   const data = await r.json();

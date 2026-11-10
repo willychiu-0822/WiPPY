@@ -2,9 +2,11 @@
 // Only LINE and Grok's external endpoint are mocked. No real secrets are read.
 const http = require('node:http');
 const { randomUUID } = require('node:crypto');
+const authHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9299';
+const firestoreHost = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8285';
 Object.assign(process.env, {
   FIREBASE_PROJECT_ID: 'demo-wippy-pr42', GCLOUD_PROJECT: 'demo-wippy-pr42',
-  FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9299', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8285',
+  FIREBASE_AUTH_EMULATOR_HOST: authHost, FIRESTORE_EMULATOR_HOST: firestoreHost,
   OWNER_USER_ID: 'pr42-install-owner', NODE_ENV: 'test',
   LINE_CHANNEL_SECRET: 'emulator-only-line-signature', LINE_CHANNEL_ACCESS_TOKEN: 'emulator-only-line-token',
   HUB_PUBLIC_BASE_URL: 'http://127.0.0.1:4142', HUB_ENCRYPTION_KEY: randomUUID(),
@@ -71,8 +73,8 @@ const mock = http.createServer(async (req, res) => {
     define: Object.fromEntries(Object.entries({
       VITE_FIREBASE_PROJECT_ID: 'demo-wippy-pr42', VITE_FIREBASE_API_KEY: 'emulator-only',
       VITE_FIREBASE_AUTH_DOMAIN: 'localhost', VITE_FIREBASE_APP_ID: 'emulator-only',
-      VITE_FIREBASE_AUTH_EMULATOR_URL: 'http://127.0.0.1:9299',
-      VITE_FIRESTORE_EMULATOR_HOST: '127.0.0.1', VITE_FIRESTORE_EMULATOR_PORT: '8285', VITE_API_BASE_URL: '',
+      VITE_FIREBASE_AUTH_EMULATOR_URL: `http://${authHost}`,
+      VITE_FIRESTORE_EMULATOR_HOST: firestoreHost.split(':')[0], VITE_FIRESTORE_EMULATOR_PORT: firestoreHost.split(':')[1], VITE_API_BASE_URL: '',
     }).map(([k, v]) => [`import.meta.env.${k}`, JSON.stringify(v)])),
     server: { host: '127.0.0.1', port: 4141, strictPort: true, proxy: {
       '/api': 'http://127.0.0.1:4142',

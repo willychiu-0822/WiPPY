@@ -15,6 +15,8 @@ LINE 群組 × AI Agent 中樞。WiPPY 收下 LINE 群組的訊息與媒體，�
 - **活動推播**（Harness Pipeline）：用自然語言規劃訊息，核准後排程推送
 - 規格：`docs/specs/2026-11-04-agent-hub.md`；上線步驟：`docs/agent-hub-setup-guide.md`
 
+新手接上自己的 AI 助手：請從 [Grok Bot／Instinct 安裝指南](docs/agent-hub/INSTALL-GROK-BOT-AND-INSTINCT.md) 開始（含 REST/MCP 範例、憑證與限額驗收）。
+
 ### Agent Hub 架構
 
 ```

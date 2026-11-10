@@ -212,6 +212,8 @@ gcloud config set project wippy-mvp
   - 開放的群組有新訊息時，Agent Hub 總覽不會出錯。
 - **其他用途**：先預設關閉、再逐一開啟（opt-in），是處理個資與第三方 AI 的基本做法。
 
+安裝外部 Agent 前，請先讀[新手安裝指南](agent-hub/INSTALL-GROK-BOT-AND-INSTINCT.md)：Grok 使用 WiPPY key，Instinct 使用登入帳號；內含可驗證的 REST/MCP 範例與限制。
+
 ## 9. 接上 Grok Bot
 
 1. **在 WiPPY 建立 Agent**：
@@ -223,10 +225,8 @@ gcloud config set project wippy-mvp
 3. **把 Routine 填回 WiPPY**：
    - 在 WiPPY 的 Agent 清單找到這個 Agent，填入「Routine 網址（名稱）」和「Routine Key（名稱，留空表示不變）」，按「儲存設定」。
    - 按「測試 Webhook」，應該顯示「Webhook 測試成功」。
-4. **讓 Grok Bot 能呼叫 WiPPY**：在 Grok Bot 對話中說：
-   > 請幫我加入一個遠端 MCP server，網址是 `<MCP 網址>`，header 是 `Authorization: Bearer <API Key>`。
-
-   它應該能列出 `list_groups`、`send_message` 等工具。
+4. **讓 Grok Bot 能呼叫 WiPPY**：在支援自訂遠端 MCP 與 header 的整合器中，填入 `<MCP 網址>`，transport 選 Streamable HTTP，header 填 `Authorization: Bearer <YOUR_KEY>`。
+   可用性取決於 Grok 平台及方案；對話中提出要求不代表已安裝。先按[新手指南](agent-hub/INSTALL-GROK-BOT-AND-INSTINCT.md)測 REST 及 MCP initialize/tools/list，再確認它能列出 `list_groups`、`send_message`。平台不支援時改用 REST 整合。
 5. **為什麼**：
    - WiPPY 用 Routine webhook 主動通知 Grok。
    - Grok 用 MCP 回頭查資料、要求 WiPPY 執行動作。
@@ -238,13 +238,13 @@ gcloud config set project wippy-mvp
 1. **在 WiPPY 建立帳號**：
    - 操作：Agent Hub → Agent → 類型選「Instinct」→ 填名稱、登入 Email（可以用你另外的信箱，只是帳號名稱）、允許的群組、逾時預警時數 → 按「建立 Agent」。
    - 黃色框會顯示 **Email 和密碼**，只顯示一次。
-2. **交給 Instinct**：把登入網址 `https://wippy-mvp.web.app/login`、Email、密碼，以及第 11 節的「Instinct 指令範本」傳給 Instinct。
+2. **交給 Instinct**：把本次要測試的 `<WIPPY_WEBSITE_URL>/login`、Email、密碼，以及第 11 節的「Instinct 指令範本」傳給 Instinct。請先向 Willy 確認網址已含 Agent Hub 版本。
 3. **為什麼**：
    - Instinct 沒有可以讓 WiPPY 主動呼叫的 API，所以改成讓它定時登入「工作台」。
    - 這個帳號只能進工作台和紀錄，看不到你的後台設定。
 4. **怎麼確認**：
    - 用無痕視窗以那組帳密登入，畫面上方應該只有「工作台」「紀錄」「登出」。
-   - 密碼外洩時，按「重設密碼」或「停用」即可。
+   - 密碼外洩時，先「停用」阻擋既有登入，再「重設密碼」。單獨重設密碼不保證立即阻擋已登入的 token。
 
 ## 11. 指令範本
 
@@ -267,7 +267,7 @@ gcloud config set project wippy-mvp
 **Instinct 指令範本**：
 
 ```text
-請每 2 小時登入一次 https://wippy-mvp.web.app/login（Email：<email>，密碼：<password>）。
+請每 2 小時登入一次 <WIPPY_WEBSITE_URL>/login（Email：<email>，密碼：<password>）。
 1. 打開「工作台」，依序點開「收件匣（待處理）」的每個項目。
 2. 讀「擁有者的指令」「重點整理」和訊息，判斷要做什麼。
 3. 需要時在「執行動作」選擇動作、群組並填寫內容，按「送出動作」：

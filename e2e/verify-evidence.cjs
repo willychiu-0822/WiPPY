@@ -39,8 +39,9 @@ const manifest = {
   updated: status.updated, base: execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim(),
   e2e: { cases: status.cases, pass: status.pass, fail: status.fail, retries: 0, channel: 'chrome', logical_cases: ids.length },
   evidence, contrast: { measurements: ratios.length, minimum_ratio: Math.min(...ratios), threshold: 4.5, files: contrastFiles },
-  patches, commits: [], commit_status: 'blocked: .git is mounted read-only; nine independent fix patches and exact commit grouping provided',
-  push: 'not attempted: cannot create commits; user message also contains conflicting push instructions',
+  patches, commits: execFileSync('git', ['log', '--format=%h %s', '46b5eda..HEAD'], { encoding: 'utf8' }).trim().split('\n').filter(Boolean),
+  commit_status: 'local commits; see git log for current state',
+  push: 'not attempted: user instructed no push',
   notes_summary: 'repo-local copy; requested /workspace/codex-burn/notes is outside writable scope',
 };
 fs.writeFileSync('docs/pr42-fixes/evidence/install-uat-verification.json', JSON.stringify(manifest, null, 2) + '\n');

@@ -779,3 +779,58 @@ test('UAT-26 AI 斷線用中文說明並保留草稿，重試僅保存一份對�
     await noOverflow(page);
   } finally { await context.setOffline(false); }
 });
+
+test('UAT-27 新手輸入與保留的草稿在淺色表單中清楚可讀', async ({ page }) => {
+  async function readable(field: import('@playwright/test').Locator) {
+    await expect(field).toBeVisible();
+    const ratio = await field.evaluate(element => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const ctx = canvas.getContext('2d')!;
+      function rgb(color: string) {
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        return [...ctx.getImageData(0, 0, 1, 1).data];
+      }
+      const foreground = rgb(getComputedStyle(element).color);
+      let background = [255, 255, 255, 255];
+      for (let node: Element | null = element; node; node = node.parentElement) {
+        const color = rgb(getComputedStyle(node).backgroundColor);
+        if (color[3] === 255) { background = color; break; }
+      }
+      function luminance(color: number[]) {
+        return color.slice(0, 3).map(c => c / 255).map(c => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+          .reduce((total, c, i) => total + c * [0.2126, 0.7152, 0.0722][i], 0);
+      }
+      const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    });
+    expect(ratio, '輸入文字與實際背景的對比至少 4.5:1').toBeGreaterThanOrEqual(4.5);
+  }
+  await page.goto('/login');
+  const email = page.getByPlaceholder('Email', { exact: true });
+  await email.fill('readability@example.test');
+  await readable(email);
+  await page.getByPlaceholder('密碼', { exact: true }).fill(fixturePassword);
+  await readable(page.getByPlaceholder('密碼', { exact: true }));
+  await register(page);
+  await page.getByRole('link', { name: '活動', exact: true }).click();
+  await page.getByRole('button', { name: '+ 新增活動' }).click();
+  const name = page.getByPlaceholder('活動名稱');
+  await name.fill('能看清輸入的活動');
+  await readable(name);
+  await page.getByRole('checkbox', { name: 'UAT 讀書會' }).check();
+  await page.getByRole('button', { name: '建立', exact: true }).click();
+  const chatInput = page.getByPlaceholder('輸入訊息... (Enter 送出，Shift+Enter 換行)');
+  await chatInput.fill('我正在輸入活動內容');
+  await readable(chatInput);
+  await page.getByRole('button', { name: '知識庫', exact: true }).click();
+  await page.getByRole('button', { name: '+ 新增知識條目' }).click();
+  const title = page.getByPlaceholder('例：主角 — 艾瑞克');
+  const content = page.getByPlaceholder('詳細描述此知識條目的內容...');
+  await title.fill('讀得清楚的知識標題');
+  await content.fill('輸入框內的活動背景也清楚可讀');
+  await readable(title); await readable(content);
+  await noOverflow(page);
+});

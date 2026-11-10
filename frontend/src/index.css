@@ -8,8 +8,8 @@ body {
   margin: 0;
   font-family: 'Noto Sans TC', 'Archivo', system-ui, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-color: #03060e;
-  color: #eaf6ff;
+  background-color: #f9fafb;
+  color: #1f2937;
 }
 
 #root {

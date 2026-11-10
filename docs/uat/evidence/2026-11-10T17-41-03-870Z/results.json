@@ -1,0 +1,447 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-11 03:14",
+  "cases": 62,
+  "pass": 60,
+  "fail": 2,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "31 個旅程，桌面/手機分開計數；完整執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-31",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-31.png"
+    },
+    {
+      "id": "UAT-28",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-28.png"
+    },
+    {
+      "id": "UAT-29",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-29.png"
+    },
+    {
+      "id": "UAT-30",
+      "project": "desktop",
+      "status": "fail",
+      "error": "Test timeout of 45000ms exceeded while running \"afterEach\" hook.",
+      "evidence": "無截圖（啟動失敗）"
+    },
+    {
+      "id": "UAT-01",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-01.png"
+    },
+    {
+      "id": "UAT-02",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-02.png"
+    },
+    {
+      "id": "UAT-03",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-03.png"
+    },
+    {
+      "id": "UAT-04",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-04.png"
+    },
+    {
+      "id": "UAT-05",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-05.png"
+    },
+    {
+      "id": "UAT-06",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-06.png"
+    },
+    {
+      "id": "UAT-07",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-07.png"
+    },
+    {
+      "id": "UAT-08",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-08.png"
+    },
+    {
+      "id": "UAT-09",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-09.png"
+    },
+    {
+      "id": "UAT-10",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-10.png"
+    },
+    {
+      "id": "UAT-11",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-11.png"
+    },
+    {
+      "id": "UAT-12",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-12.png"
+    },
+    {
+      "id": "UAT-13",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-13.png"
+    },
+    {
+      "id": "UAT-14",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-14.png"
+    },
+    {
+      "id": "UAT-15",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-15.png"
+    },
+    {
+      "id": "UAT-16",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-16.png"
+    },
+    {
+      "id": "UAT-17",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-17.png"
+    },
+    {
+      "id": "UAT-18",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-18.png"
+    },
+    {
+      "id": "UAT-19",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-19.png"
+    },
+    {
+      "id": "UAT-20",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-20.png"
+    },
+    {
+      "id": "UAT-21",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-21.png"
+    },
+    {
+      "id": "UAT-22",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-22.png"
+    },
+    {
+      "id": "UAT-23",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-23.png"
+    },
+    {
+      "id": "UAT-24",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-24.png"
+    },
+    {
+      "id": "UAT-25",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-25.png"
+    },
+    {
+      "id": "UAT-26",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-26.png"
+    },
+    {
+      "id": "UAT-27",
+      "project": "desktop",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/desktop/UAT-27.png"
+    },
+    {
+      "id": "UAT-31",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-31.png"
+    },
+    {
+      "id": "UAT-28",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-28.png"
+    },
+    {
+      "id": "UAT-29",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-29.png"
+    },
+    {
+      "id": "UAT-30",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-30.png"
+    },
+    {
+      "id": "UAT-01",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-01.png"
+    },
+    {
+      "id": "UAT-02",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-02.png"
+    },
+    {
+      "id": "UAT-03",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-03.png"
+    },
+    {
+      "id": "UAT-04",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-04.png"
+    },
+    {
+      "id": "UAT-05",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-05.png"
+    },
+    {
+      "id": "UAT-06",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-06.png"
+    },
+    {
+      "id": "UAT-07",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-07.png"
+    },
+    {
+      "id": "UAT-08",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-08.png"
+    },
+    {
+      "id": "UAT-09",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-09.png"
+    },
+    {
+      "id": "UAT-10",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-10.png"
+    },
+    {
+      "id": "UAT-11",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-11.png"
+    },
+    {
+      "id": "UAT-12",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-12.png"
+    },
+    {
+      "id": "UAT-13",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-13.png"
+    },
+    {
+      "id": "UAT-14",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-14.png"
+    },
+    {
+      "id": "UAT-15",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Test timeout of 45000ms exceeded.",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-15.png"
+    },
+    {
+      "id": "UAT-16",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-16.png"
+    },
+    {
+      "id": "UAT-17",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-17.png"
+    },
+    {
+      "id": "UAT-18",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-18.png"
+    },
+    {
+      "id": "UAT-19",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-19.png"
+    },
+    {
+      "id": "UAT-20",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-20.png"
+    },
+    {
+      "id": "UAT-21",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-21.png"
+    },
+    {
+      "id": "UAT-22",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-22.png"
+    },
+    {
+      "id": "UAT-23",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-23.png"
+    },
+    {
+      "id": "UAT-24",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-24.png"
+    },
+    {
+      "id": "UAT-25",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-25.png"
+    },
+    {
+      "id": "UAT-26",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-26.png"
+    },
+    {
+      "id": "UAT-27",
+      "project": "mobile",
+      "status": "pass",
+      "error": "",
+      "evidence": "docs/uat/evidence/2026-11-10T17-41-03-870Z/mobile/UAT-27.png"
+    }
+  ]
+}

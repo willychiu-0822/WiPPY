@@ -1,0 +1,20 @@
+{
+  "project": "WiPPY",
+  "updated": "2026-11-11 00:39",
+  "cases": 1,
+  "pass": 0,
+  "fail": 1,
+  "blocked": 0,
+  "ready_for_user_test": false,
+  "notes": "1 個旅程，桌面/手機分開計數；部分執行。僅本機 Firebase emulator + LINE/LLM mock；真實 LINE/HTTPS 未驗證。",
+  "errors": [],
+  "results": [
+    {
+      "id": "UAT-31",
+      "project": "mobile",
+      "status": "fail",
+      "error": "Error: expect(locator).toHaveCount(expected) failed Locator:  getByText('群組：UAT 讀書會', { exact: true }) Expected: 3 Received: 0 Timeout:  10000ms Call log:",
+      "evidence": "docs/uat/evidence/2026-11-10T16-39-16-173Z/mobile/UAT-31.png"
+    }
+  ]
+}

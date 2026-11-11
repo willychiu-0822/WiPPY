@@ -599,5 +599,7 @@
   ],
   "commit_status": "local commits; see git log for current state",
   "push": "not attempted: user instructed no push",
-  "notes_summary": "repo-local copy; requested /workspace/codex-burn/notes is outside writable scope"
+  "notes_summary": "repo-local copy; requested /workspace/codex-burn/notes is outside writable scope",
+  "valid_for_current_evidence": false,
+  "current_evidence_note": "2026-11-11 第 11 輪 59/60；截圖已更新，先前雜湊不適用。完整通過後重新執行 npm run verify:uat。"
 }

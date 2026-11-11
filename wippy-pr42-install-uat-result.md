@@ -67,3 +67,7 @@
 Firestore transport 警告和先前間歇逾時根因仍待釐清；真實外部平台、LINE、雲端同步及 HTTPS 未驗證。本輪僅本機提交、未 push；依後段只在目前目錄工作的指示保留此 repo 內摘要。
 
 2026-11-11 20:31 再次完整驗證：隔離 emulator、Chrome 桌面／手機及 API 69/69 PASS，19 條指南 curl 通過；核對 69 張截圖、32 筆對比及 9 份 patch。上次通過後的探索見 20:27 紀錄，本次重跑後未另做探索。既有間歇逾時根因未明、Firestore transport 警告仍在；真實外部服務及 HTTPS 未驗證。測試服務已停止，未 push。
+
+## 2026-11-11 20:41 接續
+
+本機隔離 emulator／mock 的桌面、手機及 API 共 72/72 PASS；指南 19 條 curl 包含在 API 驗證。探索發現空白 Agent 名稱顯示英文驗證訊息，`0db80d1` 修正並新增 UAT-24；測試 fixture 問題及修正 `ef5f875`、`4b162b0` 與兩次 71/72 結果均記錄於 repo 內報告。證據檢查及 frontend lint 通過；詳細內容見 `docs/pr42-fixes/RESULTS.md`、`docs/uat/UAT-RESULTS.md`。Firestore transport 警告及以往間歇逾時根因仍待釐清，真實外部平台與 HTTPS 未驗證。未 push、未部署，測試服務已停止。

@@ -1,11 +1,12 @@
 # 安裝路徑 UAT 結果
 
-時間：2026-11-11 20:31（Asia/Taipei）。69/69 PASS。
+時間：2026-11-11 20:41（Asia/Taipei）。72/72 PASS。
 
-真實 WiPPY + Auth/Firestore emulator，外部 LINE/Routine mock；Chrome 桌面 1280×800／手機 390×844。每次執行覆寫本表，完整驗收需 23 個案例 × 3 projects = 69 次且都有本次截圖；ready 僅表示可做本機瀏覽器 UAT。
+真實 WiPPY + Auth/Firestore emulator，外部 LINE/Routine mock；Chrome 桌面 1280×800／手機 390×844。每次執行覆寫本表，完整驗收需 24 個案例 × 3 projects = 72 次且都有本次截圖；ready 僅表示可做本機瀏覽器 UAT。
 
 | 案例 | 環境 | 結果 | 失敗原因 | 證據 |
 | --- | --- | --- | --- | --- |
+| UAT-24 | desktop | PASS | — | [截圖](evidence/UAT-24-desktop.png) |
 | UAT-23 | desktop | PASS | — | [截圖](evidence/UAT-23-desktop.png) |
 | UAT-22 | desktop | PASS | — | [截圖](evidence/UAT-22-desktop.png) |
 | UAT-21 | desktop | PASS | — | [截圖](evidence/UAT-21-desktop.png) |
@@ -29,6 +30,7 @@
 | UAT-17 | desktop | PASS | — | [截圖](evidence/UAT-17-desktop.png) |
 | UAT-18 | desktop | PASS | — | [截圖](evidence/UAT-18-desktop.png) |
 | UAT-19 | desktop | PASS | — | [截圖](evidence/UAT-19-desktop.png) |
+| UAT-24 | mobile | PASS | — | [截圖](evidence/UAT-24-mobile.png) |
 | UAT-23 | mobile | PASS | — | [截圖](evidence/UAT-23-mobile.png) |
 | UAT-22 | mobile | PASS | — | [截圖](evidence/UAT-22-mobile.png) |
 | UAT-21 | mobile | PASS | — | [截圖](evidence/UAT-21-mobile.png) |
@@ -52,6 +54,7 @@
 | UAT-17 | mobile | PASS | — | [截圖](evidence/UAT-17-mobile.png) |
 | UAT-18 | mobile | PASS | — | [截圖](evidence/UAT-18-mobile.png) |
 | UAT-19 | mobile | PASS | — | [截圖](evidence/UAT-19-mobile.png) |
+| UAT-24 | api | PASS | — | [截圖](evidence/UAT-24-api.png) |
 | UAT-23 | api | PASS | — | [截圖](evidence/UAT-23-api.png) |
 | UAT-22 | api | PASS | — | [截圖](evidence/UAT-22-api.png) |
 | UAT-21 | api | PASS | — | [截圖](evidence/UAT-21-api.png) |

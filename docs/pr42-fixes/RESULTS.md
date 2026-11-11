@@ -304,3 +304,13 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 接續已提交的 UAT-23，在隔離 Auth／Firestore emulator 重新執行桌面、手機和 API 全套，**69/69 PASS**，無重試，包含指南 19 條 curl。`npm run verify:uat` 核對 69 張截圖、32 筆對比與 9 份 patch；逐案結果見 [UAT 結果](../uat/UAT-RESULTS.md)。上次完整通過後的新手探索及其範圍見 20:27 紀錄，本次重跑後未另做探索，也沒有新增產品修復。
 
 先前間歇逾時根因未確認，本輪仍有 Firestore transport 警告；真實外部 Agent、LINE、雲端同步及 HTTPS 尚未驗證。本輪啟動的 4141–4148 服務已停止；依後段規則未 push、部署或寫入工作目錄外。
+
+## 2026-11-11 20:41 安裝路徑 UAT 接續
+
+隔離 Auth 4144／Firestore 4145、系統 Chrome 桌面與手機及 API 完整重跑 **72/72 PASS**（24 案 × 3，無重試），包括指南 19 條 curl；`npm run verify:uat` 核對 72 張截圖、32 個對比值及 9 份既有修復 patch，frontend lint 通過。逐案結果與證據見 [UAT 結果](../uat/UAT-RESULTS.md)。
+
+完整通過後新手探索發現，Agent 名稱只填空白時 UI 顯示英文內部驗證訊息；後端拒絕並無半成品。`0db80d1`（PR42-UAT-24）改為中文提示，並加入桌面、手機與 API 的拒絕及修正復原案例。測試初次重跑兩次為 71/72：第一次錯誤假設 API fixture 的 Agent 清單為空（修正 `ef5f875`）；第二次新建同名 Agent 造成共用截圖定位器不唯一（修正 `4b162b0`）。兩份報告分別[封存](../uat/UAT-RESULTS-2026-11-11-2037.md)及[封存](../uat/UAT-RESULTS-2026-11-11-2039.md)，截圖已被最後執行覆寫。上述探索腳本在兩種視窗確認缺陷後，清理呼叫未匯出的 helper 而報錯；正式測試的每案前置使用既有清理流程。
+
+最後完整通過後，另以桌面與手機建立名稱前後有空格的 Agent，確認名稱已修剪、成功建立且畫面無水平溢出（[桌面](../uat/evidence/exploration-trim-desktop.png)、[手機](../uat/evidence/exploration-trim-mobile.png)）。本輪新增修復與測試 commit 如上，先前修復清單見前文。
+
+先前間歇逾時根因未確認，本輪仍有 Firestore transport 警告；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 未驗證，ready 僅表示本機 mock/emulator 路徑。測試服務已停止；依後段規則未 push、部署或寫入工作目錄外摘要。

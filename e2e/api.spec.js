@@ -8,6 +8,24 @@ test.afterEach(async ({ page }, info) => {
   await expect(page.getByRole('button', { name: `停用 ${a.agent.name}`, exact: true })).toBeVisible();
   await h.shot(page, info, info.title.match(/UAT-\d+/)[0]);
 });
+test('UAT-22 Invalid limits are rejected without changing an agent', async () => {
+  const r = await h.api(f.owner, '/api/hub/admin/agents', 'POST', { kind: 'grok_bot', name: 'invalid', allowedGroupIds: [], dailySendLimit: -1 });
+  expect(r.status).toBe(400);
+  expect((await h.api(f.owner, `/api/hub/admin/agents/${a.agent.id}`, 'PATCH', { dailySendLimit: 1001 })).status).toBe(400);
+  expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents.find(x => x.id === a.agent.id).dailySendLimit).toBe(5);
+});
+test('UAT-21 Group access can be assigned after creation', async () => {
+  const created = await h.api(f.owner, '/api/hub/admin/agents', 'POST', {
+    kind: 'grok_bot', name: `empty-${f.tag}`, allowedGroupIds: [], dailySendLimit: 5,
+  });
+  expect(created.status).toBe(201);
+  const { apiKey, agent } = created.body;
+  expect((await h.api(apiKey, '/api/hub/v1/groups')).body.groups).toEqual([]);
+  expect((await h.api(apiKey, `/api/hub/v1/groups/${f.groups[0]}/messages`)).status).toBe(403);
+  expect((await h.api(f.owner, `/api/hub/admin/agents/${agent.id}`, 'PATCH', { allowedGroupIds: [f.groups[0]] })).status).toBe(200);
+  expect((await h.api(apiKey, '/api/hub/v1/groups')).body.groups.map(g => g.groupId)).toEqual([f.groups[0]]);
+  expect((await h.api(apiKey, `/api/hub/v1/groups/${f.groups[0]}/messages`)).status).toBe(200);
+});
 test('UAT-20 Incorrect Instinct password fails and the correct password still works', async () => {
   const i = await h.create(f, 'instinct');
   const wrong = await h.signIn(i.agent.accountEmail, 'incorrect-emulator-password');

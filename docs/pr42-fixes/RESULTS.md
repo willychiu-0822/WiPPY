@@ -282,3 +282,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 以隔離 Auth 4144／Firestore 4145 emulator 和系統 Chrome 完整執行桌面、手機及 API：**60/60 PASS**，無重試；API 測試包含安裝指南的 curl 範例。`npm run verify:uat` 驗證 60 張截圖、32 筆對比及 9 份修復 patch；逐案結果與證據見 [UAT 結果](../uat/UAT-RESULTS.md)。完整通過後以兩種視窗探索新增 Agent 表單切換：Instinct 顯示登入 Email，切回 Grok 顯示 Routine 網址，均通過。探索腳本首次使用錯誤的選項值而逾時，修正腳本後兩種視窗均通過；未發現產品缺陷，本輪沒有產品修復。既有修復 commit 清單見前文。
 
 歷次間歇逾時根因仍未知，本輪仍有 Firestore transport 警告；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證，狀態僅表示可進行本機 emulator/mock 瀏覽器測試。本輪啟動服務已關閉；依最後指示未 push、部署或寫入目錄外摘要。
+
+## 2026-11-11 18:19 安裝路徑 UAT 接續
+
+隔離 Auth 4144／Firestore 4145、系統 Chrome 桌面與手機、API 完整重跑 **66/66 PASS**，無重試；指南 curl 範例包含在 API 測試。`npm run verify:uat` 核對 66 張截圖、32 筆對比及 9 份既有修復 patch；frontend lint/build 與 `git diff --check` 通過，build 有大型 chunk 提示。逐項案例、證據與狀態見 [UAT 結果](../uat/UAT-RESULTS.md)及[狀態](../uat/UAT-STATUS.json)。
+
+新增 UAT-21：先建立不含群組的 Grok，再授權群組並重整；兩種視窗及 API 均通過。探索發現負數額度雖被後端拒絕，畫面顯示難懂的英文內部驗證訊息；`3accc5b`（PR42-UAT-22）讓建立及編輯的無效額度、Instinct 預警時數顯示中文範圍並保留輸入。UAT-22 驗證額度錯誤、資料未變更及修正後保存。完整通過後另在桌面和手機探索 Instinct 預警時數為 0：提示正確、無半成品，改為 24 後成功建立。最初探索腳本在兩種視窗完成 UAT-21 斷言後，清理步驟報錯；正式自動化及完整測試均通過。
+
+前一次執行 **65/66**：桌面 UAT-15 登入後等待收件匣標題逾時，未進入停用斷言；失敗時快照顯示標題後來出現。結果保存在 [18:14 報告](../uat/UAT-RESULTS-2026-11-11-1814.md)，該表截圖連結指向重跑後的證據，並非當時畫面。重跑成功不等於逾時根因已修復；先前間歇逾時仍未釐清，Firestore transport 警告仍出現。真實 Grok、Instinct、LINE、雲端同步與 HTTPS 未驗證，ready 僅表示本機 emulator/mock 可供瀏覽器測試。本輪自啟服務已關閉；依最後規則未 push、部署或寫入目錄外摘要。

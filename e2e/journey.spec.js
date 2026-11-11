@@ -30,6 +30,41 @@ async function ruleUI(page, agent, keyword) {
   await page.reload();
   await expect(page.getByRole('switch', { name: `旅程-${keyword} 啟用`, exact: true })).toHaveAttribute('aria-checked', 'true');
 }
+test('UAT-22 Explain invalid limits and allow correction', async ({ page }, info) => {
+  await agents(page); const form = page.locator('form');
+  const name = `限制測試 ${f.tag}`; await form.getByLabel('名稱', { exact: true }).fill(name);
+  const limit = form.getByLabel('每日發送上限', { exact: true }); await limit.fill('-1');
+  await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
+  await expect(form.getByRole('alert')).toHaveText('每日發送上限請填 0 到 1000 的整數');
+  expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents).toHaveLength(0);
+  await limit.fill('1'); await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
+  const secret = page.getByRole('region', { name: '只顯示一次的憑證' }); await expect(secret).toBeVisible();
+  await secret.getByRole('button', { name: '我已保存' }).click();
+  const item = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: `停用 ${name}`, exact: true }) });
+  const edit = item.getByLabel('每日發送上限', { exact: true }); await edit.fill('1001');
+  await item.getByRole('button', { name: `儲存 ${name} 設定`, exact: true }).click();
+  await expect(item.getByRole('status')).toHaveText('每日發送上限請填 0 到 1000 的整數');
+  expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents[0].dailySendLimit).toBe(1);
+  await edit.fill('2'); await item.getByRole('button', { name: `儲存 ${name} 設定`, exact: true }).click();
+  await expect(item.getByRole('status')).toHaveText('已儲存'); await page.reload(); await expect(edit).toHaveValue('2');
+  await h.shot(page, info, 'UAT-22');
+});
+test('UAT-21 Assign a group after creating a Grok without group access', async ({ page }, info) => {
+  await h.openGroup(f); await agents(page);
+  const name = `探索 Grok ${f.tag}`; const form = page.locator('form');
+  await form.getByLabel('名稱', { exact: true }).fill(name);
+  await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
+  const secret = page.getByRole('region', { name: '只顯示一次的憑證' });
+  await expect(secret).toBeVisible(); const key = await secret.locator('code.block').first().textContent();
+  expect((await h.api(key, '/api/hub/v1/groups')).body.groups).toEqual([]);
+  await secret.getByRole('button', { name: '我已保存' }).click();
+  const item = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: `停用 ${name}`, exact: true }) });
+  const group = item.getByLabel(`安裝測試 ${f.tag} 活動群組`, { exact: true });
+  await group.check(); await item.getByRole('button', { name: `儲存 ${name} 設定`, exact: true }).click();
+  await expect(item.getByRole('status')).toHaveText('已儲存');
+  expect((await h.api(key, '/api/hub/v1/groups')).body.groups.map(g => g.groupId)).toEqual([f.groups[0]]);
+  await page.reload(); await expect(group).toBeChecked(); await h.shot(page, info, 'UAT-21');
+});
 test('UAT-20 Instinct recovers after entering a wrong password', async ({ browser }, info) => {
   const a = await h.create(f, 'instinct');
   const ctx = await browser.newContext({ ...info.project.use });

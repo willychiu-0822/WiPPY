@@ -25,6 +25,7 @@ Instinct 不會取得 WiPPY API key，也不能把密碼直接填在 Bearer head
 ## 2. 安裝 Grok Bot（先測 WiPPY，再接 Routine）
 
 1. 「Agent Hub → Agent → 新增 Agent」，類型選「Grok Bot」，填名稱、每日發送上限並勾選測試群組。Routine 欄位可以先空白。
+   每日發送上限須為 0 到 1000 的整數；0 代表不允許發送。Instinct 的收件匣逾時預警須為 1 到 720 的整數小時。
 2. 按「建立 Agent」，保存黃色框中的 WiPPY API key 與 MCP 網址，然後按「我已保存」。勿把完整 key 放在截圖、git 或分享文件中。
 3. 用下方 REST 自測。`<API_BASE_URL>` 是後端 origin，不含 `/api`；例如本輪本機是 `http://127.0.0.1:4142`。以下所有 `<...>` 都要替換；不要直接保留尖括號執行。
 

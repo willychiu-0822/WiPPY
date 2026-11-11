@@ -8,6 +8,15 @@ test.afterEach(async ({ page }, info) => {
   await expect(page.getByRole('button', { name: `停用 ${a.agent.name}`, exact: true })).toBeVisible();
   await h.shot(page, info, info.title.match(/UAT-\d+/)[0]);
 });
+test('UAT-20 Incorrect Instinct password fails and the correct password still works', async () => {
+  const i = await h.create(f, 'instinct');
+  const wrong = await h.signIn(i.agent.accountEmail, 'incorrect-emulator-password');
+  expect(wrong.status).toBe(400);
+  expect(wrong.token).toBeUndefined();
+  const valid = await h.signIn(i.agent.accountEmail, i.password);
+  expect(valid.status).toBe(200);
+  expect((await h.api(valid.token, '/api/hub/me')).body).toMatchObject({ role: 'agent', agentId: i.agent.id });
+});
 test('UAT-01 REST identity, group listing and MCP discovery', async () => {
   expect((await h.api(a.apiKey, '/api/hub/me')).body).toMatchObject({ role: 'agent', agentId: a.agent.id });
   const init = await h.mcp(a.apiKey, 'initialize', { protocolVersion: '2025-06-18' });

@@ -30,6 +30,22 @@ async function ruleUI(page, agent, keyword) {
   await page.reload();
   await expect(page.getByRole('switch', { name: `旅程-${keyword} 啟用`, exact: true })).toHaveAttribute('aria-checked', 'true');
 }
+test('UAT-20 Instinct recovers after entering a wrong password', async ({ browser }, info) => {
+  const a = await h.create(f, 'instinct');
+  const ctx = await browser.newContext({ ...info.project.use });
+  const page = await ctx.newPage();
+  await page.goto('http://127.0.0.1:4141/login');
+  await page.getByPlaceholder('Email', { exact: true }).fill(a.agent.accountEmail);
+  await page.getByPlaceholder('密碼', { exact: true }).fill('incorrect-emulator-password');
+  await page.getByRole('button', { name: '登入', exact: true }).click();
+  await expect(page.getByText('Email 或密碼錯誤', { exact: true })).toBeVisible();
+  await expect(page.getByPlaceholder('Email', { exact: true })).toHaveValue(a.agent.accountEmail);
+  await page.getByPlaceholder('密碼', { exact: true }).fill(a.password);
+  await page.getByRole('button', { name: '登入', exact: true }).click();
+  await page.waitForURL('**/workbench');
+  await h.shot(page, info, 'UAT-20');
+  await ctx.close();
+});
 test('UAT-01 Owner creates Grok and receives a one-time key', async ({ page }, info) => {
   await page.goto('/hub/groups');
   await page.getByRole('switch', { name: `安裝測試 ${f.tag} 活動群組 允許 Agent 讀取`, exact: true }).click();

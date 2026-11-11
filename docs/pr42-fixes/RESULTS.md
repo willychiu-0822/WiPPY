@@ -244,3 +244,9 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 隔離 Auth 4144／Firestore 4145，以系統 Chrome 執行完整桌面、手機與 API 旅程 **57/57 PASS**，無重試；包含新手指南範例。`npm run verify:uat` 核對 57 張截圖、32 筆對比與 9 份修復 patch。通過後另外在兩種視窗探索 Grok／Instinct 建立表單切換，均正常。逐案結果見 [UAT 結果](../uat/UAT-RESULTS.md)。
 
 先前間歇逾時根因仍未確認，Firestore transport 警告仍在；本次通過不代表問題已修復。真實 Grok／Instinct／LINE、雲端同步及 HTTPS 未驗證。測試服務已停止；依後段規則未 push、未寫工作目錄外。
+
+### 2026-11-11 第 10 輪
+
+隔離 Auth 4144／Firestore 4145 emulator，系統 Chrome 桌面、手機及 API：先有 57/57 PASS；探索 Instinct 錯誤密碼後修正登入，新增 UAT-20，再完整執行 **60/60 PASS**、無重試。`npm run verify:uat` 核對 60 張截圖、32 筆對比及 9 份修復 patch。首次探索腳本使用錯誤回傳欄位而中止，修正後兩種視窗均通過。完整通過後再次探索新增 Agent 表單的類型切換，兩種視窗均正常。逐項結果見 [UAT 結果](../uat/UAT-RESULTS.md)。
+
+先前間歇逾時根因仍未確認，瀏覽器 Firestore transport 警告仍在；真實 Grok／Instinct／LINE、雲端同步與 HTTPS 未驗證。此輪沒有產品修復；既有修復 commit 清單見上方。測試服務已停止；依後段規則未 push、未寫工作目錄外的摘要。

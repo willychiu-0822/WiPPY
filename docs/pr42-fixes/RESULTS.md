@@ -322,3 +322,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 啟動失敗暴露結果報表將未執行案例顯示為 0 blocked 的問題。`94d738f`（PR42-UAT-25）將未執行／跳過案例標示為 BLOCKED，並避免把舊截圖當作本次證據；以隔離報表模擬驗證啟動失敗與完整通過兩種情況。完整旅程執行使用修正前已載入的 reporter，結果本身 72 項均實際執行通過。
 
 完整通過後，另以桌面和手機探索 Instinct 收件匣預警上界：721 小時出現中文提示且未建立 Agent，改為 720 後成功建立並保存，兩種版面無水平溢出；未發現新產品缺陷。先前間歇逾時根因未確認，本次仍有 Firestore transport 警告。真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證；ready 僅表示本機 mock/emulator 路徑。本輪啟動的 4141–4148 服務已停止；依後段指示未 push、部署或寫入工作目錄外摘要。
+
+## 2026-11-11 20:50 安裝路徑 UAT 接續
+
+隔離 Auth 4144／Firestore 4145、系統 Chrome 桌面及手機與 API 全套 **72/72 PASS**（24 案 × 3，無重試），包含指南 19 條 curl。`npm run verify:uat` 驗證 72 張截圖、32 個對比數值及 9 份修復 patch。逐項結果見 [UAT 結果](../uat/UAT-RESULTS.md)。
+
+完整通過後，以兩種 viewport 探索每日發送上限的合法上界 1000：建立後重整仍顯示 1000，API 資料一致且沒有水平溢出（[桌面](../uat/evidence/exploration-limit-boundary-desktop.png)、[手機](../uat/evidence/exploration-limit-boundary-mobile.png)）。此探索沒有發現產品缺陷，本輪沒有產品修復；既有修復清單見前文，最近修復為 `94d738f`（PR42-UAT-25）。
+
+先前間歇逾時根因未確認，Firestore transport 警告仍有出現；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證。ready 僅代表本機 emulator/mock 旅程可供瀏覽器測試。本輪自啟服務已停止；依後段指示未 push、部署或寫入工作目錄外。

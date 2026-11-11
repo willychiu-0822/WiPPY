@@ -47,3 +47,7 @@
 2026-11-11 第 10 輪：新增 UAT-20 驗證 Instinct 錯誤密碼提示及修正後登入；完整 Chrome 桌面、手機及 API 60/60 PASS，核對 60 張截圖、32 筆對比與 9 份 patch。通過後表單類型切換探索正常。先前間歇逾時根因未確認，Firestore transport 警告仍在；真實外部服務、雲端同步及 HTTPS 未驗證。未 push，測試服務已停止。詳見 docs/pr42-fixes/RESULTS.md。
 
 2026-11-11 第 11 輪：隔離 emulator 下桌面、手機及 API 共 59/60 PASS；桌面 UAT-08 進入 Agent 管理頁時停在 Loading... 並逾時，根因未確定，狀態為未就緒。截圖已覆寫，先前 manifest 不適用。Firestore transport 警告仍在；真實外部服務、HTTPS 與雲端同步未驗證。沒有產品修復，未 push；本次測試服務已停止。詳見 docs/pr42-fixes/RESULTS.md。
+
+## 2026-11-11 13:46 接續驗證
+
+隔離 emulator、系統 Chrome 桌面／手機及 API 完整套件 60/60 PASS，無重試；證據驗證 60 張截圖、32 筆對比與 9 份 patch。通過後兩種 viewport 探索 Agent 類型切換成功。先前間歇逾時根因未知，Firestore transport 警告仍在；真實 Grok／Instinct／LINE、雲端同步及 HTTPS 未驗證。逐案見 `docs/uat/UAT-RESULTS.md`；本輪未 push。

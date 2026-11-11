@@ -51,3 +51,7 @@
 ## 2026-11-11 13:46 接續驗證
 
 隔離 emulator、系統 Chrome 桌面／手機及 API 完整套件 60/60 PASS，無重試；證據驗證 60 張截圖、32 筆對比與 9 份 patch。通過後兩種 viewport 探索 Agent 類型切換成功。先前間歇逾時根因未知，Firestore transport 警告仍在；真實 Grok／Instinct／LINE、雲端同步及 HTTPS 未驗證。逐案見 `docs/uat/UAT-RESULTS.md`；本輪未 push。
+
+## 2026-11-11 13:51 第 15 輪
+
+隔離 emulator、Chrome 桌面／手機及 API 完整回歸 60/60 PASS，無重試；證據核對 60 張截圖、32 筆對比及 9 份 patch。通過後兩種視窗探索建立表單類型切換，均通過；首次探索腳本的選項值有誤，修正後重跑通過。本輪沒有產品修復。先前間歇逾時根因未知，Firestore transport 警告仍在；真實外部服務、雲端同步及 HTTPS 未驗證。未 push；詳細結果見 docs/pr42-fixes/RESULTS.md。

@@ -276,3 +276,9 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 隔離 Auth 4144／Firestore 4145，以系統 Chrome 完整執行桌面、手機及 API 共 **60/60 PASS**，沒有重試；包括安裝指南的 curl 範例。`npm run verify:uat` 驗證 60 張截圖、32 筆對比值與 9 份修復 patch。逐案結果及證據見 [UAT 結果](../uat/UAT-RESULTS.md)。先前間歇逾時本次未重現，根因仍未知；Firestore transport 警告仍出現，無法據此判斷是否相關。
 
 完整通過後另以桌面和手機探索新增 Agent 表單切換 Grok／Instinct，兩種 viewport 均可顯示對應欄位；本次探索未新增缺陷。測試使用 emulator 與 LINE／Routine mock，真實平台、LINE、雲端同步及 HTTPS 未驗證；自啟服務已關閉。本輪沒有產品修復，既有修復 commit 清單見上文。依後段指示未 push，目錄外摘要未寫入。
+
+## 2026-11-11 13:51 第 15 輪安裝路徑 UAT
+
+以隔離 Auth 4144／Firestore 4145 emulator 和系統 Chrome 完整執行桌面、手機及 API：**60/60 PASS**，無重試；API 測試包含安裝指南的 curl 範例。`npm run verify:uat` 驗證 60 張截圖、32 筆對比及 9 份修復 patch；逐案結果與證據見 [UAT 結果](../uat/UAT-RESULTS.md)。完整通過後以兩種視窗探索新增 Agent 表單切換：Instinct 顯示登入 Email，切回 Grok 顯示 Routine 網址，均通過。探索腳本首次使用錯誤的選項值而逾時，修正腳本後兩種視窗均通過；未發現產品缺陷，本輪沒有產品修復。既有修復 commit 清單見前文。
+
+歷次間歇逾時根因仍未知，本輪仍有 Firestore transport 警告；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證，狀態僅表示可進行本機 emulator/mock 瀏覽器測試。本輪啟動服務已關閉；依最後指示未 push、部署或寫入目錄外摘要。

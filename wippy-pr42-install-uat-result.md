@@ -41,3 +41,5 @@
 ### 2026-11-11 10:19 第 8 輪
 
 隔離 emulator 與 Chrome 桌面、手機及 API 全套 57/57 通過，證據核對 57 張截圖與 32 筆對比度。通過後探索空白名稱和 Instinct 空白 Email，兩種 viewport 均阻止提交且沒有建立 Agent。前次手機 UAT-02 間歇逾時本次未重現、根因未確認；瀏覽器 Firestore transport 警告仍在，真實雲端同步、外部平台、LINE 與 HTTPS 未驗證。本輪未 push、未寫目錄外摘要。
+
+2026-11-11 11:09 第 9 輪：隔離 emulator 與 Chrome 桌面、手機及 API 共 57/57 PASS；證據檢查及兩種視窗的 Agent 類型切換探索通過。先前間歇逾時根因未確認，Firestore transport 警告仍在；真實外部服務、雲端同步及 HTTPS 未驗證。未 push；測試服務已停止。詳見 docs/pr42-fixes/RESULTS.md。

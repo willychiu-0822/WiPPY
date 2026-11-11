@@ -1,0 +1,40 @@
+{
+  "at": "2026-11-11T12:27:52.658Z",
+  "viewport": "390x844",
+  "findings": [
+    {
+      "area": "00-group-load-offline",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\nUAT 讀書會\n5 人\n\n無法載入訊息，請檢查網路連線後重新載入\n\n重新載入訊息\n發送\n群組\n廣播\nU\nUAT 讀書會\n下午08:27\n\n歡迎加入本機測試群組\n\nU\nUAT 工作坊\n下午08:27\n\n歡迎加入本機測試群組",
+      "misleadingEmptyState": false,
+      "retryCount": 1
+    },
+    {
+      "area": "01-group-send-offline",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\nUAT 讀書會\n5 人\n測試夥伴\n下午08:27\n歡迎加入本機測試群組\n\n無法連線，請檢查網路連線後重新發送；輸入內容已保留\n\n發送\n群組\n廣播\nU\nUAT 讀書會\n下午08:27\n\n歡迎加入本機測試群組\n\nU\nUAT 工作坊\n下午08:27\n\n歡迎加入本機測試群組",
+      "draft": "想提醒大家帶一本喜歡的書"
+    },
+    {
+      "area": "02-broadcast-preview-offline",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\n廣播至 2 個群組\n\n無法連線，請檢查網路連線後重新產生預覽；輸入內容已保留\n\n目標群組：UAT 讀書會、UAT 工作坊\n下一步：各群組微調 →\n群組\n取消\n廣播 (2)\n✓\nU\nUAT 讀書會\n下午08:27\n\n歡迎加入本機測試群組\n\n✓\nU\nUAT 工作坊\n下午08:27\n\n歡迎加入本機測試群組",
+      "draft": "讀書會改到社區圖書館"
+    },
+    {
+      "area": "03-broadcast-empty-tweak",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\n各群組微調\n\nUAT 讀書會：訊息內容不可為空\n\nUAT 讀書會\nUAT 工作坊\n確認發送至 2 個群組\n群組\n取消\n廣播 (2)\n✓\nU\nUAT 讀書會\n下午08:27\n\n歡迎加入本機測試群組\n\n✓\nU\nUAT 工作坊\n下午08:27\n\n歡迎加入本機測試群組",
+      "emptySendEnabled": false
+    },
+    {
+      "area": "04-broadcast-send-offline",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\n各群組微調\n\n無法連線，請檢查網路連線後重新發送；各群組內容已保留\n\nUAT 讀書會\nUAT 工作坊\n確認發送至 2 個群組\n群組\n取消\n廣播 (2)\n✓\nU\nUAT 讀書會\n下午08:27\n\n歡迎加入本機測試群組\n\n✓\nU\nUAT 工作坊\n下午08:27\n\n歡迎加入本機測試群組",
+      "drafts": [
+        "讀書會改到社區圖書館，請帶一本書",
+        "讀書會改到社區圖書館"
+      ]
+    },
+    {
+      "area": "05-broadcast-recovered",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\n發送結果\nUAT 讀書會\n✓ 成功\nUAT 工作坊\n✓ 成功\n完成\n群組\n取消\n廣播 (2)\n✓\nU\nUAT 讀書會\n下午08:27\n\n歡迎加入本機測試群組\n\n✓\nU\nUAT 工作坊\n下午08:27\n\n歡迎加入本機測試群組"
+    }
+  ],
+  "errors": []
+}

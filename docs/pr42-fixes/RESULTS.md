@@ -226,3 +226,9 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 隔離 Auth 4144／Firestore 4145 emulator，系統 Chrome 桌面與手機及 API 全套 **57/57 PASS**，無重試；指南範例包含在 API 案例中。`npm run verify:uat` 驗證 57 張截圖、32 筆對比及 9 份修復 patch。逐項結果、狀態與本次截圖見 [UAT 結果](../uat/UAT-RESULTS.md)及 [狀態](../uat/UAT-STATUS.json)。完整通過後以兩種視窗探索新增 Agent 表單類型切換，正常；探索範圍僅限此表單。
 
 本輪沒有產品修復；先前修復 commit 見上方清單。先前間歇逾時的根因仍未確認，Firestore transport 警告仍出現。真實 Grok、Instinct、LINE、HTTPS 與雲端同步尚未驗證；ready 僅指本機 emulator/mock 流程。此次啟動的服務已停止，依最新規則未 push、部署或寫入工作目錄外。
+
+### 2026-11-11 第 6 輪接續驗證
+
+隔離 Auth 4144／Firestore 4145、系統 Chrome 全套為 **56/57**：手機 UAT-02 在選擇「觸發條件」時超過 60 秒，桌面與 API 共 38 案及其餘手機案例通過。單獨診斷相同手機案例連跑三次通過（33.6、2.7、2.4 秒），但不足以確定根因或宣稱修復；既有間歇逾時仍待調查。失敗畫面被診斷覆寫，結果表已明示，證據 manifest 標記未驗證。詳見 [UAT 結果](../uat/UAT-RESULTS.md)及[狀態](../uat/UAT-STATUS.json)。
+
+本次瀏覽器仍有 Firestore transport 警告，真實外部 Agent、LINE、HTTPS 與雲端同步未驗證。完整測試未通過，未執行通過後的探索式測試。本輪沒有產品修復；既有修復 commit 見上方清單。依最後的規則未 push、部署或寫入工作目錄外的摘要。

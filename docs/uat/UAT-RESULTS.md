@@ -1,10 +1,10 @@
 # 安裝路徑 UAT 結果
 
-時間：2026-11-11 21:01（Asia/Taipei）。72/72 PASS。
+時間：2026-11-11 21:20（Asia/Taipei）。72/72 PASS。
 
 真實 WiPPY + Auth/Firestore emulator，外部 LINE/Routine mock；Chrome 桌面 1280×800／手機 390×844。每次執行覆寫本表，完整驗收需 24 個案例 × 3 projects = 72 次且都有本次截圖；ready 僅表示可做本機瀏覽器 UAT。
 
-完整回歸通過後，另以桌面及手機探索清空每日發送上限：建立和編輯均顯示中文提示且資料不變，修正後保存並重整仍正確（[桌面](evidence/exploration-empty-limit-desktop.png)、[手機](evidence/exploration-empty-limit-mobile.png)）。此條件已加入 UAT-22，測試 commit `7383ad4`。
+完整回歸後，另在桌面及手機探索建立零額度 Grok：重整後額度仍為 0，管理 API 資料一致，key 可驗證且畫面無水平溢出（[桌面](evidence/exploration-zero-limit-desktop.png)、[手機](evidence/exploration-zero-limit-mobile.png)）。零額度禁止發送已由 UAT-05 驗證；本次未發現新缺陷。
 
 | 案例 | 環境 | 結果 | 失敗原因 | 證據 |
 | --- | --- | --- | --- | --- |

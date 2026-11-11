@@ -1,6 +1,6 @@
 {
-  "updated": "2026-11-11 21:01",
-  "base": "7383ad4",
+  "updated": "2026-11-11 21:20",
+  "base": "d0842ca",
   "e2e": {
     "cases": 72,
     "pass": 72,
@@ -17,7 +17,7 @@
       "evidence": "UAT-01-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "1380b949f4f6d39bed1939c4f826cf39c3d3715b0d16c9e8b00d6a3ab5b70041"
+      "sha256": "5a48fd5c8c8cfcd5cccbe719b4ec0cfb2b0e258552ac7026c29003d3e4f153de"
     },
     {
       "case": "UAT-01",
@@ -26,7 +26,7 @@
       "evidence": "UAT-01-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "737a4f6ab6b0eb648b9d1b36536fd85cfd18db97869087f187201e3d7821afb0"
+      "sha256": "48a0c73c7fdebfd583b231399ba1f713fe17ccfb246a11aac39aab5445d72255"
     },
     {
       "case": "UAT-01",
@@ -35,7 +35,7 @@
       "evidence": "UAT-01-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "a6dac8c4270fcaa5e9fe46052ee782b46d439919d7a97308caf1be203534c32b"
+      "sha256": "7439875909d995dcfaebc4b5757fe6e2a4c2d6431a8968b8c866b937109d30a3"
     },
     {
       "case": "UAT-02",
@@ -44,7 +44,7 @@
       "evidence": "UAT-02-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "c82da129ca82aa1a37e17a2264bede119765f5a90ccf033a7e17ca969213e319"
+      "sha256": "bab5a514551479f071be3c6ee0410443eefbf0e7da6cd670554c8e5c75fff0f4"
     },
     {
       "case": "UAT-02",
@@ -53,7 +53,7 @@
       "evidence": "UAT-02-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "1feabba29e90ce28aeaff6880f734651323d3110d88e0f8b1f72be6f34cd37fb"
+      "sha256": "91cf2ee0665248d228294dc59677d72b87b3bdd68794beba15ba00e8f7823c9c"
     },
     {
       "case": "UAT-02",
@@ -62,7 +62,7 @@
       "evidence": "UAT-02-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "bedd3f93d8fe0fc1666437e758c9a7154108a9d461e77b55bcbde5a47a974473"
+      "sha256": "0019ce984b69c8f2c0875094a435275a20726bcf5b1cf80e3fc069a2dc1b100c"
     },
     {
       "case": "UAT-03",
@@ -71,7 +71,7 @@
       "evidence": "UAT-03-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "0ae1f9a7d59650ea14f3278baf57c14e4b28bf04917ccb1453cf2138b787eec9"
+      "sha256": "ad8a50f62ad86fc45a38f099fd970992f3197e8cea7c71f7c563e892f077cb33"
     },
     {
       "case": "UAT-03",
@@ -80,7 +80,7 @@
       "evidence": "UAT-03-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "e7244bc756018ad96553da86d63c2c074dbcd9c54fe2fd5e9ee73215f95a5ff3"
+      "sha256": "ecc4abfdb5a4b0f3d390a39eaf2ab15dec368747775510a06b8a06dceec7f144"
     },
     {
       "case": "UAT-03",
@@ -89,7 +89,7 @@
       "evidence": "UAT-03-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "64cdf91d02e9a1f09adefc94726b7fb900d09cae4eb6b1928b6ccb22b4b9e150"
+      "sha256": "777392c01da9e2f24ffb7a18724861f4017af2df68f568f45e178759f8e330fb"
     },
     {
       "case": "UAT-04",
@@ -98,7 +98,7 @@
       "evidence": "UAT-04-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "dc2353f2ae974d61e689b136af3b0edc5f0cf66c0bec815bf746266b575382de"
+      "sha256": "1df0e76f60c4ae14c1d98a0c051702e0b9c2c6eb3ea6f2088a70c37776532e45"
     },
     {
       "case": "UAT-04",
@@ -107,7 +107,7 @@
       "evidence": "UAT-04-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "b79b38d98da4cee3bfe5f5c66ab71a09f32073da3ae9ac6f67c220b4816f13b1"
+      "sha256": "2473ba25c5ae92481cc72b0cdae62a4e0a5d120a4a9c1e4e5cd97f8da31bdb7a"
     },
     {
       "case": "UAT-04",
@@ -116,7 +116,7 @@
       "evidence": "UAT-04-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "35d7f268c799b98b73585a2234c814488f1ba4eea193e373db6456ab05276817"
+      "sha256": "f5fa6507beb2beafa37fac8bbab2ab84b8bcf327dc9c4dd63e9c629bf57f894a"
     },
     {
       "case": "UAT-05",
@@ -125,7 +125,7 @@
       "evidence": "UAT-05-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "cdf9fcc8d3f1ea6d695c71dfe516c4d3144297e068cec313ef66d5f049d0956a"
+      "sha256": "1545e8f6d4315578ee8ba68d52b73f9994432eef7fefc71177f2762fac84584d"
     },
     {
       "case": "UAT-05",
@@ -134,7 +134,7 @@
       "evidence": "UAT-05-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "882701c5bd01ef54059fa180062454a36aa6dac0602bd0d460acc677d6d28cdf"
+      "sha256": "c5f7b7770ee3a1eb669b80b72b52997ee3c78038bae77f51832c1903f38ec33a"
     },
     {
       "case": "UAT-05",
@@ -143,7 +143,7 @@
       "evidence": "UAT-05-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "7b3418b3f5c3a2043659aab401a2103190a91b6346227322aa2c73755a384210"
+      "sha256": "c2e8dca6d436644730a7f43561bf660eab22ccb9416a11c84f3cc6f43e6da6bc"
     },
     {
       "case": "UAT-06",
@@ -152,7 +152,7 @@
       "evidence": "UAT-06-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "a9ec8c9d36c7865a13f6b203d7a7e0b739bffe1fb7a6e1d3a4e424ec20a8fb4b"
+      "sha256": "b5a46fbf257252cba4ebce907c3623f8f932c8afa41996d9cbabe8f6fe4ef878"
     },
     {
       "case": "UAT-06",
@@ -161,7 +161,7 @@
       "evidence": "UAT-06-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "affeea90eb3bcb0aaed085cd2594090484a9e2fa67656d053f3c21e2f0428c39"
+      "sha256": "446afe9fb411c9a39e72dd49f1753bd87dcd0fe4447e02c72d020a682da42ac1"
     },
     {
       "case": "UAT-06",
@@ -170,7 +170,7 @@
       "evidence": "UAT-06-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "911a08f9333999a6218813bdecf258ab722962f02577526543f1e692b0897388"
+      "sha256": "85f46b1c775500711c9bc3e5feea715a46a2709288b5e7f4c852b9e4c829d667"
     },
     {
       "case": "UAT-07",
@@ -179,7 +179,7 @@
       "evidence": "UAT-07-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "b882741b3856a79ac251fc0b97f25646696289b16f61bf17589c5deccf8bcf05"
+      "sha256": "31415cf23fec7bd47a2f47de2149d7d8c8255b0cd9c707bb90ca188842e16080"
     },
     {
       "case": "UAT-07",
@@ -188,7 +188,7 @@
       "evidence": "UAT-07-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "cf12df1273701ecb1dbcbb06fd28367301eb641dbf3ec156a8d4ac3ff7092c31"
+      "sha256": "7cc75def4ddbe2a714a86b377ad5c77187b255d499f1d0f0bbcb6ef012f514e8"
     },
     {
       "case": "UAT-07",
@@ -197,7 +197,7 @@
       "evidence": "UAT-07-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "991814367bdbe70e4a74a98a59b6ec3d9b689c8be2d02854aaf199db28078f10"
+      "sha256": "6c1d302d3ef0cecb4904c1df2f5513d7ea116bdded7d2dd4ce4d83e493a97c76"
     },
     {
       "case": "UAT-08",
@@ -206,7 +206,7 @@
       "evidence": "UAT-08-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "32e34d1eb50e66b0a3a0c2890db8069f0440ccf3af277f143ac41068f6945930"
+      "sha256": "35635087cf352d3401b0a7c9309ffb0d60b3d86bb106812ae8af1bf90eb2efff"
     },
     {
       "case": "UAT-08",
@@ -215,7 +215,7 @@
       "evidence": "UAT-08-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "4634765615038a1c5ea82961e0f82738d32757732cb943734855bf4067f7e213"
+      "sha256": "c02ab824b479ac592935a7f759e0d7263204883abef3b5dedc42f79b210dbb41"
     },
     {
       "case": "UAT-08",
@@ -224,7 +224,7 @@
       "evidence": "UAT-08-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "ead6beb7ccbd9f6efd3ea03b8f247778b8bb15bac1d5631234393044dfa6de23"
+      "sha256": "cb8b256ee41c9500eff54d45f33ef0114c1f54ce746bff5ec6dbc5cca235c878"
     },
     {
       "case": "UAT-09",
@@ -233,7 +233,7 @@
       "evidence": "UAT-09-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "eb045d98e5d8911bffc824fa1533e7441e0d8147218fe4942e3cf7f310255364"
+      "sha256": "8c82f02230c7f681a4dae7ec82851bcee934580c8a30d4eec10b5072e2b554bf"
     },
     {
       "case": "UAT-09",
@@ -242,7 +242,7 @@
       "evidence": "UAT-09-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "f5356331d05d6af02d3a0fe20154271047ed24d62a0b739359c2d2fa39c56c22"
+      "sha256": "ff3a24ac8f7a142b190e3c895c2c91db980997111205d3f69ea4b87b268ce0fa"
     },
     {
       "case": "UAT-09",
@@ -251,7 +251,7 @@
       "evidence": "UAT-09-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "b587cc257b2f78ba573a326b7dc1f5475237a0dfd7ba59bcb832942811de3166"
+      "sha256": "b5bbb399f603e8da11d1bacd83818d89afa20ae95ae09e1c328bacd5f3039d91"
     },
     {
       "case": "UAT-10",
@@ -260,7 +260,7 @@
       "evidence": "UAT-10-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "911c9a04f6dfbfbf9138752365903e6216a0f51db5852cccf0b4a0d21f19264e"
+      "sha256": "b65d5f39bdcdbb996844155f2138cdc23f72838f964abff948a3778753ce1774"
     },
     {
       "case": "UAT-10",
@@ -269,7 +269,7 @@
       "evidence": "UAT-10-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "97fa995e45a7ea249a56fe58e41b5dbfa44988be46ebfb8e5abf69508f8ca102"
+      "sha256": "0338bb0722375375532dc51ca78822a00b63c59db9ceb027ff186d527683ce36"
     },
     {
       "case": "UAT-10",
@@ -278,7 +278,7 @@
       "evidence": "UAT-10-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "5e14ad9f5bb02d35bc48c17020ce8ea855d7d9427da0adc383be9596de34f36b"
+      "sha256": "c8669c94bdb6bd49d42bbdabc91ce4421b99a92ad416839205911823f08ad601"
     },
     {
       "case": "UAT-11",
@@ -287,7 +287,7 @@
       "evidence": "UAT-11-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "0b45f2fc055c62e860d547b3599d02b7b2624b1113b6ac9f5d49abdb847e2e11"
+      "sha256": "39ba8d384aed007d1c0c9b96cfdd40d8782d56bf306043b9dd33beda6d922882"
     },
     {
       "case": "UAT-11",
@@ -296,7 +296,7 @@
       "evidence": "UAT-11-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "493a2fd624304ddf23f8bfc240031984b3e387c89ec7a8e5b50ce1b4fd10a97d"
+      "sha256": "88f569c2a1a19f628e5634b2fe9a2fd16b4f867ec20c1ea9886aba83db28bf38"
     },
     {
       "case": "UAT-11",
@@ -305,7 +305,7 @@
       "evidence": "UAT-11-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "b317635ab3bd738034f90abc7d41f1a3c79082dc003ef00d88f0ffc12c59e85f"
+      "sha256": "25a3f8ba05e766bf748e1d0b9bc438d4414dcebf3096b3409d634e4e487b3b18"
     },
     {
       "case": "UAT-12",
@@ -314,7 +314,7 @@
       "evidence": "UAT-12-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "fe74f364d509d889a8249a9259e9e631bb086d1ae2b7e87a071553d0cc2d1c85"
+      "sha256": "a87f14536af6b1876f7958847ea7d495ddb31ea09a99e4f38da90caf08e9985c"
     },
     {
       "case": "UAT-12",
@@ -323,7 +323,7 @@
       "evidence": "UAT-12-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "b29325eaf0e410f864b9c5439583b0507793e537b1396547959c91e59a436dba"
+      "sha256": "5a54d42aa93f75d7979d3d9dff2c3882c264bc82fe7e620cd9c82f3d74ad492c"
     },
     {
       "case": "UAT-12",
@@ -332,7 +332,7 @@
       "evidence": "UAT-12-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "a302f7e5143cff3f13483654da21028b27c61eb79d9f3a7c51ac435425ea5992"
+      "sha256": "75654cd943d923686699fc3c6822417b0c4659d02c3b83b43b119165f38f3b20"
     },
     {
       "case": "UAT-13",
@@ -341,7 +341,7 @@
       "evidence": "UAT-13-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "f5f62ab57986c1e89b42ab9bc88532012bb4bc56445c2669129e815c6675bb1c"
+      "sha256": "a7ff164f5cb177727ee5181d0b2d3a4acebea8a569b6e4a0b286e007a35d355b"
     },
     {
       "case": "UAT-13",
@@ -350,7 +350,7 @@
       "evidence": "UAT-13-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "097ee3791c443221fed136dec6f5e6f11c31d939f08515a0080bedf5e7ce1dd7"
+      "sha256": "d1a9c10d38bbf21529b0aad9ca1ffc13b40271bdd178f58e716d75afd8e11227"
     },
     {
       "case": "UAT-13",
@@ -359,7 +359,7 @@
       "evidence": "UAT-13-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "4427ba0dc3462f0648a2324c3b3c16391bcb018a0c94ad21e30f2a6325045b03"
+      "sha256": "b20cdc9e580bfcd06779ccedde75fdf5b9dfd880b7bc18614062d8e96c80399d"
     },
     {
       "case": "UAT-14",
@@ -368,7 +368,7 @@
       "evidence": "UAT-14-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "b4211783e620817cb7e19d0b65f96243a0660a9c53b6fdf5a4170668756e24c6"
+      "sha256": "803afaacf99c06fa654b6bbd36fd8f9f3c02ad488bd07603bc6057717c98a5f4"
     },
     {
       "case": "UAT-14",
@@ -377,7 +377,7 @@
       "evidence": "UAT-14-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "d1ad3b32a83ce3d748dbe3d73dda46117d28187292fc8a851fc91bee22291845"
+      "sha256": "07f900445340ffd1e08329eae2777a1503c12afe50343919a3f0cd0d28a81bbd"
     },
     {
       "case": "UAT-14",
@@ -386,7 +386,7 @@
       "evidence": "UAT-14-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "f25cde53ffcc72feaf57aff56e413df059a1db72acea75662a777620f07b3400"
+      "sha256": "530521c4be38eafe9b4b54be89c09a006bac98a6c2dfaac8f5a611c387d4a566"
     },
     {
       "case": "UAT-15",
@@ -395,7 +395,7 @@
       "evidence": "UAT-15-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "c444930e69163e3bae373589bca1c46a0f03621c81370210def7e73bc3a7f0a6"
+      "sha256": "fc5f7627f11206a9b7a5b98c4198e21ac4c9688cfa89a1a145b61f8201d4f813"
     },
     {
       "case": "UAT-15",
@@ -404,7 +404,7 @@
       "evidence": "UAT-15-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "c3f303a642d7bf44f30113e9aba38e073d99c95864f11f2846ffeab6f75844e3"
+      "sha256": "6ec37ad74471e3b4982bd572e7991fd84680e7b025e585b95f454a4f54fe21ea"
     },
     {
       "case": "UAT-15",
@@ -413,7 +413,7 @@
       "evidence": "UAT-15-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "b235340e206c666036764eb51c5984ecce61bd205a283b0deadeb67445b1876c"
+      "sha256": "a4322ec0f9da70e6f2308311058103b4ec850bfcebddecb1922dc281611a57f8"
     },
     {
       "case": "UAT-16",
@@ -422,7 +422,7 @@
       "evidence": "UAT-16-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "8c32ea4fc8a1d579cedc56125d159e2138f9046b143ca82453ece717033dda07"
+      "sha256": "eb98c94a1878d9449a13b9da9664e6e7685b4823c841e34ad636432e6aecf7d7"
     },
     {
       "case": "UAT-16",
@@ -431,7 +431,7 @@
       "evidence": "UAT-16-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "6d6d0565a9086f2a9b8790a5949ab4b0cff70e4af6ccfbeae3daeab3b33deb2f"
+      "sha256": "aabc9c47e7f7b5db84fa6a8a7303c79636bfd68d088e803297bdd65607f23a7c"
     },
     {
       "case": "UAT-16",
@@ -440,7 +440,7 @@
       "evidence": "UAT-16-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "5626b2f6f8e4aff7c3e3ec1bac0b5dcabcf28b342018191e34b0724f3572eb17"
+      "sha256": "ec849130d2404d6cbe71c899c794c80c0093ace8686317b89c4fc4fd7d1cea58"
     },
     {
       "case": "UAT-17",
@@ -449,7 +449,7 @@
       "evidence": "UAT-17-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "6981127fc898e033ba4ebceb3a2a868ace8d5065464ecea774059be6b291eb8f"
+      "sha256": "72e14d140793a62a2d93c40bcd9b71fbf998f097cc337f94adf47f59dd8015ea"
     },
     {
       "case": "UAT-17",
@@ -458,7 +458,7 @@
       "evidence": "UAT-17-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "27fbad4c72d7dd00e572584dceab735da1901081fcf06c1f1d7287c9485ccae3"
+      "sha256": "0f0b02cc51b3c3d62087c44796567b8340cdb0b6b79fea009d5868f96ae336fe"
     },
     {
       "case": "UAT-17",
@@ -467,7 +467,7 @@
       "evidence": "UAT-17-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "0718950738ed8d9fabdcb5cd6f3415446dfc385c4f9b5e190a066fa4a0b69923"
+      "sha256": "bc142e703dfa3b8dcacff25e9e96a1aba0d4a81145afbdf90df070a48471fb58"
     },
     {
       "case": "UAT-18",
@@ -476,7 +476,7 @@
       "evidence": "UAT-18-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "7dcaf917edbb7da706cefac9d16836d8a5dde540a65a325a06166d8189ed913c"
+      "sha256": "573138b744126279aaf1b2edf74aad9b98eaa4712f473e0a46a831eb071c8df8"
     },
     {
       "case": "UAT-18",
@@ -485,7 +485,7 @@
       "evidence": "UAT-18-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "2a456b8137c4ae99394c6a7839bd11f2c02e01f336a32f7e84adc4caf7ce70c5"
+      "sha256": "9678542f00bf38d6e16df93b68f73b74858fcef008a19293880478df75770abc"
     },
     {
       "case": "UAT-18",
@@ -494,7 +494,7 @@
       "evidence": "UAT-18-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "ceb8d8a5cf17215f6ad255f22422cbb8ef54fbfaf17047c5df61d647e6bb48c2"
+      "sha256": "611eb120035d5c453df598dd2db990938e03c5de1d5172e4ce24bcbb3278b860"
     },
     {
       "case": "UAT-19",
@@ -503,7 +503,7 @@
       "evidence": "UAT-19-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "e9e7f3f4ff30c4302a1616a4b1d2d7f42a8f0698f56141e351d1f9b0e4c6fc35"
+      "sha256": "d370acba9abb2ae69f81ad9ee3f1acdde0f1c822db049a5aa3d7d688e4ab5403"
     },
     {
       "case": "UAT-19",
@@ -512,7 +512,7 @@
       "evidence": "UAT-19-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "1d81a3961307f12d6b67e3cb671dc8ec553761a80bd4272c49e9c72e6c585881"
+      "sha256": "54292a0ab642ba906c9f698f9fc03cfc4d44b76578a17b333e5caf693daaa655"
     },
     {
       "case": "UAT-19",
@@ -521,7 +521,7 @@
       "evidence": "UAT-19-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "bb0840700635beeac22ecb85cb7a2a0686424b8709aeae1a210f30aee59d57b1"
+      "sha256": "57ac726df9cf19aaefdbdbbd6a9389e57a3dd547f790ff365283b4b773801974"
     },
     {
       "case": "UAT-20",
@@ -530,7 +530,7 @@
       "evidence": "UAT-20-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "04d2883be7d22c7ca2bee8e8beb4a1eaed82932166239199316720d1c43af626"
+      "sha256": "414bfd52a90594845cd95d7e53a04b766dcceee19a9c2f4da11f398cc8444f8e"
     },
     {
       "case": "UAT-20",
@@ -539,7 +539,7 @@
       "evidence": "UAT-20-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "bde4fa56fbcf50fd458d3890d3dcdb78ec258a14738c867b5f403f828253e66f"
+      "sha256": "461bfd23eb90df7c79d46a18d4b98b81142ae48eaf185598eb31f9391e4d9c07"
     },
     {
       "case": "UAT-20",
@@ -548,7 +548,7 @@
       "evidence": "UAT-20-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "24711d1f1ea322937ab869c4a00f5d032bef017516199e72956f6f600cd7790d"
+      "sha256": "42bd5562c674d0d0f3bc2f03c56527089c2ef80a9e21ec67548e4097a41defb2"
     },
     {
       "case": "UAT-21",
@@ -557,7 +557,7 @@
       "evidence": "UAT-21-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "7a635134cec0da18776e664e066be474985d3b43a2dcc4f70c23819f39c9eaf4"
+      "sha256": "7999b90b10b7ad4f7e1a508363900033870de12935003dc54a24dfeaedf8d58b"
     },
     {
       "case": "UAT-21",
@@ -566,7 +566,7 @@
       "evidence": "UAT-21-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "a073f8988aa6175c3e9331226aaa9ec1c4d341e7a5d3aeda091caf6ca9378716"
+      "sha256": "46c861aa110637333fde0ed8ad4fbe41f4c0133ef96d77db9b2a26bc737fee4a"
     },
     {
       "case": "UAT-21",
@@ -575,7 +575,7 @@
       "evidence": "UAT-21-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "c281134d383453065374ef26e2ebcb4417a4c0c8a2611f1aa6baef0a87b75173"
+      "sha256": "645ef5fbb8ab4e3850185b6d5bdd2fa818f15325202906dc477b6fc46f29bedb"
     },
     {
       "case": "UAT-22",
@@ -584,7 +584,7 @@
       "evidence": "UAT-22-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "593c65a9fa2bbad5dfffba8279bb1985f1f44ed0b6b4eda51c41a326db402127"
+      "sha256": "f3648877094ef0e31fd77972e935b05576ad39d8d35baca881682e06452334f2"
     },
     {
       "case": "UAT-22",
@@ -593,7 +593,7 @@
       "evidence": "UAT-22-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "e27f6a3aa3dfa7329abf44cdbaf01324003dee228efab3192c3b808b9a07120e"
+      "sha256": "9fdbde58ac7b3bd588575e18c1bf3c3ab926f886935d914591c1b30cf36b26b1"
     },
     {
       "case": "UAT-22",
@@ -602,7 +602,7 @@
       "evidence": "UAT-22-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "bed6f518fc07af5bc2d3c763fce5ede04e8d84a8b99a9bd9cb1e37d0b14785fd"
+      "sha256": "b509415ec094cb6377c59d2d42e0cdcc8707a0b9816fcbfab828e63fada078e3"
     },
     {
       "case": "UAT-23",
@@ -611,7 +611,7 @@
       "evidence": "UAT-23-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "c0586f9fbfe80b460a14764def95566625983439c6b7e911232100c1340f90d4"
+      "sha256": "0e729a472811e559b88e0633ee3babb084093d4a6f35b4a4acb8ea2e512e601f"
     },
     {
       "case": "UAT-23",
@@ -620,7 +620,7 @@
       "evidence": "UAT-23-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "996ed5af605872affa006c993bbf73c7c4fe245a96432d78e153db8650e09c84"
+      "sha256": "36ab257973d21f29647299caf12367a048c9a23fb6c39ab3ca88284f9edbdc52"
     },
     {
       "case": "UAT-23",
@@ -629,7 +629,7 @@
       "evidence": "UAT-23-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "f3bcb1493a21a6f07f7bf0c1bac0bcf75dbb965748494e6a25fc141784fad02e"
+      "sha256": "8fb6601cd81c90f3259619feb16b16f166f58c6c05f95fd01b15978108663b68"
     },
     {
       "case": "UAT-24",
@@ -638,7 +638,7 @@
       "evidence": "UAT-24-desktop.png",
       "width": 1280,
       "height": 800,
-      "sha256": "7a83c33661c9628332144483d9840d6c2962c1124ed07676726fdffca48cddbb"
+      "sha256": "d142ff99c3a44080f0bb268ea825a52e09042a653538e5555c482080620bf3b0"
     },
     {
       "case": "UAT-24",
@@ -647,7 +647,7 @@
       "evidence": "UAT-24-mobile.png",
       "width": 390,
       "height": 844,
-      "sha256": "8b5040a32f233241846c486f232f3b6c60e7907b0b68a532ef7552d726a505bd"
+      "sha256": "7dbb6ddf656ec05cec6ac31f653e62f345fb3ff17a99e5ea426ea4ffe5fb7570"
     },
     {
       "case": "UAT-24",
@@ -656,7 +656,7 @@
       "evidence": "UAT-24-api.png",
       "width": 1280,
       "height": 800,
-      "sha256": "dbd85ea8b547235f7a2fb9289d8e6b620a9126aa5da8024facfd45698650c545"
+      "sha256": "26facb32f803cae8f4f8640973e5bda119caa26cd841c346973bc797574d934c"
     }
   ],
   "contrast": {
@@ -682,6 +682,7 @@
     "PR42-UAT-19.patch"
   ],
   "commits": [
+    "d0842ca test(PR42-UAT-22): record installation regression and exploration",
     "7383ad4 test(PR42-UAT-22): cover empty send limit recovery",
     "ef8476e test(PR42-UAT-05): record zero limit installation regression",
     "8a57f59 test(PR42-UAT-01): record installation regression and limit exploration",

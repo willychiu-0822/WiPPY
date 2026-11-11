@@ -346,3 +346,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 完整通過後在兩種視窗探索清空每日發送上限：建立及編輯時顯示中文提示，資料不變；修正後保存並重整仍正確，畫面無水平溢出（[桌面](../uat/evidence/exploration-empty-limit-desktop.png)、[手機](../uat/evidence/exploration-empty-limit-mobile.png)）。新增的 UAT-22 自動化覆蓋該情境，commit `7383ad4`；本輪沒有產品修復。
 
 先前間歇逾時根因仍未確認，本輪仍出現 Firestore transport 警告。真實 Grok、Instinct、LINE、雲端同步及 HTTPS 未驗證；ready 僅表示本機 emulator/mock 旅程可供瀏覽器測試。本輪自啟服務已停止；依後段指示未 push、部署或寫入工作目錄外摘要。
+
+## 2026-11-11 21:20 安裝路徑 UAT 接續
+
+隔離 Auth 4144／Firestore 4145，以系統 Chrome 執行桌面、手機及 API 完整回歸 **72/72 PASS**，無重試；指南範例包含在 API 案例。`npm run verify:uat` 檢查 72 張截圖、32 筆對比資料及 9 份修復 patch。逐案結果見 [UAT 結果](../uat/UAT-RESULTS.md)。
+
+通過後重新以兩種視窗探索建立零額度 Grok：重整後額度不變、管理 API 一致、key 可驗證且無水平溢出（[桌面](../uat/evidence/exploration-zero-limit-desktop.png)、[手機](../uat/evidence/exploration-zero-limit-mobile.png)）。發送被阻擋由 UAT-05 驗證；本輪未發現新缺陷或產品修復。既有修復 commit 見前文。
+
+首次啟動 emulator 因 PATH 缺少 Java 而未啟動，改用工作目錄內 JRE 後成功。先前間歇逾時根因未知，本輪仍出現 Firestore transport 警告；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證，ready 僅代表本機 mock/emulator 路徑。依最後規則未 push、部署或寫入工作目錄外摘要。

@@ -264,3 +264,9 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 完整通過後另以桌面及手機探索 Instinct 錯誤 Email 格式：瀏覽器阻止提交，資料庫沒有新增 Agent；修正 Email 後成功建立並顯示一次性憑證。探索腳本第一次使用相對網址而中止，修正網址後兩種視窗皆通過。本輪沒有產品修復。既有修復 commit 見「2026-11-10 17:51 接續驗證與提交」，UAT-20 測試為 `6899038`。
 
 `ready_for_user_test` 僅代表本機 emulator/mock 路徑；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證。此次啟動服務已停止；依後段規則未 push、部署或寫入工作目錄外的摘要。
+
+### 2026-11-11 第 13 輪接續驗證
+
+隔離 Auth 4144／Firestore 4145，以系統 Chrome 執行完整 `npm run test:e2e`：桌面、手機及 API 各 20 案，**60/60 PASS**，無重試；`npm run verify:uat` 核對 60 張截圖、32 筆對比與 9 份修復 patch。逐項結果與本次證據見 [UAT 結果](../uat/UAT-RESULTS.md)。完整通過後，另以桌面與手機操作新增 Agent 表單，切換 Grok／Instinct 並確認對應欄位可見；此次探索僅限表單切換，沒有新增缺陷或產品修復。
+
+先前間歇逾時根因仍未確定；本輪仍出現 Firestore transport 警告，不能推論警告是逾時原因。`ready_for_user_test` 僅代表本機 emulator/mock 路徑，真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證。既有修復 commit 見「2026-11-10 17:51 接續驗證與提交」，UAT-20 測試為 `6899038`。依最後的規則未 push、部署或寫入工作目錄外摘要。

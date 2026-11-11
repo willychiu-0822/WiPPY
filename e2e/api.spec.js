@@ -8,6 +8,18 @@ test.afterEach(async ({ page }, info) => {
   await expect(page.getByRole('button', { name: `停用 ${a.agent.name}`, exact: true })).toBeVisible();
   await h.shot(page, info, info.title.match(/UAT-\d+/)[0]);
 });
+test('UAT-23 Wrong Routine key can be corrected and omitted in later settings', async () => {
+  const url = `/api/hub/admin/agents/${a.agent.id}`;
+  const before = (await h.events()).routines.length;
+  expect((await h.api(f.owner, url, 'PATCH', { routineUrl: 'https://routine.example.invalid/uat', routineKey: 'emulator-only-wrong-routine' })).status).toBe(200);
+  expect((await h.api(f.owner, `${url}/test`, 'POST', {})).body).toMatchObject({ ok: false, status: 401 });
+  expect((await h.events()).routines).toHaveLength(before);
+  expect((await h.api(f.owner, url, 'PATCH', { routineKey: 'emulator-only-routine' })).status).toBe(200);
+  expect((await h.api(f.owner, `${url}/test`, 'POST', {})).body.ok).toBe(true);
+  expect((await h.api(f.owner, url, 'PATCH', { dailySendLimit: 4 })).status).toBe(200);
+  expect((await h.api(f.owner, `${url}/test`, 'POST', {})).body.ok).toBe(true);
+  expect((await h.events()).routines).toHaveLength(before + 2);
+});
 test('UAT-22 Invalid limits are rejected without changing an agent', async () => {
   const r = await h.api(f.owner, '/api/hub/admin/agents', 'POST', { kind: 'grok_bot', name: 'invalid', allowedGroupIds: [], dailySendLimit: -1 });
   expect(r.status).toBe(400);

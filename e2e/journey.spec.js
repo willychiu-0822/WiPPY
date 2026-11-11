@@ -30,6 +30,23 @@ async function ruleUI(page, agent, keyword) {
   await page.reload();
   await expect(page.getByRole('switch', { name: `旅程-${keyword} 啟用`, exact: true })).toHaveAttribute('aria-checked', 'true');
 }
+test('UAT-23 Recover from a wrong Routine key and preserve the corrected key', async ({ page }, info) => {
+  const a = await grok(page); const item = row(page, a);
+  const key = item.getByLabel(`Routine Key（${a.agent.name}，留空表示不變）`, { exact: true });
+  await item.getByLabel(`Routine 網址（${a.agent.name}）`, { exact: true }).fill('https://routine.example.invalid/uat');
+  await key.fill('emulator-only-wrong-routine'); await save(page, a);
+  await item.getByRole('button', { name: '測試 Webhook', exact: true }).click();
+  await expect(item.getByRole('status')).toContainText('Webhook 測試失敗：401');
+  await key.fill('emulator-only-routine'); await save(page, a);
+  await expect(key).toHaveValue('');
+  await item.getByRole('button', { name: '測試 Webhook', exact: true }).click();
+  await expect(item.getByRole('status')).toContainText('Webhook 測試成功（HTTP 200）');
+  await save(page, a); await page.reload();
+  await expect(key).toHaveValue('');
+  await item.getByRole('button', { name: '測試 Webhook', exact: true }).click();
+  await expect(item.getByRole('status')).toContainText('Webhook 測試成功（HTTP 200）');
+  await h.shot(page, info, 'UAT-23');
+});
 test('UAT-22 Explain invalid limits and allow correction', async ({ page }, info) => {
   await agents(page); const form = page.locator('form');
   const name = `限制測試 ${f.tag}`; await form.getByLabel('名稱', { exact: true }).fill(name);

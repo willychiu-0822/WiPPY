@@ -59,3 +59,9 @@
 ## 2026-11-11 18:19 接續
 
 完整桌面、手機、API 22 案各一輪 66/66 PASS；含指南 curl，證據檢查 66 張截圖、32 筆對比、9 份既有 patch。新增 UAT-21 補授權群組與 UAT-22 額度輸入錯誤復原；修復 `3accc5b`。此前 18:14 執行 65/66，桌面 UAT-15 初始化逾時；重跑通過但根因未明，詳見 `docs/pr42-fixes/RESULTS.md`。本機 mock/emulator，不代表真實平台或 HTTPS 已驗證；未 push 或部署。
+
+## 2026-11-11 20:27 接續結果
+
+隔離 emulator/mock 完整回歸 69/69 PASS，新增 UAT-23 驗證 Routine key 輸入錯誤、修正與留空保留；`npm run verify:uat` 核對 69 張截圖、32 個對比值與 9 個 patch。通過後桌面及手機瀏覽器腳本探索類型切換，名稱保留、欄位正確、無水平溢出。詳見 `docs/pr42-fixes/RESULTS.md` 與 `docs/uat/UAT-RESULTS.md`。
+
+Firestore transport 警告和先前間歇逾時根因仍待釐清；真實外部平台、LINE、雲端同步及 HTTPS 未驗證。本輪僅本機提交、未 push；依後段只在目前目錄工作的指示保留此 repo 內摘要。

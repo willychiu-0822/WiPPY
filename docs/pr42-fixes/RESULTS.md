@@ -290,3 +290,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 新增 UAT-21：先建立不含群組的 Grok，再授權群組並重整；兩種視窗及 API 均通過。探索發現負數額度雖被後端拒絕，畫面顯示難懂的英文內部驗證訊息；`3accc5b`（PR42-UAT-22）讓建立及編輯的無效額度、Instinct 預警時數顯示中文範圍並保留輸入。UAT-22 驗證額度錯誤、資料未變更及修正後保存。完整通過後另在桌面和手機探索 Instinct 預警時數為 0：提示正確、無半成品，改為 24 後成功建立。最初探索腳本在兩種視窗完成 UAT-21 斷言後，清理步驟報錯；正式自動化及完整測試均通過。
 
 前一次執行 **65/66**：桌面 UAT-15 登入後等待收件匣標題逾時，未進入停用斷言；失敗時快照顯示標題後來出現。結果保存在 [18:14 報告](../uat/UAT-RESULTS-2026-11-11-1814.md)，該表截圖連結指向重跑後的證據，並非當時畫面。重跑成功不等於逾時根因已修復；先前間歇逾時仍未釐清，Firestore transport 警告仍出現。真實 Grok、Instinct、LINE、雲端同步與 HTTPS 未驗證，ready 僅表示本機 emulator/mock 可供瀏覽器測試。本輪自啟服務已關閉；依最後規則未 push、部署或寫入目錄外摘要。
+
+## 2026-11-11 20:27 安裝路徑 UAT 接續
+
+接續中斷前未提交的 UAT-23：Routine key 錯誤時顯示 401，修正後測試成功，留空儲存與重整後仍可使用已保存的 key；桌面、手機及 API 皆 PASS。完整執行 `npm run test:e2e` 為 **69/69 PASS**（23 案 × 3，Chrome，無重試）；指南 19 條 curl 在隔離 emulator/mock 執行。逐案結果與證據見 [UAT 結果](../uat/UAT-RESULTS.md)，`npm run verify:uat` 核對 69 張截圖、32 個對比數值及 9 個可反向套用 patch。
+
+通過後另以瀏覽器腳本在兩種 viewport 探索切換新增 Agent 類型，確認名稱保留、顯示對應欄位且沒有水平溢出（[桌面](../uat/evidence/exploration-type-switch-desktop.png)、[手機](../uat/evidence/exploration-type-switch-mobile.png)）；此探索沒有新缺陷，並非真人實測外部平台。本輪無產品修復；先前修復 commit 清單見上方，後續新增額度提示修復 `3accc5b`、群組授權測試 `000950e`，本輪以 `test(PR42-UAT-23)` 提交接續測試及結果。
+
+先前間歇逾時根因仍未確認，Firestore transport 警告仍出現；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證，ready 只表示本機 mock/emulator 路徑可供瀏覽器測試。本輪使用 4141–4148，服務已停止。依後段明確指示未 push、部署或寫入工作目錄外的摘要。

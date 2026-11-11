@@ -67,12 +67,18 @@ test('UAT-22 Explain invalid limits and allow correction', async ({ page }, info
   await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
   await expect(form.getByRole('alert')).toHaveText('每日發送上限請填 0 到 1000 的整數');
   expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents).toHaveLength(0);
+  await limit.fill(''); await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
+  await expect(form.getByRole('alert')).toHaveText('每日發送上限請填 0 到 1000 的整數');
+  expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents).toHaveLength(0);
   await limit.fill('1'); await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
   const secret = page.getByRole('region', { name: '只顯示一次的憑證' }); await expect(secret).toBeVisible();
   await secret.getByRole('button', { name: '我已保存' }).click();
   const item = page.getByRole('listitem').filter({ has: page.getByRole('button', { name: `停用 ${name}`, exact: true }) });
   const edit = item.getByLabel('每日發送上限', { exact: true }); await edit.fill('1001');
   await item.getByRole('button', { name: `儲存 ${name} 設定`, exact: true }).click();
+  await expect(item.getByRole('status')).toHaveText('每日發送上限請填 0 到 1000 的整數');
+  expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents[0].dailySendLimit).toBe(1);
+  await edit.fill(''); await item.getByRole('button', { name: `儲存 ${name} 設定`, exact: true }).click();
   await expect(item.getByRole('status')).toHaveText('每日發送上限請填 0 到 1000 的整數');
   expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents[0].dailySendLimit).toBe(1);
   await edit.fill('2'); await item.getByRole('button', { name: `儲存 ${name} 設定`, exact: true }).click();

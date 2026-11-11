@@ -1,0 +1,18 @@
+{
+  "at": "2026-11-11T13:09:26.530Z",
+  "viewport": "390x844",
+  "findings": [
+    {
+      "area": "00-group-load-offline",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\nUAT 讀書會\n5 人\n\n無法載入訊息，請檢查網路連線後重新載入\n\n重新載入訊息\n發送\n群組\n廣播\nU\nUAT 工作坊\n下午09:03\n\n歡迎加入本機測試群組\n\nU\nUAT 讀書會\n下午09:03\n\n歡迎加入本機測試群組",
+      "misleadingEmptyState": false,
+      "retryCount": 1
+    },
+    {
+      "area": "01-group-send-offline",
+      "body": "本機 UAT · Firebase emulator · LINE / AI 模擬，不會發送真實訊息 · LIFF 檢查\nWiPPY\n群組\n活動\n記錄\n登出\n←\nUAT 讀書會\n5 人\n測試夥伴\n下午09:03\n歡迎加入本機測試群組\n\n無法連線，請檢查網路連線後重新發送；輸入內容已保留\n\n發送\n群組\n廣播\nU\nUAT 工作坊\n下午09:03\n\n歡迎加入本機測試群組\n\nU\nUAT 讀書會\n下午09:03\n\n歡迎加入本機測試群組",
+      "draft": "想提醒大家帶一本喜歡的書"
+    }
+  ],
+  "errors": []
+}

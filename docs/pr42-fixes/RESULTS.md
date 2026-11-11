@@ -314,3 +314,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 最後完整通過後，另以桌面與手機建立名稱前後有空格的 Agent，確認名稱已修剪、成功建立且畫面無水平溢出（[桌面](../uat/evidence/exploration-trim-desktop.png)、[手機](../uat/evidence/exploration-trim-mobile.png)）。本輪新增修復與測試 commit 如上，先前修復清單見前文。
 
 先前間歇逾時根因未確認，本輪仍有 Firestore transport 警告；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 未驗證，ready 僅表示本機 mock/emulator 路徑。測試服務已停止；依後段規則未 push、部署或寫入工作目錄外摘要。
+
+## 2026-11-11 20:46 安裝路徑 UAT 接續
+
+原先預期的 Auth 9299／Firestore 8285 未運行，第一次完整測試在啟動堆疊時失敗，沒有執行任何案例。改用隔離 Auth 4144／Firestore 4145 及系統 Chrome 後，桌面、手機與 API 完整重跑 **72/72 PASS**（24 案 × 3，無重試），包含指南範例；`npm run verify:uat` 核對 72 張截圖、32 筆對比及 9 份修復 patch。逐項結果與證據見 [UAT 結果](../uat/UAT-RESULTS.md)。
+
+啟動失敗暴露結果報表將未執行案例顯示為 0 blocked 的問題。`94d738f`（PR42-UAT-25）將未執行／跳過案例標示為 BLOCKED，並避免把舊截圖當作本次證據；以隔離報表模擬驗證啟動失敗與完整通過兩種情況。完整旅程執行使用修正前已載入的 reporter，結果本身 72 項均實際執行通過。
+
+完整通過後，另以桌面和手機探索 Instinct 收件匣預警上界：721 小時出現中文提示且未建立 Agent，改為 720 後成功建立並保存，兩種版面無水平溢出；未發現新產品缺陷。先前間歇逾時根因未確認，本次仍有 Firestore transport 警告。真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證；ready 僅表示本機 mock/emulator 路徑。本輪啟動的 4141–4148 服務已停止；依後段指示未 push、部署或寫入工作目錄外摘要。

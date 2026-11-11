@@ -1,6 +1,6 @@
 # 安裝路徑 UAT 結果
 
-時間：2026-11-11 20:41（Asia/Taipei）。72/72 PASS。
+時間：2026-11-11 20:46（Asia/Taipei）。72/72 PASS。
 
 真實 WiPPY + Auth/Firestore emulator，外部 LINE/Routine mock；Chrome 桌面 1280×800／手機 390×844。每次執行覆寫本表，完整驗收需 24 個案例 × 3 projects = 72 次且都有本次截圖；ready 僅表示可做本機瀏覽器 UAT。
 

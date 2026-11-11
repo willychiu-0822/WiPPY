@@ -298,3 +298,9 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 通過後另以瀏覽器腳本在兩種 viewport 探索切換新增 Agent 類型，確認名稱保留、顯示對應欄位且沒有水平溢出（[桌面](../uat/evidence/exploration-type-switch-desktop.png)、[手機](../uat/evidence/exploration-type-switch-mobile.png)）；此探索沒有新缺陷，並非真人實測外部平台。本輪無產品修復；先前修復 commit 清單見上方，後續新增額度提示修復 `3accc5b`、群組授權測試 `000950e`，本輪以 `test(PR42-UAT-23)` 提交接續測試及結果。
 
 先前間歇逾時根因仍未確認，Firestore transport 警告仍出現；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證，ready 只表示本機 mock/emulator 路徑可供瀏覽器測試。本輪使用 4141–4148，服務已停止。依後段明確指示未 push、部署或寫入工作目錄外的摘要。
+
+## 2026-11-11 20:31 接續驗證
+
+接續已提交的 UAT-23，在隔離 Auth／Firestore emulator 重新執行桌面、手機和 API 全套，**69/69 PASS**，無重試，包含指南 19 條 curl。`npm run verify:uat` 核對 69 張截圖、32 筆對比與 9 份 patch；逐案結果見 [UAT 結果](../uat/UAT-RESULTS.md)。上次完整通過後的新手探索及其範圍見 20:27 紀錄，本次重跑後未另做探索，也沒有新增產品修復。
+
+先前間歇逾時根因未確認，本輪仍有 Firestore transport 警告；真實外部 Agent、LINE、雲端同步及 HTTPS 尚未驗證。本輪啟動的 4141–4148 服務已停止；依後段規則未 push、部署或寫入工作目錄外。

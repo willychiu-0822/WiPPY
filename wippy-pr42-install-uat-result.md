@@ -65,3 +65,5 @@
 隔離 emulator/mock 完整回歸 69/69 PASS，新增 UAT-23 驗證 Routine key 輸入錯誤、修正與留空保留；`npm run verify:uat` 核對 69 張截圖、32 個對比值與 9 個 patch。通過後桌面及手機瀏覽器腳本探索類型切換，名稱保留、欄位正確、無水平溢出。詳見 `docs/pr42-fixes/RESULTS.md` 與 `docs/uat/UAT-RESULTS.md`。
 
 Firestore transport 警告和先前間歇逾時根因仍待釐清；真實外部平台、LINE、雲端同步及 HTTPS 未驗證。本輪僅本機提交、未 push；依後段只在目前目錄工作的指示保留此 repo 內摘要。
+
+2026-11-11 20:31 再次完整驗證：隔離 emulator、Chrome 桌面／手機及 API 69/69 PASS，19 條指南 curl 通過；核對 69 張截圖、32 筆對比及 9 份 patch。上次通過後的探索見 20:27 紀錄，本次重跑後未另做探索。既有間歇逾時根因未明、Firestore transport 警告仍在；真實外部服務及 HTTPS 未驗證。測試服務已停止，未 push。

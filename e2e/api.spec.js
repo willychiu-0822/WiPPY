@@ -8,6 +8,13 @@ test.afterEach(async ({ page }, info) => {
   await expect(page.getByRole('button', { name: `停用 ${a.agent.name}`, exact: true })).toBeVisible();
   await h.shot(page, info, info.title.match(/UAT-\d+/)[0]);
 });
+test('UAT-24 Whitespace-only names are rejected without creating an agent', async () => {
+  const invalid = await h.api(f.owner, '/api/hub/admin/agents', 'POST', { kind: 'grok_bot', name: '   ', allowedGroupIds: [], dailySendLimit: 5 });
+  expect(invalid.status).toBe(400);
+  expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents).toHaveLength(0);
+  const valid = await h.create(f);
+  expect((await h.api(valid.apiKey, '/api/hub/me')).status).toBe(200);
+});
 test('UAT-23 Wrong Routine key can be corrected and omitted in later settings', async () => {
   const url = `/api/hub/admin/agents/${a.agent.id}`;
   const before = (await h.events()).routines.length;

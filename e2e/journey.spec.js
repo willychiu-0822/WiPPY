@@ -30,6 +30,19 @@ async function ruleUI(page, agent, keyword) {
   await page.reload();
   await expect(page.getByRole('switch', { name: `旅程-${keyword} 啟用`, exact: true })).toHaveAttribute('aria-checked', 'true');
 }
+test('UAT-24 Explain whitespace-only names and allow creation after correction', async ({ page }, info) => {
+  await agents(page); const form = page.locator('form');
+  const name = form.getByLabel('名稱', { exact: true });
+  await name.fill('   '); await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
+  await expect(form.getByRole('alert')).toHaveText('請填寫 Agent 名稱');
+  expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents).toHaveLength(0);
+  await name.fill(`名稱修正 ${f.tag}`); await form.getByRole('button', { name: '建立 Agent', exact: true }).click();
+  const secret = page.getByRole('region', { name: '只顯示一次的憑證' });
+  await expect(secret).toBeVisible(); const key = await secret.locator('code.block').first().textContent();
+  expect((await h.api(key, '/api/hub/me')).status).toBe(200);
+  await secret.getByRole('button', { name: '我已保存' }).click();
+  await h.shot(page, info, 'UAT-24');
+});
 test('UAT-23 Recover from a wrong Routine key and preserve the corrected key', async ({ page }, info) => {
   const a = await grok(page); const item = row(page, a);
   const key = item.getByLabel(`Routine Key（${a.agent.name}，留空表示不變）`, { exact: true });

@@ -53,6 +53,7 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!name.trim()) { setError('請填寫 Agent 名稱'); return; }
     const validation = settingsError(dailySendLimit, kind === 'instinct' ? inboxAlertHours : undefined);
     if (validation) { setError(validation); return; }
     setSaving(true);

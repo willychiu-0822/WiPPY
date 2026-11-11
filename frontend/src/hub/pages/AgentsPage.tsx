@@ -7,6 +7,13 @@ import { useLoad } from '../useLoad';
 
 type Secret = { kind: AgentKind; name: string; apiKey?: string; password?: string; email?: string | null };
 
+function settingsError(limit: string, hours?: string): string | null {
+  const valid = (value: string, min: number, max: number) => value.trim() !== '' && Number.isInteger(Number(value)) && Number(value) >= min && Number(value) <= max;
+  if (!valid(limit, 0, 1000)) return '每日發送上限請填 0 到 1000 的整數';
+  if (hours !== undefined && !valid(hours, 1, 720)) return '收件匣逾時預警請填 1 到 720 的整數小時';
+  return null;
+}
+
 function SecretBox({ secret, onClose }: { secret: Secret; onClose: () => void }) {
   return (
     <section role="region" aria-label="只顯示一次的憑證" className="bg-amber-50 text-gray-900 border border-amber-300 rounded-xl p-4 space-y-2 text-sm">
@@ -46,6 +53,8 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const validation = settingsError(dailySendLimit, kind === 'instinct' ? inboxAlertHours : undefined);
+    if (validation) { setError(validation); return; }
     setSaving(true);
     setError(null);
     const base = { kind, name: name.trim(), allowedGroupIds, dailySendLimit: Number(dailySendLimit), inboxAlertHours: Number(inboxAlertHours) };
@@ -143,7 +152,11 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
         </>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" label={`儲存 ${agent.name} 設定`} onClick={() => run(async () => { await hubApi.admin.updateAgent(agent.id, settingsPatch()); setRoutineKey(''); }, '已儲存')}>儲存設定</Button>
+        <Button variant="secondary" label={`儲存 ${agent.name} 設定`} onClick={() => {
+          const validation = settingsError(limit, agent.kind === 'instinct' ? inboxAlertHours : undefined);
+          if (validation) { setMessage(validation); return; }
+          void run(async () => { await hubApi.admin.updateAgent(agent.id, settingsPatch()); setRoutineKey(''); }, '已儲存');
+        }}>儲存設定</Button>
         {agent.kind === 'grok_bot' ? (
           <>
             <Button variant="secondary" onClick={() => run(async () => { const r = await hubApi.admin.testAgent(agent.id); setMessage(r.ok ? `Webhook 測試成功（HTTP ${r.status}）` : `Webhook 測試失敗：${r.status ?? ''} ${r.detail ?? ''}`); })}>測試 Webhook</Button>

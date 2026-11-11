@@ -16,10 +16,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       if (u) {
-        await createUserDoc(u.uid, {
-          displayName: u.displayName,
-          email: u.email,
-        });
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          await Promise.race([
+            createUserDoc(u.uid, { displayName: u.displayName, email: u.email }),
+            new Promise<never>((_, reject) => {
+              timer = setTimeout(() => reject(new Error('Account initialization timed out')), 5000);
+            }),
+          ]);
+        } finally {
+          clearTimeout(timer);
+        }
       }
       if (attempt === generation.current) setUser(u);
     } catch {

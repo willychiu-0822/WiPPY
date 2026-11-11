@@ -848,6 +848,28 @@ test('UAT-24 首次登入的帳號資料連線失敗可理解、可重試，不�
   await noOverflow(page);
 });
 
+test('UAT-32 帳號資料長時間無回應時可重試，不持續停在載入中', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByRole('button', { name: '還沒有帳號？免費註冊' }).click();
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const pattern = '**/google.firestore.v1.Firestore/**';
+  await page.route(pattern, async route => { await held; await route.abort().catch(() => {}); });
+  try {
+    await page.getByPlaceholder('Email', { exact: true }).fill(`slow-profile-${crypto.randomUUID()}@example.test`);
+    await page.getByPlaceholder('密碼', { exact: true }).fill(fixturePassword);
+    await page.getByRole('button', { name: '建立帳號', exact: true }).click();
+    await expect(page.getByRole('alert')).toHaveText('無法載入帳號資料，請檢查網路連線後重試');
+    await expect(page.getByRole('button', { name: '重試載入帳號', exact: true })).toHaveCount(1);
+  } finally {
+    release();
+    await page.unrouteAll({ behavior: 'wait' });
+  }
+  await page.getByRole('button', { name: '重試載入帳號', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '群組', exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('UAT-25 無群組企畫先引導選擇收件群組，選妥才可核准或重新核准', async ({ page }) => {
   await register(page); const id = await createActivity(page, false); await plan(page);
   for (const label of ['核准企畫', '重新核准']) {

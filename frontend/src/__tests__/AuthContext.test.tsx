@@ -32,6 +32,22 @@ beforeEach(() => {
 });
 
 describe('UAT-24 first-login profile recovery', () => {
+  it('offers retry when profile initialization never completes, and ignores its late completion', async () => {
+    vi.useFakeTimers();
+    let finish!: () => void;
+    mocks.createUserDoc.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; })).mockResolvedValueOnce(undefined);
+    render(<AuthProvider><Probe /></AuthProvider>);
+    mocks.auth.currentUser = user;
+    act(() => { void mocks.listeners.at(-1)!(user); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000); });
+    expect(screen.getByRole('alert')).toHaveTextContent('無法載入帳號資料');
+    fireEvent.click(screen.getByRole('button', { name: 'retry' }));
+    await act(async () => {});
+    expect(screen.getByText('new-host')).toBeInTheDocument();
+    await act(async () => { finish(); });
+    expect(screen.getByText('new-host')).toBeInTheDocument();
+    vi.useRealTimers();
+  });
   it('reports profile failure, blocks entry and retries the authenticated account', async () => {
     mocks.createUserDoc.mockRejectedValueOnce(new Error('Firestore offline')).mockResolvedValueOnce(undefined);
     render(<AuthProvider><Probe /></AuthProvider>);

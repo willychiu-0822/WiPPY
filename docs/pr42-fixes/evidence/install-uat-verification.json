@@ -1,5 +1,574 @@
 {
-  "updated": "2026-11-11 06:29",
-  "verified": false,
-  "reason": "完整 UAT 為 56/57；手機 UAT-02 逾時。診斷重跑覆寫該案例截圖，不能視為完整通過證據。"
+  "updated": "2026-11-11 10:19",
+  "base": "0e929d5",
+  "e2e": {
+    "cases": 57,
+    "pass": 57,
+    "fail": 0,
+    "retries": 0,
+    "channel": "chrome",
+    "logical_cases": 19
+  },
+  "evidence": [
+    {
+      "case": "UAT-01",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-01-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "38e9d3237ef18bb52a7137df2a5d4c30eb593af1286e10de61c900bb32ae5804"
+    },
+    {
+      "case": "UAT-01",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-01-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "8425bd2ab983288ae226ed09e83be0ba96083c31d6eae02e231742b644077a8e"
+    },
+    {
+      "case": "UAT-01",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-01-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "4faa280f626992280da3ce913dc53d50707935a7e810b6e8c4dee7b56551b9bf"
+    },
+    {
+      "case": "UAT-02",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-02-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f9e354ec0b47a7925a749261a3f7b369c552d037bdedb9f7ed0cca394f0819ff"
+    },
+    {
+      "case": "UAT-02",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-02-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9e2d16d8f77e5af37bf8963d3b57ec800edf287534f2c3b6d634c762bbd92914"
+    },
+    {
+      "case": "UAT-02",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-02-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0561e6b40eda545333f9dc369402510b6a690ef4d0d2975d4156a0de11b16cd5"
+    },
+    {
+      "case": "UAT-03",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-03-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "89ed181655e0b3b0a5fcff98f64de9683999c37bfd1fe8eef503a38634d8438f"
+    },
+    {
+      "case": "UAT-03",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-03-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ab01dd99c439dc7371c76284f6bd31a5c2d9364d014f57dd7a8ec9014ac13ad4"
+    },
+    {
+      "case": "UAT-03",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-03-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "93304f4bbadb646ebe09184112e99b98f49c3bef2065dfa5f2dee501ee131fc8"
+    },
+    {
+      "case": "UAT-04",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-04-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "6f4ec687d95e0524161d10f6a9436c07a7165ee4b62c1bfed6839065cb65ad2a"
+    },
+    {
+      "case": "UAT-04",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-04-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "10a7cf842fa4e5ffb0790ee4269e1b31d65cfad6bdffe9f719361bbbb30f9d7b"
+    },
+    {
+      "case": "UAT-04",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-04-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "19a878122f9ab0ed7adb68cafe0bfbe7ee81933bda9c83588a25a82c918e1a98"
+    },
+    {
+      "case": "UAT-05",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-05-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "aa3685eb0df3fc753ed9e949b91fb2c29d381325bdd69be0221f9aa76f2ced81"
+    },
+    {
+      "case": "UAT-05",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-05-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "291ea45d40b24d6214f8f8f710f9d80034a1d40a50f37208179fca3d5516bd47"
+    },
+    {
+      "case": "UAT-05",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-05-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fe715ff7e471d4cc5b761ea1679a383dca47deb849d9b0d201e0a5e8aab8dc9f"
+    },
+    {
+      "case": "UAT-06",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-06-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "d6911f5871de420c198fd4a228b17b8f52f5ec92d3798faaa1fa2772bfc439c3"
+    },
+    {
+      "case": "UAT-06",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-06-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "006f32621b2db0d1d2c3eb0f1cf015663a175672765a79e09e37ded9114faf7e"
+    },
+    {
+      "case": "UAT-06",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-06-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ef647f37b5201f3707f1d4c386b825dce8251569e669be34bb79af2f6e5ed8e5"
+    },
+    {
+      "case": "UAT-07",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-07-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fe95e3a46c066876c1293960bd8180505b922d4e0399f43ef3dd578f00a9dc00"
+    },
+    {
+      "case": "UAT-07",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-07-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "4a3dceb1855b5dd3b7822c9f9c77e7ea2601cd194778114944828dc45d0eb05a"
+    },
+    {
+      "case": "UAT-07",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-07-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "563ae4db9a915aaf9ac8d293737dd4767b32db0493c0e5598a32f8201033404d"
+    },
+    {
+      "case": "UAT-08",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-08-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "a2867d6370f33e1f2d983db9e34caaa8af9777aba21515c464d0571515708fec"
+    },
+    {
+      "case": "UAT-08",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-08-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3a4aa56b11376220b42e812fce8fcc9dc487840dc84bc46f9a3b7465cb494f46"
+    },
+    {
+      "case": "UAT-08",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-08-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "9e9071937bc376e882876c019dbd303706509e7a70736602806422d2880781d5"
+    },
+    {
+      "case": "UAT-09",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-09-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b9e75cf3e5c8f9e0f23ada9519cbfdda5d0adc71d2619d0784f060edc0363f25"
+    },
+    {
+      "case": "UAT-09",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-09-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "3ffd33c1ed6edc7747f9f04e977c543fb4a8d029e24ccf3c89b768d8067569f6"
+    },
+    {
+      "case": "UAT-09",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-09-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b53f43e7d51df1e6eaa34bd847f839dd442cf05d1009cfd6fe7ec626387280e0"
+    },
+    {
+      "case": "UAT-10",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-10-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "e275a8da7bd48531140ceb0cae865bbc2ec51d4ad993f9298dfd5562e17c461c"
+    },
+    {
+      "case": "UAT-10",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-10-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "4b0408d3f063dc37dde68515d4fa0595b9513409ece9afef812f09d2601c3eaa"
+    },
+    {
+      "case": "UAT-10",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-10-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "17973cd85d236bc818fcf4c41503beba0e7a5a3dc3fbb53813526cb88e051790"
+    },
+    {
+      "case": "UAT-11",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-11-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "623bb78791b11eaac45b0c2415f917363d4a079ee0b35e12c0d941d696a86c68"
+    },
+    {
+      "case": "UAT-11",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-11-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "449b59ad0b4ed9ab3abaff30ea3df147137f30ee756d3136bad333cf371ab5ed"
+    },
+    {
+      "case": "UAT-11",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-11-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "d387eab2e7dfd3ab8d2e223aa0c650925c408cfe5205257a3c9f6f7bec7f00e2"
+    },
+    {
+      "case": "UAT-12",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-12-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "35e262b93a619acb3da39f413e980b6b37bbf7bf3441175ede3a93321d40c22a"
+    },
+    {
+      "case": "UAT-12",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-12-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "674bfe4406cf95d2a0c320507d9116916e6953b07bba4514aff6ddfce97811f8"
+    },
+    {
+      "case": "UAT-12",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-12-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b567bdac6a686aa607c52e7a4af1dd76bda2b4a715c21e31ee5d22412520d196"
+    },
+    {
+      "case": "UAT-13",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-13-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "933b88c8a1fedc6b18fdee7d9ed41a7483f2ced32d910f23a9211fcbf436b828"
+    },
+    {
+      "case": "UAT-13",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-13-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "e0072de80ce61cf6e993dd63db226052300c271aef677e539be8bf4247249aff"
+    },
+    {
+      "case": "UAT-13",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-13-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "af6e4138d82c84bc124853ec8b943746382c34474b84ff89398592d78e37716a"
+    },
+    {
+      "case": "UAT-14",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-14-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "60205ec9184e6107c00e9e1fe61a78134c1890ffab95c83192f6ca77c21fc08e"
+    },
+    {
+      "case": "UAT-14",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-14-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "724a73d518dddfee65898fa2dbc59e85e12081448ba6fda7316fb9bc1dff98e9"
+    },
+    {
+      "case": "UAT-14",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-14-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "daa7b3e87aea3c0dcf31252fd7c54f46810f3702b5d28669c4cb90d11ca92b1d"
+    },
+    {
+      "case": "UAT-15",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-15-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "06d305771891776032f8c5f738207e56debbe7732776d2b8c651af1afb6adee3"
+    },
+    {
+      "case": "UAT-15",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-15-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "05fbf8a447f3c97412f449e6026f6222b1adbb113fcb8033cdfcc52c771be7f9"
+    },
+    {
+      "case": "UAT-15",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-15-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "190090e428abf9f85d40824b13096e2049c37e5e32989102cd86ba6fbd15bb6f"
+    },
+    {
+      "case": "UAT-16",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-16-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "4adbc552e10367d20bcdc9994d68410d8dc57ab7c4ad8da6780181455beb2b86"
+    },
+    {
+      "case": "UAT-16",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-16-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "10934b014105a37c5e9a7e32c4145f6104207178f1d8b8d079edbb44308445f9"
+    },
+    {
+      "case": "UAT-16",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-16-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "a2305abaec186e8c79fe1886546241680753338661da795f3ee5f9f20164f9d5"
+    },
+    {
+      "case": "UAT-17",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-17-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ca465e65a6f929de8808bac613bd7649de4d61cc3a16e607b43d574b56d2ce05"
+    },
+    {
+      "case": "UAT-17",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-17-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "757278825df5162f81d33d18248cb0e460cf1d48f513f85bdd5caab8788458c7"
+    },
+    {
+      "case": "UAT-17",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-17-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "eb6136fa27ae5d5341390c8d263464e4d2f136f467c0120d87dcb34128294e94"
+    },
+    {
+      "case": "UAT-18",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-18-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "1e93d88f91d59e82e5b57e5d2b3d8a333baded732c21b18c72ea3e294c306d33"
+    },
+    {
+      "case": "UAT-18",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-18-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "5184af7f0864bc6b84271fcd82ea7bc0ffb05fe6accefa585c84db2a3124eaf0"
+    },
+    {
+      "case": "UAT-18",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-18-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "d078d85ed47726b16d0b7e9708ed8d0043cd8f33055c888cc98c3d47db99a41b"
+    },
+    {
+      "case": "UAT-19",
+      "project": "desktop",
+      "result": "PASS",
+      "evidence": "UAT-19-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "5f60efb6989da4a28354941d1c870d1700b370d19d51a6bfd06d653632e622d7"
+    },
+    {
+      "case": "UAT-19",
+      "project": "mobile",
+      "result": "PASS",
+      "evidence": "UAT-19-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "ee6bfd72c721cc83b8b7b5d3760a6e26cb24d656c3cc946f0e74c74ddb1e6e87"
+    },
+    {
+      "case": "UAT-19",
+      "project": "api",
+      "result": "PASS",
+      "evidence": "UAT-19-api.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "2ab502bd10764b266156db3c1e78927caa941dbfa8b950fa80441580a14b5d21"
+    }
+  ],
+  "contrast": {
+    "measurements": 32,
+    "minimum_ratio": 4.836368464139303,
+    "threshold": 4.5,
+    "files": [
+      "UAT-17-desktop-contrast.json",
+      "UAT-17-mobile-contrast.json",
+      "UAT-18-desktop-contrast.json",
+      "UAT-18-mobile-contrast.json"
+    ]
+  },
+  "patches": [
+    "PR42-UAT-08.patch",
+    "PR42-UAT-11.patch",
+    "PR42-UAT-13.patch",
+    "PR42-UAT-14.patch",
+    "PR42-UAT-15.patch",
+    "PR42-UAT-16.patch",
+    "PR42-UAT-17.patch",
+    "PR42-UAT-18.patch",
+    "PR42-UAT-19.patch"
+  ],
+  "commits": [
+    "0e929d5 test(PR42-UAT-02): record intermittent mobile installation timeout",
+    "57a30fd test(PR42-UAT-01): record installation journey verification",
+    "4d41f4b test(PR42-UAT-07): record installation retest and intermittent timeout",
+    "95aaeac test(PR42-UAT-01): record isolated installation verification",
+    "4628965 test(PR42-UAT-01): allow isolated emulator ports for installation tests",
+    "5a81c54 test(PR42-UAT-01): verify installation journeys in isolated emulators",
+    "bb809cd test(PR42-UAT-01): record third-round installation verification",
+    "1ae93cc test(PR42-UAT-01): record installation UAT timeouts and evidence",
+    "ede053b fix(PR42-UAT-01): report actual local commits in evidence manifest",
+    "fbe776e test(PR42-UAT-01): automate installation journeys and preserve UAT evidence",
+    "c921a7b docs(PR42-UAT-10): document verified Grok and Instinct installation",
+    "f8023a6 fix(PR42-UAT-19): explain workbench failures and preserve retry inputs",
+    "0bed4ae fix(PR42-UAT-18): make one-time Grok and Instinct credentials readable",
+    "738b48d fix(PR42-UAT-17): make login fields and inbox work labels readable",
+    "5c36b0a fix(PR42-UAT-16): isolate completion keys and allow explicit recovery keys",
+    "960c8f2 fix(PR42-UAT-15): explain how to recover a disabled Instinct login",
+    "b52bd60 fix(PR42-UAT-14): deny saved work completion after group access is revoked",
+    "f49c50e fix(PR42-UAT-13): keep login state independent of profile writes",
+    "d1fad90 fix(PR42-UAT-08): explain disabled Instinct accounts consistently",
+    "a1dc0e3 fix(PR42-UAT-11): enforce current group access before limiting saved work"
+  ],
+  "commit_status": "local commits; see git log for current state",
+  "push": "not attempted: user instructed no push",
+  "notes_summary": "repo-local copy; requested /workspace/codex-burn/notes is outside writable scope"
 }

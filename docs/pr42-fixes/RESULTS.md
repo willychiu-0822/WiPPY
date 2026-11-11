@@ -232,3 +232,9 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 隔離 Auth 4144／Firestore 4145、系統 Chrome 全套為 **56/57**：手機 UAT-02 在選擇「觸發條件」時超過 60 秒，桌面與 API 共 38 案及其餘手機案例通過。單獨診斷相同手機案例連跑三次通過（33.6、2.7、2.4 秒），但不足以確定根因或宣稱修復；既有間歇逾時仍待調查。失敗畫面被診斷覆寫，結果表已明示，證據 manifest 標記未驗證。詳見 [UAT 結果](../uat/UAT-RESULTS.md)及[狀態](../uat/UAT-STATUS.json)。
 
 本次瀏覽器仍有 Firestore transport 警告，真實外部 Agent、LINE、HTTPS 與雲端同步未驗證。完整測試未通過，未執行通過後的探索式測試。本輪沒有產品修復；既有修復 commit 見上方清單。依最後的規則未 push、部署或寫入工作目錄外的摘要。
+
+### 2026-11-11 10:19 第 8 輪接續驗證
+
+隔離 Auth 4144／Firestore 4145，以系統 Chrome 執行完整 `npm run test:e2e`：桌面、手機及 API 各 19 案，**57/57 PASS**，無重試；包含指南 curl 範例。`npm run verify:uat` 核對 57 張截圖、32 筆對比度及 9 份 patch。詳細結果見 [UAT 結果](../uat/UAT-RESULTS.md)。完整通過後另以桌面和手機探索空白名稱與 Instinct 空白 Email：表單阻止提交，後端 Agent 數仍為零。第一次探索的清理程式報錯，修正清理後兩個 viewport 的檢查重新通過。
+
+先前手機 UAT-02 間歇逾時本輪未重現，根因仍未確認；本輪持續出現瀏覽器 Firestore transport 警告，真實雲端 profile 同步尚未驗證。`ready_for_user_test` 僅指本機 emulator/mock 旅程，不代表真實 Grok、Instinct、LINE 或 HTTPS 已驗證。本輪沒有產品修復；既有修復 commit 見前述清單。依後段規則未 push，目錄外摘要未寫入，repo 內摘要保留。測試服務已關閉。

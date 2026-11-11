@@ -1,6 +1,6 @@
 # 安裝路徑 UAT 結果
 
-時間：2026-11-11 06:29（Asia/Taipei）。56/57 PASS。
+時間：2026-11-11 10:19（Asia/Taipei）。57/57 PASS。
 
 真實 WiPPY + Auth/Firestore emulator，外部 LINE/Routine mock；Chrome 桌面 1280×800／手機 390×844。每次執行覆寫本表，完整驗收需 19 個案例 × 3 projects = 57 次且都有本次截圖；ready 僅表示可做本機瀏覽器 UAT。
 
@@ -26,7 +26,7 @@
 | UAT-18 | desktop | PASS | — | [截圖](evidence/UAT-18-desktop.png) |
 | UAT-19 | desktop | PASS | — | [截圖](evidence/UAT-19-desktop.png) |
 | UAT-01 | mobile | PASS | — | [截圖](evidence/UAT-01-mobile.png) |
-| UAT-02 | mobile | FAIL | 選擇「觸發條件」時測試逾時；根因未確認。 | 原失敗截圖被後續診斷覆寫；[診斷截圖](evidence/UAT-02-mobile.png) |
+| UAT-02 | mobile | PASS | — | [截圖](evidence/UAT-02-mobile.png) |
 | UAT-03 | mobile | PASS | — | [截圖](evidence/UAT-03-mobile.png) |
 | UAT-04 | mobile | PASS | — | [截圖](evidence/UAT-04-mobile.png) |
 | UAT-05 | mobile | PASS | — | [截圖](evidence/UAT-05-mobile.png) |

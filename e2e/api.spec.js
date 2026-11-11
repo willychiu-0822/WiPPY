@@ -13,8 +13,9 @@ test('UAT-24 Whitespace-only names are rejected without creating an agent', asyn
   const invalid = await h.api(f.owner, '/api/hub/admin/agents', 'POST', { kind: 'grok_bot', name: '   ', allowedGroupIds: [], dailySendLimit: 5 });
   expect(invalid.status).toBe(400);
   expect((await h.api(f.owner, '/api/hub/admin/agents')).body.agents).toEqual(before);
-  const valid = await h.create(f);
-  expect((await h.api(valid.apiKey, '/api/hub/me')).status).toBe(200);
+  const valid = await h.api(f.owner, '/api/hub/admin/agents', 'POST', { kind: 'grok_bot', name: `corrected-${f.tag}`, allowedGroupIds: [], dailySendLimit: 5 });
+  expect(valid.status).toBe(201);
+  expect((await h.api(valid.body.apiKey, '/api/hub/me')).status).toBe(200);
 });
 test('UAT-23 Wrong Routine key can be corrected and omitted in later settings', async () => {
   const url = `/api/hub/admin/agents/${a.agent.id}`;

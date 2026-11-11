@@ -256,3 +256,11 @@ Git 已可寫，以下修復已分別提交（上方唯讀與待提交資訊為�
 隔離 Auth 4144／Firestore 4145、系統 Chrome 桌面、手機及 API 執行完整 `npm run test:e2e`：**59/60 PASS，1 FAIL**，無重試。桌面 UAT-08 前置導向 Agent 管理頁時，畫面停在 Loading...，測試於 60 秒逾時；未進入憑證輪替斷言。手機及 API UAT-08 均通過。Loading 可能來自身分初始化或 Hub 角色載入，現有證據不足以確定是哪個階段，也不能確定與先前逾時是否同因；尚未修復。逐項結果及失敗畫面見 [UAT 結果](../uat/UAT-RESULTS.md)，狀態為 `ready_for_user_test=false`。
 
 本輪截圖已覆寫前次截圖，既有 manifest 的雜湊不再代表目前證據，已標註無效；完整通過後才能重新執行 `npm run verify:uat`。瀏覽器 Firestore transport 警告仍出現，真實 Grok／Instinct／LINE、雲端同步與 HTTPS 未驗證。完整測試未通過，未進行通過後探索；沒有產品修復。此輪啟動的 4141–4148 服務已停止；依後段規則未 push、部署或寫入工作目錄外摘要。既有修復 commit 清單見上方「2026-11-10 17:51 接續驗證與提交」，新增 UAT-20 測試 commit 為 `6899038`。
+
+### 2026-11-11 第 12 輪接續驗證
+
+隔離 Auth 4144／Firestore 4145，以系統 Chrome 執行完整 `npm run test:e2e`：桌面、手機及 API 各 20 案，**60/60 PASS**，無重試；`npm run verify:uat` 核對 60 張截圖、32 筆對比與 9 份修復 patch。最新逐案結果與截圖見 [UAT 結果](../uat/UAT-RESULTS.md)；先前桌面 UAT-08 逾時本輪未重現，根因仍未確定。Firestore transport 警告仍出現，不能推論它是逾時原因。
+
+完整通過後另以桌面及手機探索 Instinct 錯誤 Email 格式：瀏覽器阻止提交，資料庫沒有新增 Agent；修正 Email 後成功建立並顯示一次性憑證。探索腳本第一次使用相對網址而中止，修正網址後兩種視窗皆通過。本輪沒有產品修復。既有修復 commit 見「2026-11-10 17:51 接續驗證與提交」，UAT-20 測試為 `6899038`。
+
+`ready_for_user_test` 僅代表本機 emulator/mock 路徑；真實 Grok、Instinct、LINE、雲端同步及 HTTPS 尚未驗證。此次啟動服務已停止；依後段規則未 push、部署或寫入工作目錄外的摘要。

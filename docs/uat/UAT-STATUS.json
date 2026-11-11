@@ -1,10 +1,10 @@
 {
   "project": "WiPPY PR42 Agent Hub 安裝路徑",
-  "updated": "2026-11-11 12:18",
+  "updated": "2026-11-11 13:13",
   "cases": 60,
-  "pass": 59,
-  "fail": 1,
+  "pass": 60,
+  "fail": 0,
   "blocked": 0,
-  "ready_for_user_test": false,
+  "ready_for_user_test": true,
   "notes": "本機 emulator/mock UAT；先前間歇逾時根因未確認，Firestore transport 警告仍在；真實 Grok/Instinct/LINE、雲端同步及 HTTPS 尚未驗證；未 push。"
 }

@@ -1,5 +1,5 @@
-import express, { Request, Response } from 'express';
-import { middleware, WebhookEvent } from '@line/bot-sdk';
+import express, { Request, Response, type ErrorRequestHandler } from 'express';
+import { middleware, SignatureValidationFailed, WebhookEvent } from '@line/bot-sdk';
 import { getDb } from '../firebase';
 import { getLineClient, getLineMiddlewareConfig, hasLineWebhookConfig } from '../line';
 import {
@@ -9,6 +9,8 @@ import {
   updateGroupOnMessage,
   appendRecentMessage,
 } from '../services/groupService';
+import { processHubWebhookEvents } from '../hub/webhook';
+import { getHub } from '../hub/runtime';
 
 const router = express.Router();
 
@@ -19,13 +21,24 @@ const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
 // LINE SDK middleware validates signature using raw body
 if (hasLineWebhookConfig()) {
   const lineConfig = getLineMiddlewareConfig();
-  router.post('/line', middleware(lineConfig), (req: Request, res: Response) => {
-    // Respond immediately — LINE requires a response within 15 seconds
+  router.post('/line', middleware(lineConfig), async (req: Request, res: Response) => {
+    const events: WebhookEvent[] = req.body.events ?? [];
+
+    // Agent Hub: store messages of agent-enabled groups before acknowledging,
+    // so a storage failure makes LINE redeliver (event ids dedupe retries).
+    try {
+      await processHubWebhookEvents(getHub(), events);
+    } catch (err) {
+      console.error(JSON.stringify({ severity: 'ERROR', event: 'hub_webhook_ingest_error', error: String(err) }));
+      res.status(500).json({ ok: false });
+      return;
+    }
+
+    // Respond quickly — LINE requires a response within a few seconds
     res.json({ ok: true });
 
-    // Process events out-of-band
+    // Legacy group bookkeeping runs out-of-band
     setImmediate(() => {
-      const events: WebhookEvent[] = req.body.events;
       Promise.all(events.map(handleEvent)).catch((err) => {
         console.error(JSON.stringify({ event: 'webhook_error', error: String(err) }));
       });
@@ -36,6 +49,16 @@ if (hasLineWebhookConfig()) {
     res.status(503).json({ error: 'LINE webhook is not configured' });
   });
 }
+
+// Signature failures are client authentication errors, not server failures.
+const signatureErrorHandler: ErrorRequestHandler = (err, _req, res, next) => {
+  if (err instanceof SignatureValidationFailed) {
+    res.status(401).json({ error: 'Invalid LINE webhook signature', code: 'invalid_signature' });
+    return;
+  }
+  next(err);
+};
+router.use(signatureErrorHandler);
 
 async function handleEvent(event: WebhookEvent): Promise<void> {
   const db = getDb();

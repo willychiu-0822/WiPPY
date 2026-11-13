@@ -1,0 +1,82 @@
+[
+  {
+    "label": "login email",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "login email placeholder",
+    "color": "oklch(0.551 0.027 264.364)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 4.836368464139303
+  },
+  {
+    "label": "login password",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "login password placeholder",
+    "color": "oklch(0.551 0.027 264.364)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 4.836368464139303
+  },
+  {
+    "label": "inbox title",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "inbox time",
+    "color": "oklch(0.446 0.03 256.802)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 7.558072756271033
+  },
+  {
+    "label": "selected inbox title",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      239,
+      246,
+      255
+    ],
+    "ratio": 16.306966368343282
+  },
+  {
+    "label": "selected inbox time",
+    "color": "oklch(0.446 0.03 256.802)",
+    "background": [
+      239,
+      246,
+      255
+    ],
+    "ratio": 6.944951580679223
+  }
+]

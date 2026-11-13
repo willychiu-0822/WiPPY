@@ -72,5 +72,24 @@ service cloud.firestore {
     match /rateLimits/{userId} {
       allow read, write: if false; // Backend only
     }
+
+    // ── Agent Hub: backend only (agents and the owner use /api/hub) ─────────
+    match /groupMessages/{id} { allow read, write: if false; }
+    match /mediaAssets/{id} { allow read, write: if false; }
+    match /agents/{id} { allow read, write: if false; }
+    match /agentRules/{id} { allow read, write: if false; }
+    match /hubRuleState/{id} { allow read, write: if false; }
+    match /agentDispatches/{id} { allow read, write: if false; }
+    match /agentInbox/{id} { allow read, write: if false; }
+    match /digests/{id} { allow read, write: if false; }
+    match /hubActions/{id} { allow read, write: if false; }
+    match /agentRecords/{id} { allow read, write: if false; }
+    match /hubSettings/{id} { allow read, write: if false; }
+    match /hubCounters/{id} { allow read, write: if false; }
+    match /hubQuota/{id} { allow read, write: if false; }
+    match /hubAlerts/{id} { allow read, write: if false; }
+    match /hubAuditLogs/{id} { allow read, write: if false; }
+    match /hubAccounts/{id} { allow read, write: if false; }
+    match /hubGroupStats/{id} { allow read, write: if false; }
   }
 }

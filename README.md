@@ -1,20 +1,39 @@
 # WiPPY
 
-AI 驅動的活動管理與訊息推播平台。透過對話式 Agent 幫助你規劃活動訊息、管理群組知識，並透過 LINE Bot 自動推播。
+LINE 群組 × AI Agent 中樞。WiPPY 收下 LINE 群組的訊息與媒體，依你設定的規則交給外部 Agent（xAI Grok Bot、Instinct）判斷；Agent 再透過 WiPPY 發訊息、發預警、記錄重點，或把它們做好的網頁和媒體發到群組。另外保留原本的「AI 規劃活動推播」。
 
 ---
 
 ## Overview
 
-WiPPY 讓你用自然語言跟 AI Agent 對話，告訴它「這週活動要發什麼訊息」，Agent 就會自動：
+- **Agent Hub**（`backend/src/hub`、`frontend/src/hub`）
+  - 收訊：開放的群組才會保存文字、圖片、影片、語音、檔案（媒體立刻下載到私有 bucket）
+  - 規則：關鍵字、訊息類型、@機器人、訊息量、定時；可附免費模型做的重點整理
+  - 派送：Grok Bot 走 Routine webhook，Instinct 進工作台收件匣
+  - 執行：Agent 透過 REST `/api/hub/v1` 或 MCP `/api/hub/mcp` 要求 WiPPY 發送、記錄、排程；WiPPY 只做硬流程驗證（https、免登入可開、LINE 規格、額度），不製作也不修改內容
+  - 保護：群組預設關閉、每日發送上限、LINE 額度保留 5% 給預警、70%/90% 額度預警、冪等鍵、稽核紀錄、失敗自動重試
+- **活動推播**（Harness Pipeline）：用自然語言規劃訊息，核准後排程推送
+- 規格：`docs/specs/2026-11-04-agent-hub.md`；上線步驟：`docs/agent-hub-setup-guide.md`
 
-- 根據活動資訊與歷史知識產生訊息計畫
-- 驗證排程合理性
-- 寫回 Firestore 並觸發 LINE Bot 推播
+新手接上自己的 AI 助手：請從 [Grok Bot／Instinct 安裝指南](docs/agent-hub/INSTALL-GROK-BOT-AND-INSTINCT.md) 開始（含 REST/MCP 範例、憑證與限額驗收）。
 
-核心設計是 **Harness Pipeline**，一個 7 階段的有狀態執行器，讓每次 AI 呼叫都可觀測、可恢復。
+### Agent Hub 架構
 
----
+```
+LINE webhook ─▶ 收訊（去重、存檔、媒體下載佇列）
+                  │
+                  ▼
+              規則引擎 ◀── /scheduler/hub-tick（定時規則、收件匣逾時）
+                  │
+         ┌────────┴─────────┐
+         ▼                  ▼
+  Grok Routine webhook   Instinct 收件匣（工作台）
+         │                  │
+         ▼                  ▼
+  MCP / REST ──▶ Hub 動作：權限 → 冪等 → 驗證 → 額度 → LINE 發送 → 稽核
+                  │
+                  └─ 失敗 → Cloud Tasks 退避重試 → 最後失敗發預警
+```
 
 ## Architecture
 
@@ -180,6 +199,9 @@ WiPPY/
 │       │   ├── internal/     # Cloud Tasks worker（harness）
 │       │   ├── webhook.ts    # LINE Bot webhook
 │       │   └── scheduler.ts  # 定時推播觸發
+│       ├── hub/                # Agent Hub（收訊、規則、派送、動作、MCP、後台 API）
+│       │   ├── core/           # ports、adapters（Firestore/GCS/LINE）、佇列與重試
+│       │   └── http/           # /api/hub/admin、/api/hub/v1、/api/hub/mcp、排程
 │       ├── services/
 │       │   ├── harnessOrchestrator.ts  # 7-stage pipeline 核心
 │       │   ├── llmProvider.ts          # LLM 抽象層
@@ -191,6 +213,7 @@ WiPPY/
 │           └── auth.ts
 ├── frontend/
 │   └── src/
+│       ├── hub/                # Agent Hub 後台頁面與 Agent 工作台
 │       ├── components/
 │       │   ├── AgentChatPanel.tsx
 │       │   ├── MessagePlanTable.tsx

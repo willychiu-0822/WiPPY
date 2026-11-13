@@ -1,0 +1,19 @@
+diff --git a/backend/src/hub/http/agentRouter.ts b/backend/src/hub/http/agentRouter.ts
+index f433f0d..47affbd 100644
+--- a/backend/src/hub/http/agentRouter.ts
++++ b/backend/src/hub/http/agentRouter.ts
+@@ -64,10 +64,12 @@ agentRouter.get('/quota', tool('get_quota', () => ({})));
+ agentRouter.get('/inbox', tool('list_inbox', (req) => ({ status: str(req.query['status']) })));
+ agentRouter.get('/dispatches/:id', tool('get_dispatch', (req) => ({ jobId: req.params['id'] })));
+ agentRouter.post('/dispatches/:id/complete', tool('complete_dispatch', (req) => ({
+-  idempotencyKey: `complete-${req.params['id']}`, jobId: req.params['id'], summary: (req.body as { summary?: string })?.summary,
++  idempotencyKey: (req.body as { idempotencyKey?: unknown })?.idempotencyKey ?? `complete-dispatch-${req.params['id']}`,
++  jobId: req.params['id'], summary: (req.body as { summary?: string })?.summary,
+ })));
+ agentRouter.post('/inbox/:id/complete', tool('complete_inbox', (req) => ({
+-  idempotencyKey: `complete-${req.params['id']}`, itemId: req.params['id'], note: (req.body as { note?: string })?.note,
++  idempotencyKey: (req.body as { idempotencyKey?: unknown })?.idempotencyKey ?? `complete-inbox-${req.params['id']}`,
++  itemId: req.params['id'], note: (req.body as { note?: string })?.note,
+ })));
+ agentRouter.get('/actions/:id', tool('get_action', (req) => ({ actionId: req.params['id'] })));
+ agentRouter.post('/actions', asyncRoute(async (req: Request, res: Response) => {

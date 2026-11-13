@@ -1,0 +1,22 @@
+--- a/frontend/src/pages/LoginPage.tsx
++++ b/frontend/src/pages/LoginPage.tsx
+@@ -89,3 +89,3 @@
+               required
+-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
++              className="bg-white text-gray-900 placeholder:text-gray-500 w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+             />
+@@ -98,3 +98,3 @@
+               minLength={6}
+-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
++              className="bg-white text-gray-900 placeholder:text-gray-500 w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+             />
+--- a/frontend/src/hub/pages/WorkbenchPage.tsx
++++ b/frontend/src/hub/pages/WorkbenchPage.tsx
+@@ -168,5 +168,5 @@
+             <li key={item.id}>
+-              <button type="button" onClick={() => void open(item)} className={`w-full text-left rounded-lg border px-3 py-2 text-sm ${selected?.id === item.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
++              <button type="button" onClick={() => void open(item)} className={`w-full text-left text-gray-900 rounded-lg border px-3 py-2 text-sm ${selected?.id === item.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+                 {item.ruleName}｜{item.groupName}
+-                <span className="block text-xs text-gray-400">{formatTime(item.createdAt)}</span>
++                <span className="block text-xs text-gray-600">{formatTime(item.createdAt)}</span>
+               </button>

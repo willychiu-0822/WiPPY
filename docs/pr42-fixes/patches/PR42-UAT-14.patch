@@ -1,0 +1,57 @@
+diff --git a/backend/src/__tests__/hub/actions.test.ts b/backend/src/__tests__/hub/actions.test.ts
+index 4e2d79b..5500cd5 100644
+--- a/backend/src/__tests__/hub/actions.test.ts
++++ b/backend/src/__tests__/hub/actions.test.ts
+@@ -153,4 +153,30 @@ describe('executeAction', () => {
+     expect((await executeAction(hub, owner, { type: 'send_message', idempotencyKey: 'o1', params: { groupId: GROUP_B, text: 'owner says hi' } })).status).toBe('done');
+     expect(await executeAction(hub, owner, { type: 'send_message', idempotencyKey: 'o2', params: { groupId: 'Cnotmine', text: 'x' } })).toMatchObject({ status: 'blocked', code: 'group_not_allowed' });
+   });
++
++  it.each(['closed', 'unassigned'])('PR42-UAT-14 blocks completion of saved work after group is %s', async (mode) => {
++    for (const actor of [grok, instinct]) {
++      const suffix = actor.agentId;
++      const dispatchId = `dispatch-${suffix}`;
++      const itemId = `inbox-${suffix}`;
++      await hub.store.set('agentDispatches', dispatchId, { ownerId: 'owner_1', agentId: suffix, groupId: GROUP, status: 'sent' });
++      await hub.store.set('agentInbox', itemId, { ownerId: 'owner_1', agentId: suffix, groupId: GROUP, dispatchId, status: 'open' });
++      if (mode === 'closed') await hub.store.update('groups', GROUP, { agentEnabled: false });
++      else await hub.store.update('agents', suffix, { allowedGroupIds: [] });
++      for (const [type, params] of [
++        ['complete_dispatch', { jobId: dispatchId, summary: 'must not persist' }],
++        ['complete_inbox', { itemId, note: 'must not persist' }],
++      ] as const) {
++        expect(await executeAction(hub, actor, { type, params, idempotencyKey: `denied-${type}` }))
++          .toMatchObject({ status: 'blocked', code: 'group_not_allowed' });
++      }
++      expect(hub.store.dump('agentDispatches')[dispatchId]).toEqual({ ownerId: 'owner_1', agentId: suffix, groupId: GROUP, status: 'sent' });
++      expect(hub.store.dump('agentInbox')[itemId]).toEqual({ ownerId: 'owner_1', agentId: suffix, groupId: GROUP, dispatchId, status: 'open' });
++      // Owner can still resolve the work while its group is closed/unassigned.
++      expect((await executeAction(hub, owner, { type: 'complete_inbox', params: { itemId }, idempotencyKey: `owner-${suffix}` })).status).toBe('done');
++      if (mode === 'closed') await hub.store.update('groups', GROUP, { agentEnabled: true });
++      else await hub.store.update('agents', suffix, { allowedGroupIds: [GROUP] });
++      expect((await executeAction(hub, actor, { type: 'complete_dispatch', params: { jobId: dispatchId }, idempotencyKey: 'restored' })).status).toBe('done');
++    }
++  });
+ });
+diff --git a/backend/src/hub/actions.ts b/backend/src/hub/actions.ts
+index d861e74..d7a4f23 100644
+--- a/backend/src/hub/actions.ts
++++ b/backend/src/hub/actions.ts
+@@ -280,6 +280,8 @@ async function perform(ctx: HubContext, actionId: string, doc: ActionDoc): Promi
+       if (!dispatch || dispatch.ownerId !== ctx.ownerId || (actor.kind === 'agent' && dispatch.agentId !== actor.agentId)) {
+         return blocked('not_found', '找不到這個派送工作');
+       }
++      const denied = await groupAccess(ctx, actor, agent, dispatch.groupId);
++      if (denied) return denied;
+       await ctx.store.update(COLLECTIONS.dispatches, p['jobId'], { status: 'completed', completedAt: ctx.now(), summary: p['summary'] ?? null });
+       return { status: 'done', result: { jobId: p['jobId'] } };
+     }
+@@ -289,6 +291,8 @@ async function perform(ctx: HubContext, actionId: string, doc: ActionDoc): Promi
+       if (!item || item.ownerId !== ctx.ownerId || (actor.kind === 'agent' && item.agentId !== actor.agentId)) {
+         return blocked('not_found', '找不到這個收件匣項目');
+       }
++      const denied = await groupAccess(ctx, actor, agent, item.groupId);
++      if (denied) return denied;
+       await ctx.store.update(COLLECTIONS.inbox, p['itemId'], { status: 'done', doneAt: ctx.now(), note: p['note'] ?? null });
+       if (item.dispatchId) {
+         await ctx.store.update(COLLECTIONS.dispatches, item.dispatchId, { status: 'completed', completedAt: ctx.now(), summary: p['note'] ?? null }).catch(() => undefined);

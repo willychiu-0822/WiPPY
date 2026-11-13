@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -29,20 +28,14 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
+      await signInWithEmailAndPassword(auth, email, password);
       navigate('/groups');
     } catch (e: unknown) {
       const msg = (e as { code?: string }).code;
-      if (msg === 'auth/user-not-found' || msg === 'auth/wrong-password') {
+      if (msg === 'auth/user-not-found' || msg === 'auth/wrong-password' || msg === 'auth/invalid-credential') {
         setError('Email 或密碼錯誤');
-      } else if (msg === 'auth/email-already-in-use') {
-        setError('此 Email 已被註冊');
-      } else if (msg === 'auth/weak-password') {
-        setError('密碼至少需要 6 位字元');
+      } else if (msg === 'auth/user-disabled') {
+        setError('此帳號已停用，請聯絡擁有者重新啟用後再登入。');
       } else {
         setError('登入失敗，請再試一次');
       }
@@ -56,16 +49,14 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⏱️</div>
+          <div className="text-5xl mb-3">🤖</div>
           <h1 className="text-3xl font-bold text-gray-900">WiPPY</h1>
-          <p className="text-gray-500 mt-1 text-sm">把「想做的事」真正排進你的日程</p>
+          <p className="text-gray-500 mt-1 text-sm">LINE 群組 × AI Agent 中樞</p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            {isRegister ? '建立帳號' : '歡迎回來'}
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">登入</h2>
 
           {/* Google */}
           <button
@@ -96,7 +87,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+              className="bg-white text-gray-900 placeholder:text-gray-500 w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
             />
             <input
               type="password"
@@ -105,24 +96,19 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+              className="bg-white text-gray-900 placeholder:text-gray-500 w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
             />
-            {error && <p className="text-red-500 text-xs">{error}</p>}
+            {error && <p role="alert" className="text-red-500 text-xs">{error}</p>}
             <button
               type="submit"
               disabled={loading}
               className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              {loading ? '處理中...' : isRegister ? '建立帳號' : '登入'}
+              {loading ? '處理中...' : '登入'}
             </button>
           </form>
 
-          <button
-            onClick={() => { setIsRegister(!isRegister); setError(''); }}
-            className="w-full text-center text-xs text-gray-400 hover:text-gray-600 mt-4 transition-colors"
-          >
-            {isRegister ? '已有帳號？登入' : '還沒有帳號？免費註冊'}
-          </button>
+          <p className="text-center text-xs text-gray-400 mt-4">帳號由 WiPPY 擁有者建立，不開放註冊。</p>
         </div>
       </div>
     </div>

@@ -74,6 +74,8 @@ jest.mock('../services/cloudTasksService', () => ({
 
 jest.mock('../services/llmProvider', () => ({
   createLLMProvider: () => mockCreateLLMProvider(),
+  getLLMConfigStatus: () => ({ provider: 'test', missingEnv: [], isConfigured: false }),
+  setLLMCallObserver: jest.fn(),
 }));
 
 jest.mock('../services/harnessOrchestrator', () => ({
@@ -183,6 +185,17 @@ describe('backend API route integration safety net', () => {
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ error: 'Missing Authorization header' });
     expect(mockGetDb).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-owner accounts on back-office routes when OWNER_USER_ID is set', async () => {
+    process.env.OWNER_USER_ID = 'owner_uid';
+    try {
+      const res = await request(server, 'GET', '/api/groups');
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({ error: 'Forbidden', code: 'not_owner' });
+    } finally {
+      delete process.env.OWNER_USER_ID;
+    }
   });
 
   it('queries /api/groups by authenticated owner and hides backend-only fields', async () => {

@@ -4,9 +4,15 @@
   "scripts": {
     "uat:start": "node e2e/local-stack.mjs",
     "test:e2e": "npm --prefix frontend run test:e2e --",
-    "test:uat-tools": "node --test e2e/report.test.mjs"
+    "test:uat-tools": "node --test e2e/report.test.mjs",
+    "pretest:e2e:install": "npm --prefix backend run build",
+    "test:e2e:install": "playwright test",
+    "pretest:api": "npm --prefix backend run build",
+    "test:api": "playwright test --project=api",
+    "verify:uat": "node e2e/verify-evidence.cjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.0",
     "firebase-tools": "15.1.0"
   }
 }

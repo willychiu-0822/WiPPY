@@ -1,0 +1,82 @@
+[
+  {
+    "label": "grok_bot created field 1",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "grok_bot created field 2",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "grok_bot recovered field 1",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "grok_bot recovered field 2",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "instinct created field 1",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "instinct created field 2",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "instinct recovered field 1",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  },
+  {
+    "label": "instinct recovered field 2",
+    "color": "oklch(0.21 0.034 264.665)",
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "ratio": 17.74659431591738
+  }
+]

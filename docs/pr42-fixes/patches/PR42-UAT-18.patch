@@ -1,0 +1,13 @@
+diff --git a/frontend/src/hub/pages/AgentsPage.tsx b/frontend/src/hub/pages/AgentsPage.tsx
+index f8e8c6d..38f39bd 100644
+--- a/frontend/src/hub/pages/AgentsPage.tsx
++++ b/frontend/src/hub/pages/AgentsPage.tsx
+@@ -9,7 +9,7 @@ type Secret = { kind: AgentKind; name: string; apiKey?: string; password?: strin
+ 
+ function SecretBox({ secret, onClose }: { secret: Secret; onClose: () => void }) {
+   return (
+-    <section role="region" aria-label="只顯示一次的憑證" className="bg-amber-50 border border-amber-300 rounded-xl p-4 space-y-2 text-sm">
++    <section role="region" aria-label="只顯示一次的憑證" className="bg-amber-50 text-gray-900 border border-amber-300 rounded-xl p-4 space-y-2 text-sm">
+       <p className="font-semibold text-amber-900">只顯示這一次，請立刻複製保存：{secret.name}</p>
+       {secret.apiKey && (
+         <>

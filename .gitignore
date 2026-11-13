@@ -56,3 +56,6 @@ pr42-fix/
 
 # Local delivery bundles
 *.bundle
+
+# Local install-UAT artifacts (credentials must never be persisted)
+run/install-uat/

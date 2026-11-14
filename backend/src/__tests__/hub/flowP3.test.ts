@@ -38,17 +38,22 @@ describe('P3 end-to-end: LINE message → rule → agent', () => {
   it('a schedule rule for Instinct lands in its inbox via /scheduler/hub-tick', async () => {
     await seedInstinctAgent(hub);
     await seedRule(hub, 'daily', { agentId: 'instinct_1', trigger: { type: 'schedule', intervalMinutes: 30 } });
+    const previousSecret = process.env.SCHEDULER_SECRET;
+    process.env.SCHEDULER_SECRET = 'sched';
     const server = await startHubServer(hub);
+    const schedulerHeaders = { 'X-Scheduler-Secret': 'sched' };
     try {
-      expect((await server.call('POST', '/scheduler/hub-tick')).body).toEqual({ ok: true, dispatched: 0, overdueAlerts: 0 });
+      expect((await server.call('POST', '/scheduler/hub-tick', { headers: schedulerHeaders })).body).toEqual({ ok: true, dispatched: 0, overdueAlerts: 0 });
       hub.clock.now = new Date(hub.clock.now.getTime() + 60_000);
       await processHubWebhookEvents(hub, [textEvent({ id: 'e2', ts: hub.now().getTime(), text: '今天的進度如何？' })]);
       hub.clock.now = new Date(hub.clock.now.getTime() + 30 * 60_000);
-      expect((await server.call('POST', '/scheduler/hub-tick')).body).toEqual({ ok: true, dispatched: 1, overdueAlerts: 0 });
+      expect((await server.call('POST', '/scheduler/hub-tick', { headers: schedulerHeaders })).body).toEqual({ ok: true, dispatched: 1, overdueAlerts: 0 });
       await hub.queue.drain((job) => runHubJob(hub, job));
       expect(Object.values(hub.store.dump('agentInbox'))[0]).toMatchObject({ agentId: 'instinct_1', status: 'open', messageIds: ['e2'] });
     } finally {
       await server.close();
+      if (previousSecret === undefined) delete process.env.SCHEDULER_SECRET;
+      else process.env.SCHEDULER_SECRET = previousSecret;
     }
   });
 });

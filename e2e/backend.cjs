@@ -7,6 +7,9 @@ if (process.env.FIREBASE_PROJECT_ID !== 'demo-wippy-uat'
   || process.env.FIRESTORE_EMULATOR_HOST !== '127.0.0.1:4124'
   || process.env.FIREBASE_AUTH_EMULATOR_HOST !== '127.0.0.1:4123'
   || process.env.NODE_ENV === 'production') throw new Error('UAT backend requires local demo emulators');
+// Local stand-in for Cloud Scheduler. Production stays closed unless SCHEDULER_SECRET is set.
+const schedulerSecret = process.env.SCHEDULER_SECRET?.trim() || 'local-uat-scheduler';
+process.env.SCHEDULER_SECRET = schedulerSecret;
 
 const line = require('../backend/src/line.ts');
 const heldLineSends = new Map();
@@ -96,7 +99,12 @@ let ticking = false;
 const timer = setInterval(async () => {
   if (ticking) return;
   ticking = true;
-  try { await fetch('http://127.0.0.1:4122/scheduler/tick', { method: 'POST' }); }
+  try {
+    await fetch('http://127.0.0.1:4122/scheduler/tick', {
+      method: 'POST',
+      headers: { 'X-Scheduler-Secret': schedulerSecret },
+    });
+  }
   finally { ticking = false; }
 }, 1000);
 process.on('SIGTERM', () => { clearInterval(timer); server.close(() => process.exit(0)); });

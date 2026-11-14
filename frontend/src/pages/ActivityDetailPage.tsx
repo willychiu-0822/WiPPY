@@ -102,8 +102,12 @@ export default function ActivityDetailPage() {
     }
   }
 
-  async function handleAgentChat(message: string, sid: string | null): Promise<AgentChatApiResponse> {
-    return api.agent.chat(id!, message, sid ?? undefined);
+  async function handleAgentChat(
+    message: string,
+    sid: string | null,
+    action?: 'confirm_schedule',
+  ): Promise<AgentChatApiResponse> {
+    return api.agent.chat(id!, message, sid ?? undefined, action);
   }
 
   function handleSessionId(newId: string) {

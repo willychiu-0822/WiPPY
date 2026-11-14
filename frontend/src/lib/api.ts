@@ -190,10 +190,10 @@ export const api = {
   },
 
   agent: {
-    chat: (activityId: string, message: string, sessionId?: string) =>
+    chat: (activityId: string, message: string, sessionId?: string, action?: 'confirm_schedule') =>
       request<AgentChatApiResponse>('/api/agent/chat', {
         method: 'POST',
-        body: JSON.stringify({ activityId, message, sessionId }),
+        body: JSON.stringify({ activityId, message, sessionId, ...(action ? { action } : {}) }),
       }),
   },
 };

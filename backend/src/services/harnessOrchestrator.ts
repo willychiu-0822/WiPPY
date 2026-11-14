@@ -19,6 +19,18 @@ export interface HarnessInput {
   userId: string;
   userMessage: string;
   sessionId?: string;
+  /** Set when the client confirmed the schedule. The format rules stay in the model prompt. */
+  action?: 'confirm_schedule';
+}
+
+const CONFIRM_SCHEDULE_INSTRUCTION = [
+  '使用者已確認排程。請立即輸出純 JSON 陣列，不可有任何說明文字或 markdown code fence。',
+  '格式：[{"content":"...","targetGroups":["all"],"triggerValue":"YYYY-MM-DDTHH:MM:SS+08:00","sequenceOrder":1}]',
+].join('\n');
+
+function modelUserMessage(userMessage: string, action: HarnessInput['action']): string {
+  if (action !== 'confirm_schedule') return userMessage;
+  return `${userMessage}\n\n${CONFIRM_SCHEDULE_INSTRUCTION}`;
 }
 
 export interface HarnessOutput {
@@ -194,7 +206,7 @@ export async function executeHarness(
   llm: LLMProvider,
   input: HarnessInput
 ): Promise<HarnessOutput> {
-  const { runId, activityId, userId, userMessage, sessionId } = input;
+  const { runId, activityId, userId, userMessage, sessionId, action } = input;
   let llmCallCount = 0;
 
   // ─── Run Trace (Layer 1) ──────────────────────────────────────────────────
@@ -255,7 +267,7 @@ export async function executeHarness(
     const llmMessages: LLMMessage[] = [
       { role: 'system', content: sysPrompt },
       ...history,
-      { role: 'user', content: userMessage },
+      { role: 'user', content: modelUserMessage(userMessage, action) },
     ];
 
     // run_planner

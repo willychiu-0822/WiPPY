@@ -14,7 +14,11 @@ interface Props {
   onSessionId: (id: string) => void;
   onMessagesGenerated: () => void;
   onKnowledgeExtracted: () => void;
-  onSendMessage: (message: string, sessionId: string | null) => Promise<AgentChatApiResponse>;
+  onSendMessage: (
+    message: string,
+    sessionId: string | null,
+    action?: 'confirm_schedule',
+  ) => Promise<AgentChatApiResponse>;
 }
 
 export default function AgentChatPanel({
@@ -99,21 +103,24 @@ export default function AgentChatPanel({
     unsubRef.current = unsub;
   }, [onMessagesGenerated, onKnowledgeExtracted]);
 
-  async function send(text: string) {
-    if (!text || loading || restoring || countdown > 0) return;
+  async function send(text: string, action?: 'confirm_schedule') {
+    const display = action === 'confirm_schedule' ? '就照這樣排' : text;
+    if (!display || loading || restoring || countdown > 0) return;
 
     setInput('');
     setError(null);
     setRateLimitWarning(null);
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    setMessages((prev) => [...prev, { role: 'user', content: display }]);
     setLoading(true);
 
     try {
-      const result = await onSendMessage(text, sessionId);
+      const result = action
+        ? await onSendMessage(display, sessionId, action)
+        : await onSendMessage(display, sessionId);
 
       if (result.status === 'rate_limited') {
         setMessages((prev) => prev.slice(0, -1));
-        setInput(text);
+        if (!action) setInput(text);
         setLoading(false);
         setCountdown(result.retryAfterSeconds ?? 60);
         return;
@@ -140,7 +147,7 @@ export default function AgentChatPanel({
         ? '無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留'
         : String(err).replace(/^Error:\s*/, ''));
       setMessages((prev) => prev.slice(0, -1));
-      setInput(text);
+      if (!action) setInput(text);
       setLoading(false);
     }
   }
@@ -234,7 +241,7 @@ export default function AgentChatPanel({
         )}
         {messages.length > 0 && (
           <button
-            onClick={() => send('確認排程。請立即輸出純 JSON 陣列，不可有任何說明文字或 markdown code fence，格式：[{"content":"...","targetGroups":["all"],"triggerValue":"YYYY-MM-DDTHH:MM:SS+08:00","sequenceOrder":1},...]')}
+            onClick={() => send('', 'confirm_schedule')}
             disabled={isBlocked}
             className="w-full text-sm bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-xl px-4 py-2 font-medium disabled:opacity-40 transition-colors"
           >

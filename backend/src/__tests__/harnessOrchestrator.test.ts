@@ -287,6 +287,32 @@ describe('executeHarness — session handling', () => {
     expect(output.sessionId.length).toBeGreaterThan(0);
   });
 
+  it('keeps the confirm-schedule phrase in the transcript and adds the JSON format only for the model', async () => {
+    const db = buildDb();
+    const llm = makeLLM('一般對話回覆');
+    await executeHarness(db as any, llm, {
+      runId: RUN_ID,
+      activityId: ACT_ID,
+      userId: USER_ID,
+      userMessage: '就照這樣排',
+      sessionId: 'session_1',
+      action: 'confirm_schedule',
+    });
+
+    const sent = (llm.chat as jest.Mock).mock.calls[0][0] as Array<{ role: string; content: string }>;
+    const userTurns = sent.filter((message) => message.role === 'user');
+    const modelUser = userTurns[userTurns.length - 1];
+    expect(modelUser?.content).toContain('就照這樣排');
+    expect(modelUser?.content).toContain('純 JSON 陣列');
+    expect(modelUser?.content).toContain('triggerValue');
+
+    const updateCall = (db.sessionRef.update as jest.Mock).mock.calls[0][0] as { messages: Array<{ role: string; content: string }> };
+    const stored = updateCall.messages.find((message) => message.role === 'user' && message.content === '就照這樣排');
+    expect(stored?.content).toBe('就照這樣排');
+    expect(stored?.content).not.toContain('JSON');
+    expect(stored?.content).not.toContain('triggerValue');
+  });
+
   it('appends exchange to session messages', async () => {
     const db = buildDb();
     await executeHarness(db as any, makeLLM('reply text'), { runId: RUN_ID, activityId: ACT_ID, userId: USER_ID, userMessage: '你好', sessionId: 'session_1' });

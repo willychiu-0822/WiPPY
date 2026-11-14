@@ -19,11 +19,13 @@ function toClientErrorMessage(err: unknown): string {
 // POST /api/agent/chat
 // Returns immediately with { status: 'queued' } (prod) or { status: 'completed' } (dev/no Cloud Tasks).
 router.post('/chat', authMiddleware, async (req: Request, res: Response) => {
-  const { activityId, message, sessionId } = req.body as {
+  const { activityId, message, sessionId, action } = req.body as {
     activityId?: string;
     message?: string;
     sessionId?: string;
+    action?: string;
   };
+  const harnessAction: 'confirm_schedule' | undefined = action === 'confirm_schedule' ? 'confirm_schedule' : undefined;
 
   if (!activityId?.trim()) { res.status(400).json({ error: 'activityId is required' }); return; }
   if (!message?.trim()) { res.status(400).json({ error: 'message is required' }); return; }
@@ -78,6 +80,7 @@ router.post('/chat', authMiddleware, async (req: Request, res: Response) => {
     userId,
     userMessage: message.trim(),
     sessionId: sessionId ?? undefined,
+    action: harnessAction,
   };
 
   if (isCloudTasksEnabled()) {

@@ -241,6 +241,22 @@ describe('AgentChatPanel — input behavior', () => {
     expect(textarea.value).toBe('失敗的訊息');
   });
 
+  it('確認排程只把短句放進對話，不把格式指令顯示出來', async () => {
+    const onSendMessage = vi.fn()
+      .mockResolvedValueOnce(makeSyncResponse())
+      .mockResolvedValueOnce(makeSyncResponse());
+    renderPanel(onSendMessage);
+    fireEvent.change(screen.getByPlaceholderText(/輸入訊息/), { target: { value: '先討論活動' } });
+    fireEvent.click(screen.getByRole('button', { name: '送出' }));
+    const confirm = await screen.findByRole('button', { name: /確認排程/ });
+    fireEvent.click(confirm);
+
+    await waitFor(() => expect(onSendMessage).toHaveBeenLastCalledWith('就照這樣排', null, 'confirm_schedule'));
+    const bubble = screen.getByText('就照這樣排');
+    expect(bubble.textContent ?? '').not.toMatch(/JSON|markdown|\{|triggerValue/);
+    expect(screen.queryByText(/純 JSON 陣列/)).not.toBeInTheDocument();
+  });
+
   it('UAT-26 explains an offline send, retains the draft and retries once without duplicate messages', async () => {
     const send = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch'))
       .mockResolvedValueOnce(makeSyncResponse({ reply: '活動建議已準備好' }));

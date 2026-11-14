@@ -27,12 +27,13 @@ router.post('/harness/run', async (req: Request, res: Response) => {
     return;
   }
 
-  const { runId, activityId, userId, userMessage, sessionId } = req.body as {
+  const { runId, activityId, userId, userMessage, sessionId, action } = req.body as {
     runId: string;
     activityId: string;
     userId: string;
     userMessage: string;
     sessionId?: string;
+    action?: string;
   };
 
   if (!runId || !activityId || !userId || !userMessage) {
@@ -43,7 +44,14 @@ router.post('/harness/run', async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const llm = createLLMProvider();
-    await executeHarness(db, llm, { runId, activityId, userId, userMessage, sessionId });
+    await executeHarness(db, llm, {
+      runId,
+      activityId,
+      userId,
+      userMessage,
+      sessionId,
+      ...(action === 'confirm_schedule' ? { action } : {}),
+    });
     res.json({ ok: true });
   } catch (err) {
     // Log but return 200 — the run is already marked failed in Firestore.

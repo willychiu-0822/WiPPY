@@ -201,6 +201,51 @@ describe('backend API route integration safety net', () => {
     }
   });
 
+  it.each([
+    ['unset', undefined],
+    ['blank', ''],
+    ['whitespace', '   '],
+  ] as const)('returns 503 from /api/groups when production has OWNER_USER_ID %s', async (_label, owner) => {
+    const previousOwner = process.env.OWNER_USER_ID;
+    const previousService = process.env.K_SERVICE;
+    process.env.K_SERVICE = 'wippy-backend';
+    if (owner === undefined) delete process.env.OWNER_USER_ID;
+    else process.env.OWNER_USER_ID = owner;
+    try {
+      const res = await request(server, 'GET', '/api/groups');
+      expect(res.status).toBe(503);
+      expect(res.body).toEqual({ error: 'WiPPY 尚未設定擁有者，請聯絡管理員', code: 'owner_not_configured' });
+      expect(mockGetDb).not.toHaveBeenCalled();
+    } finally {
+      if (previousOwner === undefined) delete process.env.OWNER_USER_ID;
+      else process.env.OWNER_USER_ID = previousOwner;
+      if (previousService === undefined) delete process.env.K_SERVICE;
+      else process.env.K_SERVICE = previousService;
+    }
+  });
+
+  it('still serves /api/groups to the configured owner in production', async () => {
+    const previousOwner = process.env.OWNER_USER_ID;
+    const previousService = process.env.K_SERVICE;
+    process.env.K_SERVICE = 'wippy-backend';
+    process.env.OWNER_USER_ID = 'user_a';
+    const query = { where: jest.fn(), orderBy: jest.fn(), get: jest.fn() };
+    query.where.mockReturnValue(query);
+    query.orderBy.mockReturnValue(query);
+    query.get.mockResolvedValue({ docs: [] });
+    mockGetDb.mockReturnValue({ collection: () => query });
+    try {
+      const res = await request(server, 'GET', '/api/groups');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ groups: [] });
+    } finally {
+      if (previousOwner === undefined) delete process.env.OWNER_USER_ID;
+      else process.env.OWNER_USER_ID = previousOwner;
+      if (previousService === undefined) delete process.env.K_SERVICE;
+      else process.env.K_SERVICE = previousService;
+    }
+  });
+
   it('queries /api/groups by authenticated owner and hides backend-only fields', async () => {
     const where = jest.fn().mockReturnThis();
     const orderBy = jest.fn().mockReturnThis();

@@ -29,8 +29,9 @@ async function api(page: Page, path: string, method = 'GET', body?: unknown) {
     const modulePath = '/src/firebase.ts';
     const { auth } = await import(modulePath);
     const token = await auth.currentUser?.getIdToken();
+    const schedulerSecret = path.startsWith('/scheduler/') ? { 'X-Scheduler-Secret': 'local-uat-scheduler' } : {};
     const res = await fetch(path, { method,
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...schedulerSecret },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     return { status: res.status, data: await res.json() };

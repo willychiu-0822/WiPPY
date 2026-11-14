@@ -95,7 +95,8 @@ async function request(
   method: string,
   path: string,
   body?: unknown,
-  token = 'valid-token'
+  token = 'valid-token',
+  extraHeaders?: Record<string, string>,
 ): Promise<JsonResponse> {
   const address = server.address() as AddressInfo;
   const payload = body === undefined ? undefined : JSON.stringify(body);
@@ -113,6 +114,7 @@ async function request(
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {}),
+          ...(extraHeaders ?? {}),
         },
       },
       (res) => {
@@ -154,6 +156,7 @@ describe('backend API route integration safety net', () => {
   beforeEach((done) => {
     jest.clearAllMocks();
     process.env.INTERNAL_HARNESS_SECRET = 'test-secret';
+    process.env.SCHEDULER_SECRET = 'sched-secret';
     delete process.env.CLOUD_TASKS_QUEUE;
     delete process.env.CLOUD_RUN_SERVICE_URL;
     delete process.env.LIFF_DEV_BYPASS_USER;
@@ -383,7 +386,9 @@ describe('backend API route integration safety net', () => {
     const collectionGroup = jest.fn(() => query);
     mockGetDb.mockReturnValue({ collectionGroup });
 
-    const res = await request(server, 'POST', '/scheduler/tick', undefined, '');
+    const res = await request(server, 'POST', '/scheduler/tick', undefined, '', {
+      'X-Scheduler-Secret': 'sched-secret',
+    });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true, sent: 0 });
@@ -399,15 +404,76 @@ describe('backend API route integration safety net', () => {
     query.get = jest.fn().mockRejectedValue(new Error('firestore down'));
     mockGetDb.mockReturnValue({ collectionGroup: jest.fn(() => query) });
 
-    const res = await request(server, 'POST', '/scheduler/tick', undefined, '');
+    const res = await request(server, 'POST', '/scheduler/tick', undefined, '', {
+      'X-Scheduler-Secret': 'sched-secret',
+    });
 
     expect(res.status).toBe(500);
-    expect(res.body).toMatchObject({ ok: false, error: expect.stringContaining('firestore down') });
+    expect(res.body).toEqual({ ok: false, error: 'scheduler_failed' });
+    expect(JSON.stringify(res.body)).not.toContain('firestore down');
+  });
+
+  const schedulerPaths = [
+    '/scheduler/tick',
+    '/scheduler/hub-tick',
+    '/scheduler/hub-quota',
+    '/scheduler/hub-cleanup',
+    '/scheduler/notify',
+    '/scheduler/water-reset',
+  ];
+
+  it.each(schedulerPaths)('rejects %s unless the scheduler secret matches', async (path) => {
+    const missing = await request(server, 'POST', path, undefined, '');
+    const empty = await request(server, 'POST', path, undefined, '', { 'X-Scheduler-Secret': '' });
+    const wrongLength = await request(server, 'POST', path, undefined, '', { 'X-Scheduler-Secret': 'nope' });
+    const sameLength = await request(server, 'POST', path, undefined, '', { 'X-Scheduler-Secret': 'sched-secreX' });
+
+    for (const res of [missing, empty, wrongLength, sameLength]) {
+      expect(res.status).toBe(401);
+      expect(res.body).toEqual({ error: 'Unauthorized' });
+    }
+    expect(mockGetDb).not.toHaveBeenCalled();
   });
 
   it.each([
-    ['POST', '/scheduler/notify'],
-    ['POST', '/scheduler/water-reset'],
+    ['unset', undefined],
+    ['blank', ''],
+    ['whitespace', '   '],
+  ] as const)('rejects scheduler routes when SCHEDULER_SECRET is %s', async (_label, secret) => {
+    const previous = process.env.SCHEDULER_SECRET;
+    if (secret === undefined) delete process.env.SCHEDULER_SECRET;
+    else process.env.SCHEDULER_SECRET = secret;
+    try {
+      for (const path of schedulerPaths) {
+        const missing = await request(server, 'POST', path, undefined, '');
+        const empty = await request(server, 'POST', path, undefined, '', { 'X-Scheduler-Secret': '' });
+        const arbitrary = await request(server, 'POST', path, undefined, '', { 'X-Scheduler-Secret': 'anything' });
+        expect(missing.status).toBe(401);
+        expect(empty.status).toBe(401);
+        expect(arbitrary.status).toBe(401);
+        expect(missing.body).toEqual({ error: 'Unauthorized' });
+        expect(JSON.stringify(arbitrary.body)).not.toContain('anything');
+      }
+      expect(mockGetDb).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.SCHEDULER_SECRET;
+      else process.env.SCHEDULER_SECRET = previous;
+    }
+  });
+
+  it.each(['/scheduler/notify', '/scheduler/water-reset'])(
+    'still does not serve removed %s when the scheduler secret is valid',
+    async (path) => {
+      const address = server.address() as AddressInfo;
+      const res = await fetch(`http://127.0.0.1:${address.port}${path}`, {
+        method: 'POST',
+        headers: { 'X-Scheduler-Secret': 'sched-secret' },
+      });
+      expect(res.status).toBe(404);
+    },
+  );
+
+  it.each([
     ['POST', '/api/water/session'],
     ['GET', '/api/groups/group_a/water-config'],
     ['GET', '/api/learning/access'],
@@ -419,6 +485,110 @@ describe('backend API route integration safety net', () => {
       headers: { Authorization: 'Bearer valid-token' },
     });
     expect(res.status).toBe(404);
+  });
+
+  const harnessBody = {
+    runId: 'run_1',
+    activityId: 'act_1',
+    userId: 'user_a',
+    userMessage: 'go',
+  };
+
+  function postHarness(secret?: string): Promise<JsonResponse> {
+    const address = server.address() as AddressInfo;
+    const payload = JSON.stringify(harnessBody);
+    const headers: http.OutgoingHttpHeaders = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(payload),
+    };
+    if (secret !== undefined) headers['X-Harness-Secret'] = secret;
+
+    return new Promise((resolve, reject) => {
+      const req = http.request({
+        host: '127.0.0.1',
+        port: address.port,
+        agent: false,
+        method: 'POST',
+        path: '/api/internal/harness/run',
+        headers,
+      }, (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            body: data ? JSON.parse(data) : null,
+            headers: res.headers,
+          });
+        });
+      });
+      req.on('error', reject);
+      req.write(payload);
+      req.end();
+    });
+  }
+
+  it('rejects /api/internal/harness/run whenever INTERNAL_HARNESS_SECRET is unset', async () => {
+    const previous = process.env.INTERNAL_HARNESS_SECRET;
+    delete process.env.INTERNAL_HARNESS_SECRET;
+    mockExecuteHarness.mockResolvedValue(undefined);
+
+    try {
+      const missing = await postHarness();
+      const empty = await postHarness('');
+      const arbitrary = await postHarness('not-the-secret');
+
+      expect(missing.status).toBe(401);
+      expect(empty.status).toBe(401);
+      expect(arbitrary.status).toBe(401);
+      expect(missing.body).toEqual({ error: 'Unauthorized' });
+      expect(empty.body).toEqual({ error: 'Unauthorized' });
+      expect(arbitrary.body).toEqual({ error: 'Unauthorized' });
+      expect(mockExecuteHarness).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.INTERNAL_HARNESS_SECRET;
+      else process.env.INTERNAL_HARNESS_SECRET = previous;
+    }
+  });
+
+  it('rejects /api/internal/harness/run when INTERNAL_HARNESS_SECRET is an empty string', async () => {
+    const previous = process.env.INTERNAL_HARNESS_SECRET;
+    process.env.INTERNAL_HARNESS_SECRET = '';
+    mockExecuteHarness.mockResolvedValue(undefined);
+
+    try {
+      const missing = await postHarness();
+      const empty = await postHarness('');
+      const arbitrary = await postHarness('not-the-secret');
+
+      expect(missing.status).toBe(401);
+      expect(empty.status).toBe(401);
+      expect(arbitrary.status).toBe(401);
+      expect(mockExecuteHarness).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.INTERNAL_HARNESS_SECRET;
+      else process.env.INTERNAL_HARNESS_SECRET = previous;
+    }
+  });
+
+  it('accepts /api/internal/harness/run only for the configured secret', async () => {
+    mockExecuteHarness.mockResolvedValue(undefined);
+
+    const missing = await postHarness();
+    const empty = await postHarness('');
+    const wrongLength = await postHarness('wrong-secret');
+    const sameLength = await postHarness('xxxx-secret');
+    const correct = await postHarness('test-secret');
+
+    expect(missing.status).toBe(401);
+    expect(empty.status).toBe(401);
+    expect(wrongLength.status).toBe(401);
+    expect(sameLength.status).toBe(401);
+    expect(correct.status).toBe(200);
+    expect(correct.body).toEqual({ ok: true });
+    expect(mockExecuteHarness).toHaveBeenCalledTimes(1);
+    expect(mockExecuteHarness).toHaveBeenCalledWith(expect.anything(), expect.anything(), harnessBody);
   });
 
   it('protects /api/internal/harness/run with the internal secret', async () => {

@@ -14,9 +14,12 @@ import { getHub } from '../hub/runtime';
 
 const router = express.Router();
 
-// Single-owner constants — set via Cloud Run env vars
-const OWNER_USER_ID = process.env.OWNER_USER_ID!;
 const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
+
+function configuredOwnerUserId(): string | undefined {
+  const ownerUserId = process.env.OWNER_USER_ID?.trim();
+  return ownerUserId || undefined;
+}
 
 // LINE SDK middleware validates signature using raw body
 if (hasLineWebhookConfig()) {
@@ -63,13 +66,18 @@ router.use(signatureErrorHandler);
 async function handleEvent(event: WebhookEvent): Promise<void> {
   const db = getDb();
   const lineClient = getLineClient();
+  const ownerUserId = configuredOwnerUserId();
 
   // ── Group: bot joined ─────────────────────────────────────────────────────
   if (event.type === 'join' && event.source.type === 'group') {
+    if (!ownerUserId) {
+      console.warn(JSON.stringify({ severity: 'WARNING', event: 'owner_not_configured', lineEvent: 'join' }));
+      return;
+    }
     await upsertGroupOnJoin(
       db, lineClient,
       event.source.groupId,
-      OWNER_USER_ID,
+      ownerUserId,
       OFFICIAL_ACCOUNT_ID
     );
     return;
@@ -95,11 +103,16 @@ async function handleEvent(event: WebhookEvent): Promise<void> {
     const groupId = event.source.groupId;
     const senderId = event.source.userId || 'unknown';
 
+    if (!ownerUserId) {
+      console.warn(JSON.stringify({ severity: 'WARNING', event: 'owner_not_configured', lineEvent: 'message' }));
+      return;
+    }
+
     if (event.message.type === 'text') {
       const content = event.message.text;
 
       await updateGroupOnMessage(
-        db, groupId, OWNER_USER_ID, OFFICIAL_ACCOUNT_ID, content, event.timestamp
+        db, groupId, ownerUserId, OFFICIAL_ACCOUNT_ID, content, event.timestamp
       );
       await appendRecentMessage(
         db, lineClient, groupId, senderId, content, 'text', event.timestamp
@@ -110,7 +123,7 @@ async function handleEvent(event: WebhookEvent): Promise<void> {
     } else {
       // Non-text message — just update group's lastMessageAt
       await updateGroupOnMessage(
-        db, groupId, OWNER_USER_ID, OFFICIAL_ACCOUNT_ID,
+        db, groupId, ownerUserId, OFFICIAL_ACCOUNT_ID,
         `[${event.message.type}]`, event.timestamp
       );
     }

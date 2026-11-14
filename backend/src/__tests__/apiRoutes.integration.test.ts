@@ -421,6 +421,110 @@ describe('backend API route integration safety net', () => {
     expect(res.status).toBe(404);
   });
 
+  const harnessBody = {
+    runId: 'run_1',
+    activityId: 'act_1',
+    userId: 'user_a',
+    userMessage: 'go',
+  };
+
+  function postHarness(secret?: string): Promise<JsonResponse> {
+    const address = server.address() as AddressInfo;
+    const payload = JSON.stringify(harnessBody);
+    const headers: http.OutgoingHttpHeaders = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(payload),
+    };
+    if (secret !== undefined) headers['X-Harness-Secret'] = secret;
+
+    return new Promise((resolve, reject) => {
+      const req = http.request({
+        host: '127.0.0.1',
+        port: address.port,
+        agent: false,
+        method: 'POST',
+        path: '/api/internal/harness/run',
+        headers,
+      }, (res) => {
+        let data = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          resolve({
+            status: res.statusCode ?? 0,
+            body: data ? JSON.parse(data) : null,
+            headers: res.headers,
+          });
+        });
+      });
+      req.on('error', reject);
+      req.write(payload);
+      req.end();
+    });
+  }
+
+  it('rejects /api/internal/harness/run whenever INTERNAL_HARNESS_SECRET is unset', async () => {
+    const previous = process.env.INTERNAL_HARNESS_SECRET;
+    delete process.env.INTERNAL_HARNESS_SECRET;
+    mockExecuteHarness.mockResolvedValue(undefined);
+
+    try {
+      const missing = await postHarness();
+      const empty = await postHarness('');
+      const arbitrary = await postHarness('not-the-secret');
+
+      expect(missing.status).toBe(401);
+      expect(empty.status).toBe(401);
+      expect(arbitrary.status).toBe(401);
+      expect(missing.body).toEqual({ error: 'Unauthorized' });
+      expect(empty.body).toEqual({ error: 'Unauthorized' });
+      expect(arbitrary.body).toEqual({ error: 'Unauthorized' });
+      expect(mockExecuteHarness).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.INTERNAL_HARNESS_SECRET;
+      else process.env.INTERNAL_HARNESS_SECRET = previous;
+    }
+  });
+
+  it('rejects /api/internal/harness/run when INTERNAL_HARNESS_SECRET is an empty string', async () => {
+    const previous = process.env.INTERNAL_HARNESS_SECRET;
+    process.env.INTERNAL_HARNESS_SECRET = '';
+    mockExecuteHarness.mockResolvedValue(undefined);
+
+    try {
+      const missing = await postHarness();
+      const empty = await postHarness('');
+      const arbitrary = await postHarness('not-the-secret');
+
+      expect(missing.status).toBe(401);
+      expect(empty.status).toBe(401);
+      expect(arbitrary.status).toBe(401);
+      expect(mockExecuteHarness).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.INTERNAL_HARNESS_SECRET;
+      else process.env.INTERNAL_HARNESS_SECRET = previous;
+    }
+  });
+
+  it('accepts /api/internal/harness/run only for the configured secret', async () => {
+    mockExecuteHarness.mockResolvedValue(undefined);
+
+    const missing = await postHarness();
+    const empty = await postHarness('');
+    const wrongLength = await postHarness('wrong-secret');
+    const sameLength = await postHarness('xxxx-secret');
+    const correct = await postHarness('test-secret');
+
+    expect(missing.status).toBe(401);
+    expect(empty.status).toBe(401);
+    expect(wrongLength.status).toBe(401);
+    expect(sameLength.status).toBe(401);
+    expect(correct.status).toBe(200);
+    expect(correct.body).toEqual({ ok: true });
+    expect(mockExecuteHarness).toHaveBeenCalledTimes(1);
+    expect(mockExecuteHarness).toHaveBeenCalledWith(expect.anything(), expect.anything(), harnessBody);
+  });
+
   it('protects /api/internal/harness/run with the internal secret', async () => {
     mockExecuteHarness.mockResolvedValue(undefined);
 

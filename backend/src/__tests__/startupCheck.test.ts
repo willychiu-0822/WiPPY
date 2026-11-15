@@ -17,7 +17,7 @@ describe('startup config check', () => {
 
   it('lists names of missing settings, never values', () => {
     const logs: string[] = [];
-    const gaps = reportConfigGaps({ NODE_ENV: 'production', LINE_CHANNEL_SECRET: 'topsecret' }, (l) => logs.push(l));
+    const gaps = reportConfigGaps({ NODE_ENV: 'production', LLM_PROVIDER: 'gemini', LINE_CHANNEL_SECRET: 'topsecret' }, (l) => logs.push(l));
     const names = gaps.map((g) => g.name);
     expect(names).toEqual(expect.arrayContaining(['OWNER_USER_ID', 'SCHEDULER_SECRET', 'HUB_ENCRYPTION_KEY', 'GEMINI_API_KEY']));
     expect(names).not.toContain('LINE_CHANNEL_SECRET');

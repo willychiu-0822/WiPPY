@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    # 只改文件或截圖的 commit 不用重新部署。要手動部署請用 workflow_dispatch。
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 permissions:
@@ -53,13 +57,21 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Deploy backend to Cloud Run
+      # 順序：規則＋索引 → 後端（先不導流量）→ 檢查 → 導流量 → 前端。
+      # 注意：索引這步只是先送出建立請求，大型集合可能還在建，不等它建完。
+      - name: Deploy Firestore rules and indexes
+        run: npx --yes firebase-tools@15.1.0 deploy --only firestore:rules,firestore:indexes --project "${{ env.FIREBASE_PROJECT_ID }}"
+
+      - name: Deploy backend to Cloud Run (candidate, no traffic yet)
+        id: deploy-backend
         uses: google-github-actions/deploy-cloudrun@v3
         with:
           project_id: ${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}
           service: ${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}
           region: ${{ steps.deploy-target.outputs.GCP_REGION }}
           source: backend
+          no_traffic: true
+          tag: next
           env_vars: |
             NODE_ENV=production
             LLM_PROVIDER=${{ steps.deploy-target.outputs.LLM_PROVIDER }}
@@ -73,6 +85,30 @@ jobs:
             HUB_TASKS_LOCATION=${{ steps.deploy-target.outputs.HUB_TASKS_LOCATION }}
             HUB_ENCRYPTION_KEY=${{ secrets.HUB_ENCRYPTION_KEY }}
             SCHEDULER_SECRET=${{ secrets.SCHEDULER_SECRET }}
+
+      # 一定要打 tag 網址（next---<原 host>），打正式網址只會測到舊版。
+      # 失敗時 job 會停在這裡，新版沒拿到流量，線上維持上一版。
+      - name: Check candidate revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="${CLOUD_RUN_URL#https://}"
+          candidate="https://next---${base}"
+          echo "Checking ${candidate}/health"
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors --max-time 20 "${candidate}/health"
+          echo
+          # 沒帶憑證必須是 401；404/5xx 代表新版路由或啟動有問題
+          code="$(curl --silent --output /dev/null --retry 3 --retry-all-errors --max-time 20 --write-out '%{http_code}' "${candidate}/api/hub/me")"
+          echo "/api/hub/me without credentials -> ${code}"
+          test "${code}" = "401"
+
+      - name: Route traffic to the new revision
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          project_id: ${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}
+          service: ${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}
+          region: ${{ steps.deploy-target.outputs.GCP_REGION }}
+          revision_traffic: LATEST=100
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -91,11 +127,5 @@ jobs:
           VITE_API_BASE_URL: ${{ steps.deploy-target.outputs.VITE_API_BASE_URL }}
         run: npm run build
 
-      - name: Install Firebase CLI
-        run: npm install --global firebase-tools
-
       - name: Deploy Firebase Hosting
-        run: firebase deploy --only hosting --project "${{ env.FIREBASE_PROJECT_ID }}"
-
-      - name: Deploy Firestore rules and indexes
-        run: firebase deploy --only firestore:rules,firestore:indexes --project "${{ env.FIREBASE_PROJECT_ID }}"
+        run: npx --yes firebase-tools@15.1.0 deploy --only hosting --project "${{ env.FIREBASE_PROJECT_ID }}"

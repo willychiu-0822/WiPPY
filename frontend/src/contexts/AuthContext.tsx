@@ -14,11 +14,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Instinct agent accounts must sign in even when the browser profile cannot be
   // written); owner screens decide whether to block on it (see ProfileGate).
   const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const generation = useRef(0);
 
   const initializeUser = useCallback(async (u: User | null) => {
     const attempt = ++generation.current;
     setError(null);
+    setSyncing(!!u);
     setUser(u);
     setLoading(false);
     if (!u) return;
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (attempt === generation.current) setError(PROFILE_ERROR);
     } finally {
       clearTimeout(timer);
+      if (attempt === generation.current) setSyncing(false);
     }
   }, []);
 
@@ -47,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const retry = useCallback(() => initializeUser(auth.currentUser), [initializeUser]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, retry }}>
+    <AuthContext.Provider value={{ user, loading, error, syncing, retry }}>
       {children}
     </AuthContext.Provider>
   );

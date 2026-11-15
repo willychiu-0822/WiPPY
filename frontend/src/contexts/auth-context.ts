@@ -5,7 +5,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
+  syncing: boolean;
   retry: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType>({ user: null, loading: true, error: null, retry: async () => {} });
+export const AuthContext = createContext<AuthContextType>({ user: null, loading: true, error: null, syncing: false, retry: async () => {} });

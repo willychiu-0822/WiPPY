@@ -198,7 +198,7 @@ curl -sS '<API_BASE_URL>/api/hub/v1/inbox/<ITEM_ID>/complete' \
 npm ci --cache /tmp/wippy-install-npm-cache
 npm --prefix backend ci --cache /tmp/wippy-install-npm-cache
 npm --prefix frontend ci --cache /tmp/wippy-install-npm-cache
-npm run test:e2e:install
+npm run test:e2e   # 舊的 install E2E 已移除（W-08），只留 frontend 這一套
 ```
 
 測試會先編譯 backend，再自動啟停 4141／4142／4143，不下載瀏覽器。若要親自用瀏覽器測 mock 版，先執行 `npm --prefix backend run build`，再執行 `node e2e/stack.cjs` 後開 `http://127.0.0.1:4141`。Owner 測試登入資料由 `e2e/stack.cjs` 的 emulator-only fixture 提供，請勿套用正式帳密；完成自動測試後留下的測試 Agent 憑證不可回查，可在 UI 新建或輪替。測完 Ctrl+C 關閉。這是本機 mock，沒有公開 HTTPS URL。

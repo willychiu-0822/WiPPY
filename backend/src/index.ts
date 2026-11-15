@@ -1,12 +1,19 @@
 import * as admin from 'firebase-admin';
 import { getDb } from './firebase';
 import { createApp } from './app';
+import { reportConfigGaps } from './config/startupCheck';
 
 const PORT = process.env.PORT || 8080;
 const app = createApp();
 
 const server = app.listen(PORT, () => {
   console.log(JSON.stringify({ severity: 'INFO', message: `WiPPY backend running on port ${PORT}` }));
+  // Warn only; a missing setting must never stop the service from starting.
+  try {
+    reportConfigGaps();
+  } catch (err) {
+    console.log(JSON.stringify({ severity: 'WARNING', message: `Config check failed: ${String(err)}` }));
+  }
 });
 
 // SIGTERM handler: Cloud Run sends SIGTERM before terminating the instance.

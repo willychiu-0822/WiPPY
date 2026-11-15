@@ -15,4 +15,11 @@ describe('LoginPage', () => {
     expect(screen.getByText('帳號由 WiPPY 擁有者建立，不開放註冊。')).toBeInTheDocument();
     expect(screen.queryByText('建立帳號')).not.toBeInTheDocument();
   });
+
+  it('has one solid primary button; Google is a secondary link', () => {
+    render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    expect(screen.getAllByRole('button', { name: '登入' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /使用 Google 繼續/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '改用 Google 帳號登入' })).toBeInTheDocument();
+  });
 });

@@ -61,8 +61,9 @@ jobs:
           region: ${{ steps.deploy-target.outputs.GCP_REGION }}
           source: backend
           env_vars: |
-            LLM_PROVIDER=gemini
-            LLM_MODEL=gemma-4-26b-a4b-it
+            NODE_ENV=production
+            LLM_PROVIDER=${{ steps.deploy-target.outputs.LLM_PROVIDER }}
+            LLM_MODEL=${{ steps.deploy-target.outputs.LLM_MODEL }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             LIFF_CHANNEL_ID=${{ steps.deploy-target.outputs.LIFF_CHANNEL_ID }}
             CLOUD_RUN_SERVICE_URL=${{ steps.deploy-target.outputs.CLOUD_RUN_URL }}

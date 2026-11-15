@@ -59,3 +59,7 @@ pr42-fix/
 
 # Local install-UAT artifacts (credentials must never be persisted)
 run/install-uat/
+
+# 由 CI 產生，不手動提交
+docs/uat/UAT-STATUS.json
+docs/uat/install/UAT-STATUS.json

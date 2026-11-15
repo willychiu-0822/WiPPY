@@ -5445,3 +5445,11 @@ backend 15 suites／189 tests、frontend 12 files／99 tests、報告工具 5 te
 | UAT-25 | mobile | pass | — | [截圖](evidence/2026-11-11T14-30-58-603Z/mobile/UAT-25.png) |
 | UAT-26 | mobile | pass | — | [截圖](evidence/2026-11-11T14-30-58-603Z/mobile/UAT-26.png) |
 | UAT-27 | mobile | pass | — | [截圖](evidence/2026-11-11T14-30-58-603Z/mobile/UAT-27.png) |
+
+## 2026-11-16 05:57 ～ 2026-11-16 05:57（台北）
+
+批次：`2026-11-15T21-57-47-253Z`。0 pass / 0 fail / 64 blocked；可試用：false。
+
+| 案例 | Viewport | 結果 | 失敗原因 | 證據 |
+| --- | --- | --- | --- | --- |
+

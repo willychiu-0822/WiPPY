@@ -239,7 +239,7 @@ WiPPY/
 使用真實 Firebase Auth / Firestore emulator 與 LINE、LLM mock，不需要雲端金鑰：
 
 ```bash
-# 需 Node 22+、Java 21+；本次環境的 Java 已放在 .uat-tools/
+# 需 Node 20+、Java 21+；本次環境的 Java 已放在 .uat-tools/
 npm ci
 npm run uat:start
 # 另開 terminal 執行完整桌面／手機 E2E
@@ -247,9 +247,9 @@ npm run uat:start
 npm run test:e2e
 ```
 
-瀏覽器開 `http://127.0.0.1:4121`，用任意測試 Email 免費註冊與自選測試密碼。建立活動、選擇模擬群組並請 AI 規劃推播；本機不會發送真實 LINE 訊息。Ctrl+C 關閉所有服務，資料在重啟後清空。
+登入頁不開放註冊。瀏覽器開 `http://127.0.0.1:4121` 前，先用 Auth emulator（`127.0.0.1:4123`）建一個測試帳號再登入（`frontend/e2e/uat.spec.ts` 的 `createAccount` 就是這樣做）。建立活動、選擇模擬群組並請 AI 規劃推播；本機不會發送真實 LINE 訊息。Ctrl+C 關閉所有服務，資料在重啟後清空。
 
-[完整 UAT 計畫與環境](docs/uat/UAT-PLAN.md) · [執行結果與截圖](docs/uat/UAT-RESULTS.md) · [目前狀態](docs/uat/UAT-STATUS.json)
+[完整 UAT 計畫與環境](docs/uat/UAT-PLAN.md) · [執行結果與截圖](docs/uat/UAT-RESULTS.md) · 目前狀態看 CI 的 E2E job（`UAT-STATUS.json` 由 CI 產生，不進版控）
 
 ### Prerequisites
 

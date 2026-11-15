@@ -100,3 +100,49 @@ jobs:
 
       - name: Test
         run: npm test
+
+  e2e:
+    name: E2E (Firebase emulator + Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # Firestore / Auth emulator 需要 Java
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm --prefix backend ci
+          npm --prefix frontend ci
+
+      - name: Run E2E
+        run: npm run test:e2e > /tmp/e2e.log 2>&1 || { tail -n 80 /tmp/e2e.log; exit 1; }
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            /tmp/e2e.log
+            docs/uat/UAT-STATUS.json
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 7

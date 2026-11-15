@@ -13,13 +13,23 @@ test.afterEach(async ({ page, errors }, info) => {
   expect(errors, '瀏覽器不得有未處理例外').toEqual([]);
 });
 const fixturePassword = 'local-uat-test-only';
-async function register(page: Page) {
-  const email = `uat-${crypto.randomUUID()}@example.test`;
-  await page.goto('/login');
-  await page.getByRole('button', { name: '還沒有帳號？免費註冊' }).click();
+// 登入頁不開放註冊，帳號改由 Auth emulator 預先建立（就像擁有者替人開帳號）。
+async function createAccount(page: Page, prefix = 'uat') {
+  const email = `${prefix}-${crypto.randomUUID()}@example.test`;
+  const res = await page.request.post('http://127.0.0.1:4123/identitytoolkit.googleapis.com/v1/accounts:signUp?key=demo-public-config',
+    { data: { email, password: fixturePassword, returnSecureToken: true } });
+  expect(res.ok(), 'emulator 建立測試帳號').toBe(true);
+  return email;
+}
+async function submitLogin(page: Page, email: string) {
   await page.getByPlaceholder('Email', { exact: true }).fill(email);
   await page.getByPlaceholder('密碼', { exact: true }).fill(fixturePassword);
-  await page.getByRole('button', { name: '建立帳號', exact: true }).click();
+  await page.getByRole('button', { name: '登入', exact: true }).click();
+}
+async function register(page: Page) {
+  const email = await createAccount(page);
+  await page.goto('/login');
+  await submitLogin(page, email);
   await expect(page.getByRole('heading', { name: '群組', exact: true })).toBeVisible();
   await expect(page.getByText('UAT 讀書會', { exact: true })).toBeVisible();
   return email;
@@ -194,7 +204,7 @@ test('UAT-30 廣播微調空白或過長時指出群組並阻止發送，修正�
   await noOverflow(page);
 });
 
-test('UAT-01 註冊、登入、登出與路由保護', async ({ page }) => {
+test('UAT-01 登入、登出與路由保護', async ({ page }) => {
   await page.goto('/activities/private');
   await expect(page).toHaveURL(/\/login$/);
   const email = await register(page);
@@ -818,15 +828,13 @@ test('UAT-23 斷線刪除與編輯企畫可復原，不遺失待發訊息或草�
 });
 
 test('UAT-24 首次登入的帳號資料連線失敗可理解、可重試，不停在處理中', async ({ page }) => {
+  const email = await createAccount(page, 'profile');
   await page.goto('/login');
-  await page.getByRole('button', { name: '還沒有帳號？免費註冊' }).click();
   await page.evaluate(async () => {
     const helper = '/e2e/firestore-client.ts';
     await (await import(helper)).setFirestoreOnline(false);
   });
-  await page.getByPlaceholder('Email', { exact: true }).fill(`profile-${crypto.randomUUID()}@example.test`);
-  await page.getByPlaceholder('密碼', { exact: true }).fill(fixturePassword);
-  await page.getByRole('button', { name: '建立帳號', exact: true }).click();
+  await submitLogin(page, email);
   await expect(page.getByRole('alert')).toHaveText('無法載入帳號資料，請檢查網路連線後重試');
   const retry = page.getByRole('button', { name: '重試載入帳號', exact: true });
   await expect(retry).toHaveCount(1);
@@ -850,16 +858,14 @@ test('UAT-24 首次登入的帳號資料連線失敗可理解、可重試，不�
 });
 
 test('UAT-32 帳號資料長時間無回應時可重試，不持續停在載入中', async ({ page }) => {
+  const email = await createAccount(page, 'slow-profile');
   await page.goto('/login');
-  await page.getByRole('button', { name: '還沒有帳號？免費註冊' }).click();
   let release!: () => void;
   const held = new Promise<void>(resolve => { release = resolve; });
   const pattern = '**/google.firestore.v1.Firestore/**';
   await page.route(pattern, async route => { await held; await route.abort().catch(() => {}); });
   try {
-    await page.getByPlaceholder('Email', { exact: true }).fill(`slow-profile-${crypto.randomUUID()}@example.test`);
-    await page.getByPlaceholder('密碼', { exact: true }).fill(fixturePassword);
-    await page.getByRole('button', { name: '建立帳號', exact: true }).click();
+    await submitLogin(page, email);
     await expect(page.getByRole('alert')).toHaveText('無法載入帳號資料，請檢查網路連線後重試');
     await expect(page.getByRole('button', { name: '重試載入帳號', exact: true })).toHaveCount(1);
   } finally {

@@ -9,8 +9,11 @@ import { useHubRole } from '../hub/hub-role-context';
  * Must be rendered inside the HubRoleProvider so the role is known.
  */
 export function ProfileGate({ children }: { children: ReactNode }) {
-  const { error, retry } = useAuth();
+  const { error, syncing, retry } = useAuth();
   const { me } = useHubRole();
+  if (syncing && !error && me?.role === 'owner') return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center text-sm text-gray-500">載入帳號中...</div>
+  );
   if (error && me?.role === 'owner') return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4 px-6 text-center">
       <h1 className="text-xl font-bold text-blue-600">WiPPY</h1>

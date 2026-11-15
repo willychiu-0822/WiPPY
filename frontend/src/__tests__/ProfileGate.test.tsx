@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { HubRoleContext, type HubRoleState } from '../hub/hub-role-context';
 
-const auth = vi.hoisted(() => ({ value: { user: { uid: 'u' }, loading: false, error: null as string | null, retry: vi.fn() } }));
+const auth = vi.hoisted(() => ({ value: { user: { uid: 'u' }, loading: false, error: null as string | null, syncing: false, retry: vi.fn() } }));
 vi.mock('../contexts/useAuth', () => ({ useAuth: () => auth.value }));
 
 import { ProfileGate } from '../components/ProfileGate';
@@ -19,7 +19,7 @@ function renderGate(role: HubRoleState) {
 describe('ProfileGate (UAT-24/32 owner recovery, PR42-UAT-13 agent independence)', () => {
   it('blocks the owner back office on a profile failure and retries the account', async () => {
     const retry = vi.fn();
-    auth.value = { user: { uid: 'u' }, loading: false, error: MESSAGE, retry };
+    auth.value = { user: { uid: 'u' }, loading: false, error: MESSAGE, syncing: false, retry };
     const { rerender } = renderGate(owner);
     expect(screen.getByRole('alert')).toHaveTextContent(MESSAGE);
     expect(screen.queryByText('back office')).not.toBeInTheDocument();
@@ -31,15 +31,22 @@ describe('ProfileGate (UAT-24/32 owner recovery, PR42-UAT-13 agent independence)
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
+  it('holds the owner back office while the profile is still being written', () => {
+    auth.value = { user: { uid: 'u' }, loading: false, error: null, syncing: true, retry: vi.fn() };
+    renderGate(owner);
+    expect(screen.queryByText('back office')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('never blocks an Instinct agent account on a profile failure', () => {
-    auth.value = { user: { uid: 'u' }, loading: false, error: MESSAGE, retry: vi.fn() };
+    auth.value = { user: { uid: 'u' }, loading: false, error: MESSAGE, syncing: false, retry: vi.fn() };
     renderGate(agent);
     expect(screen.getByText('back office')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('lets everyone through when the profile is fine', () => {
-    auth.value = { user: { uid: 'u' }, loading: false, error: null, retry: vi.fn() };
+    auth.value = { user: { uid: 'u' }, loading: false, error: null, syncing: false, retry: vi.fn() };
     renderGate(owner);
     expect(screen.getByText('back office')).toBeInTheDocument();
   });

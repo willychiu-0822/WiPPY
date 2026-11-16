@@ -28,6 +28,8 @@ line.getLineClient = () => ({
   async getGroupSummary() { return { groupName: 'UAT 模擬群組' }; },
   async getGroupMembersCount() { return { count: 5 }; },
 });
+// The scheduler pushes through pushLineText (retry key); route it to the same fake.
+line.pushLineText = async (groupId, text) => (await line.getLineClient().pushMessage(groupId, { type: 'text', text })).messageId;
 const llm = require('../backend/src/services/llmProvider.ts');
 llm.createLLMProvider = () => ({
   async chat(messages) {

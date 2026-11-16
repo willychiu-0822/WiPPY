@@ -102,13 +102,18 @@ jobs:
           echo "/api/hub/me without credentials -> ${code}"
           test "${code}" = "401"
 
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      # deploy-cloudrun 只改流量時一定要給 image，會失敗（11/16 部署就卡在這），改用 gcloud 直接把流量導到剛檢查過的 next 版。
       - name: Route traffic to the new revision
-        uses: google-github-actions/deploy-cloudrun@v3
-        with:
-          project_id: ${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}
-          service: ${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}
-          region: ${{ steps.deploy-target.outputs.GCP_REGION }}
-          revision_traffic: LATEST=100
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run services update-traffic "${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}" \
+            --project "${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}" \
+            --region "${{ steps.deploy-target.outputs.GCP_REGION }}" \
+            --to-tags next=100
 
       - name: Install frontend dependencies
         working-directory: frontend

@@ -33,7 +33,7 @@ export async function buildDispatchPayload(ctx: HubContext, dispatchId: string) 
       restUrl: `${base}/api/hub/v1/dispatches/${dispatchId}/complete`,
       mcpUrl: `${base}/api/hub/mcp`,
     },
-    howToAct: '要執行動作（發訊息、預警、記錄、發連結/圖片/影片/語音、排程）請呼叫 WiPPY 的 MCP 工具或 POST /api/hub/v1/actions，每個請求都要帶 idempotencyKey；完成後呼叫 complete_dispatch。',
+    howToAct: '要執行動作（發訊息、預警、存紀錄、發連結/圖片/影片/語音、排程）請呼叫 WiPPY 的 MCP 工具或 POST /api/hub/v1/actions，每個請求都要帶 idempotencyKey；完成後呼叫 complete_dispatch。',
     rule: { id: dispatch.ruleId, name: dispatch.ruleName, trigger: dispatch.trigger, instruction: dispatch.instruction },
     group: { id: dispatch.groupId, name: group?.name ?? dispatch.groupId, memberCount: group?.memberCount ?? null },
     window: { start: dispatch.windowStart ? new Date(dispatch.windowStart).toISOString() : null, end: new Date(dispatch.windowEnd).toISOString() },

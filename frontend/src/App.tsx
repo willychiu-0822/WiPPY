@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/useAuth';
 import LoginPage from './pages/LoginPage';
 import GroupsSection from './pages/GroupsSection';
-import SendHistoryPage from './pages/SendHistoryPage';
+import AllRecordsPage from './pages/AllRecordsPage';
 import ActivitiesPage from './pages/ActivitiesPage';
 import ActivityDetailPage from './pages/ActivityDetailPage';
 import Layout from './components/Layout';
@@ -12,12 +12,10 @@ import { HubRoleProvider } from './hub/HubRoleProvider';
 import { RoleGate } from './hub/RoleGate';
 import { useHubRole } from './hub/hub-role-context';
 import HubLayout from './hub/pages/HubLayout';
-import DashboardPage from './hub/pages/DashboardPage';
+import HubOverviewPage from './hub/pages/HubOverviewPage';
 import AgentsPage from './hub/pages/AgentsPage';
 import RulesPage from './hub/pages/RulesPage';
 import RecordsPage from './hub/pages/RecordsPage';
-import LogsPage from './hub/pages/LogsPage';
-import HubSettingsPage from './hub/pages/HubSettingsPage';
 import WorkbenchPage from './hub/pages/WorkbenchPage';
 
 const localUat = import.meta.env.DEV && import.meta.env.VITE_UAT_MODE === 'true';
@@ -56,17 +54,18 @@ export default function App() {
         <Route index element={<HomeRedirect />} />
         {/* Owner back office */}
         <Route path="/groups" element={owner(<GroupsSection />)} />
-        <Route path="/history" element={owner(<SendHistoryPage />)} />
+        <Route path="/records" element={owner(<AllRecordsPage />)} />
+        <Route path="/history" element={<Navigate to="/records" replace />} />
         <Route path="/activities" element={owner(<ActivitiesPage />)} />
         <Route path="/activities/:id" element={owner(<ActivityDetailPage />)} />
         <Route path="/hub" element={owner(<HubLayout />)}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<HubOverviewPage />} />
           <Route path="groups" element={<Navigate to="/groups?tab=agent" replace />} />
           <Route path="agents" element={<AgentsPage />} />
           <Route path="rules" element={<RulesPage />} />
-          <Route path="records" element={<RecordsPage />} />
-          <Route path="logs" element={<LogsPage />} />
-          <Route path="settings" element={<HubSettingsPage />} />
+          <Route path="records" element={<Navigate to="/records?type=notes" replace />} />
+          <Route path="logs" element={<Navigate to="/records?type=runs" replace />} />
+          <Route path="settings" element={<Navigate to="/hub" replace />} />
           <Route path="workbench" element={<WorkbenchPage />} />
         </Route>
         {/* Agent accounts (Instinct) */}

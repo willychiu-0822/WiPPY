@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -23,12 +23,13 @@ const owner: HubRoleState = { me: { role: 'owner', agentId: null, agentName: nul
 const agent: HubRoleState = { me: { role: 'agent', agentId: 'instinct_1', agentName: 'Instinct', ownerConfigured: true }, loading: false, error: null };
 
 describe('Layout', () => {
-  it('shows the owner navigation including Agent Hub, and no removed legacy pages', () => {
+  it('shows the owner four top-level entries and no removed legacy pages', () => {
     renderAs(owner);
     expect(screen.getByRole('link', { name: '群組' })).toHaveAttribute('href', '/groups');
     expect(screen.getByRole('link', { name: '活動' })).toHaveAttribute('href', '/activities');
-    expect(screen.getByRole('link', { name: '記錄' })).toHaveAttribute('href', '/history');
+    expect(screen.getByRole('link', { name: '紀錄' })).toHaveAttribute('href', '/records');
     expect(screen.getByRole('link', { name: 'Agent Hub' })).toHaveAttribute('href', '/hub');
+    expect(within(screen.getByRole('navigation', { name: '主選單' })).getAllByRole('link')).toHaveLength(4);
     expect(screen.queryByRole('link', { name: '設定' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '探索' })).not.toBeInTheDocument();
   });

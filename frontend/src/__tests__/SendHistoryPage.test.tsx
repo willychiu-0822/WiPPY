@@ -13,7 +13,7 @@ describe('UAT-17 — history failure recovery', () => {
     });
     render(<SendHistoryPage />);
     expect(await screen.findByRole('alert')).toHaveTextContent('無法載入發送紀錄');
-    expect(screen.queryByText('尚無發送記錄')).not.toBeInTheDocument();
+    expect(screen.queryByText('還沒發過訊息，發出去之後會出現在這裡')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '重試' }));
     expect(await screen.findByText('原本已送出的訊息')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();

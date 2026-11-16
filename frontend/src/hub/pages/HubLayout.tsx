@@ -1,13 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
 const TABS = [
-  { to: '/hub', label: '總覽', end: true },
+  { to: '/hub', label: '總覽與設定', end: true },
   { to: '/hub/agents', label: 'Agent' },
   { to: '/hub/rules', label: '規則' },
-  { to: '/hub/records', label: '紀錄' },
-  { to: '/hub/logs', label: '執行紀錄' },
-  { to: '/hub/settings', label: '設定' },
-  { to: '/hub/workbench', label: '工作台' },
 ];
 
 export default function HubLayout() {

@@ -1,29 +1,13 @@
-import express, { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { getDb } from '../firebase';
 import { getLineClient } from '../line';
-import { requireSchedulerSecret } from '../middleware/schedulerAuth';
 
-const router = express.Router();
-
-// Every /scheduler/* request enters this router first. Reject before fallthrough
-// so a missing secret cannot reach hub tasks or reveal which paths exist.
-router.use(requireSchedulerSecret);
-
-// Called by Cloud Scheduler every minute: send due, approved ActivityMessages.
-router.post('/tick', async (_req: Request, res: Response) => {
-  try {
-    const sent = await processScheduledActivityMessages();
-    res.json({ ok: true, sent });
-  } catch (err) {
-    console.error('Scheduler tick error:', err);
-    res.status(500).json({ ok: false, error: 'scheduler_failed' });
-  }
-});
+// Sends due, approved activity messages. Runs as the `tick` task of the single
+// scheduler entry (hub/http/schedulerRoutes.ts); it has no route of its own.
 
 // ── Process scheduled ActivityMessages ────────────────────────────────────
 
-async function processScheduledActivityMessages(): Promise<number> {
+export async function processScheduledActivityMessages(): Promise<number> {
   const db = getDb();
   const now = admin.firestore.Timestamp.now();
 
@@ -160,5 +144,3 @@ async function writeSendLog(
     sentAt: admin.firestore.Timestamp.now(),
   });
 }
-
-export { router as schedulerRouter };

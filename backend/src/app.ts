@@ -4,7 +4,6 @@ import express from 'express';
 import cors from 'cors';
 
 import { webhookRouter } from './routes/webhook';
-import { schedulerRouter } from './routes/scheduler';
 import { groupsRouter } from './routes/api/groups';
 import { broadcastRouter } from './routes/api/broadcast';
 import { sendLogsRouter } from './routes/api/sendLogs';
@@ -29,7 +28,6 @@ export function createApp() {
     credentials: true,
   }));
 
-  app.use('/scheduler', express.json(), schedulerRouter);
   app.use('/api/groups', express.json(), groupsRouter);
   app.use('/api/broadcast', express.json(), broadcastRouter);
   app.use('/api/send-logs', express.json(), sendLogsRouter);

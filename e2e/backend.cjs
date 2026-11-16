@@ -50,7 +50,15 @@ llm.createLLMProvider = () => ({
 const express = backendRequire('express');
 const admin = backendRequire('firebase-admin');
 const { getDb } = require('../backend/src/firebase.ts');
-const { authMiddleware } = require('../backend/src/middleware/auth.ts');
+const { verifyIdToken } = require('../backend/src/hub/http/auth.ts');
+// Fixture-only: learn who is calling so their groups can be seeded. The real
+// permission check is still the backend's single auth middleware inside createApp().
+const authMiddleware = async (req, res, next) => {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) { res.status(401).json({ error: 'Missing Authorization header' }); return; }
+  try { req.userId = (await verifyIdToken(header.slice(7).trim())).uid; next(); }
+  catch { res.status(401).json({ error: 'Invalid or expired token' }); }
+};
 const { createApp } = require('../backend/src/app.ts');
 const app = express();
 const seeded = new Map();

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
-import { authMiddleware } from '../../middleware/auth';
+import { ownerAuth } from '../../hub/http/auth';
 import { getLineClient } from '../../line';
 
 const router = express.Router();
@@ -14,7 +14,7 @@ async function ownsAllGroups(db: ReturnType<typeof getDb>, userId: string, group
 
 // POST /api/broadcast/preview
 // Returns per-group content preview before sending (supports F1-3 per-group tweak)
-router.post('/preview', authMiddleware, async (req: Request, res: Response) => {
+router.post('/preview', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { groupIds, content } = req.body as { groupIds: string[]; content: string };
 
@@ -49,7 +49,7 @@ router.post('/preview', authMiddleware, async (req: Request, res: Response) => {
 
 // POST /api/broadcast/multi
 // Send customized message per group (after per-group tweak)
-router.post('/multi', authMiddleware, async (req: Request, res: Response) => {
+router.post('/multi', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { messages } = req.body as { messages: Array<{ groupId: string; content: string }> };
 

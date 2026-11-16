@@ -4,8 +4,7 @@ import { getHub } from '../runtime';
 import { adminRouter } from './adminRouter';
 import { agentRouter } from './agentRouter';
 import { mcpRouter } from './mcpRouter';
-import { isProduction } from '../accounts';
-import { hubAuth } from './auth';
+import { hubAuth, rejectWhenOwnerMissing } from './auth';
 import { internalHubRouter } from './internalRouter';
 import { mountSchedulerRoutes } from './schedulerRoutes';
 import { asyncRoute } from './util';
@@ -19,12 +18,7 @@ export function registerHubMount(fn: (app: Express) => void): void {
 
 export function mountHubRoutes(app: Express): void {
   app.use('/api/hub', (_req, res, next) => {
-    if (isProduction() && !process.env['OWNER_USER_ID']?.trim()) {
-      console.warn(JSON.stringify({ severity: 'WARNING', event: 'owner_not_configured' }));
-      res.status(503).json({ error: 'WiPPY 尚未設定擁有者，請聯絡管理員', code: 'owner_not_configured' });
-      return;
-    }
-    next();
+    if (!rejectWhenOwnerMissing(res)) next();
   });
   app.get('/api/hub/me', hubAuth({ allow: ['owner', 'agent'] }), asyncRoute(async (req: Request, res: Response) => {
     const actor = req.hubActor!;

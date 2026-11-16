@@ -83,6 +83,8 @@ jest.mock('../services/harnessOrchestrator', () => ({
 }));
 
 import { createApp } from '../app';
+import { setHubContext } from '../hub/runtime';
+import { makeTestHub } from './hub/helpers';
 
 type JsonResponse = {
   status: number;
@@ -163,10 +165,13 @@ describe('backend API route integration safety net', () => {
     delete process.env.LIFF_CHANNEL_ID;
     mockVerifyIdToken.mockResolvedValue({ uid: 'user_a' });
     mockIsNearLimit.mockReturnValue(false);
+    // Back-office routes share the Agent Hub auth, which reads hub accounts.
+    setHubContext(makeTestHub());
     server = createApp().listen(4129, '127.0.0.1', done);
   });
 
   afterEach((done) => {
+    setHubContext(null);
     if (server) {
       server.close(done);
       return;
@@ -186,7 +191,7 @@ describe('backend API route integration safety net', () => {
     const res = await request(server, 'GET', '/api/groups', undefined, '');
 
     expect(res.status).toBe(401);
-    expect(res.body).toEqual({ error: 'Missing Authorization header' });
+    expect(res.body).toEqual({ error: 'Missing Authorization header', code: 'unauthenticated' });
     expect(mockGetDb).not.toHaveBeenCalled();
   });
 
@@ -195,7 +200,7 @@ describe('backend API route integration safety net', () => {
     try {
       const res = await request(server, 'GET', '/api/groups');
       expect(res.status).toBe(403);
-      expect(res.body).toEqual({ error: 'Forbidden', code: 'not_owner' });
+      expect(res.body).toEqual({ error: '此帳號沒有 WiPPY 存取權限', code: 'account_not_allowed' });
     } finally {
       delete process.env.OWNER_USER_ID;
     }

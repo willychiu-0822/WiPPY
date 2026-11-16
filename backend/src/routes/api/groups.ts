@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
-import { authMiddleware } from '../../middleware/auth';
+import { ownerAuth } from '../../hub/http/auth';
 import { getLineClient } from '../../line';
 
 const router = express.Router();
@@ -22,7 +22,7 @@ async function loadOwnedGroupOr404(req: Request, res: Response) {
 
 // GET /api/groups
 // Returns all active groups for the authenticated user, sorted by lastMessageAt DESC
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', ownerAuth, async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const snap = await db.collection('groups')
@@ -52,7 +52,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 
 // GET /api/groups/:groupId/messages
 // Returns recent messages for a group (up to 50, newest first)
-router.get('/:groupId/messages', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:groupId/messages', ownerAuth, async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const groupSnap = await loadOwnedGroupOr404(req, res);
@@ -87,7 +87,7 @@ router.get('/:groupId/messages', authMiddleware, async (req: Request, res: Respo
 
 // POST /api/groups/:groupId/messages
 // Send a quick reply to a single group
-router.post('/:groupId/messages', authMiddleware, async (req: Request, res: Response) => {
+router.post('/:groupId/messages', ownerAuth, async (req: Request, res: Response) => {
   try {
     const groupId = req.params['groupId'] as string;
     const { content } = req.body as { content: string };
@@ -143,7 +143,7 @@ router.post('/:groupId/messages', authMiddleware, async (req: Request, res: Resp
 
 // POST /api/groups/sync
 // Refresh group data from LINE API for all active groups
-router.post('/sync', authMiddleware, async (req: Request, res: Response) => {
+router.post('/sync', ownerAuth, async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const snap = await db.collection('groups')

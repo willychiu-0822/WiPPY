@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { getDb } from '../../firebase';
-import { authMiddleware } from '../../middleware/auth';
+import { ownerAuth } from '../../hub/http/auth';
 import {
   createActivity,
   getActivity,
@@ -25,7 +25,7 @@ const router = express.Router();
 // ─── Activities ───────────────────────────────────────────────────────────────
 
 // GET /api/activities
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', ownerAuth, async (req: Request, res: Response) => {
   try {
     const activities = await listActivities(getDb(), req.userId!);
     res.json({ activities });
@@ -37,7 +37,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // POST /api/activities
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { name, targetGroups } = req.body as { name?: string; targetGroups?: string[] };
     if (!name?.trim()) {
@@ -57,7 +57,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // GET /api/activities/:id
-router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id', ownerAuth, async (req: Request, res: Response) => {
   try {
     const activity = await getActivity(getDb(), req.params['id']! as string, req.userId!);
     if (!activity) {
@@ -73,7 +73,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // PATCH /api/activities/:id
-router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { name, targetGroups, status, eventStartAt, eventEndAt, agentSessionId } =
       req.body as {
@@ -105,7 +105,7 @@ router.patch('/:id', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // PATCH /api/activities/:id/approve
-router.patch('/:id/approve', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/approve', ownerAuth, async (req: Request, res: Response) => {
   try {
     const activity = await approveActivity(getDb(), req.params['id']! as string, req.userId!);
     if (!activity) {
@@ -121,7 +121,7 @@ router.patch('/:id/approve', authMiddleware, async (req: Request, res: Response)
 });
 
 // PATCH /api/activities/:id/request-revision
-router.patch('/:id/request-revision', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/request-revision', ownerAuth, async (req: Request, res: Response) => {
   try {
     const activity = await requestRevision(getDb(), req.params['id']! as string, req.userId!);
     if (!activity) {
@@ -139,7 +139,7 @@ router.patch('/:id/request-revision', authMiddleware, async (req: Request, res: 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 
 // GET /api/activities/:id/messages
-router.get('/:id/messages', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id/messages', ownerAuth, async (req: Request, res: Response) => {
   try {
     const messages = await listMessages(getDb(), req.params['id']! as string, req.userId!);
     res.json({ messages });
@@ -151,7 +151,7 @@ router.get('/:id/messages', authMiddleware, async (req: Request, res: Response) 
 });
 
 // POST /api/activities/:id/messages
-router.post('/:id/messages', authMiddleware, async (req: Request, res: Response) => {
+router.post('/:id/messages', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { content, targetGroups, triggerType, triggerValue, sequenceOrder } =
       req.body as {
@@ -196,7 +196,7 @@ router.post('/:id/messages', authMiddleware, async (req: Request, res: Response)
 });
 
 // PATCH /api/activities/:id/messages/:msgId
-router.patch('/:id/messages/:msgId', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/messages/:msgId', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { content, targetGroups, triggerValue, sequenceOrder } =
       req.body as {
@@ -232,7 +232,7 @@ router.patch('/:id/messages/:msgId', authMiddleware, async (req: Request, res: R
 });
 
 // DELETE /api/activities/:id/messages/:msgId
-router.delete('/:id/messages/:msgId', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id/messages/:msgId', ownerAuth, async (req: Request, res: Response) => {
   try {
     const ok = await deleteMessage(
       getDb(),
@@ -255,7 +255,7 @@ router.delete('/:id/messages/:msgId', authMiddleware, async (req: Request, res: 
 // ─── Knowledge ────────────────────────────────────────────────────────────────
 
 // GET /api/activities/:id/knowledge
-router.get('/:id/knowledge', authMiddleware, async (req: Request, res: Response) => {
+router.get('/:id/knowledge', ownerAuth, async (req: Request, res: Response) => {
   try {
     const knowledge = await listKnowledge(getDb(), req.params['id']! as string, req.userId!);
     res.json({ knowledge });
@@ -267,7 +267,7 @@ router.get('/:id/knowledge', authMiddleware, async (req: Request, res: Response)
 });
 
 // POST /api/activities/:id/knowledge
-router.post('/:id/knowledge', authMiddleware, async (req: Request, res: Response) => {
+router.post('/:id/knowledge', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { knowledgeType, title, content, sourceType, targetGroupId } =
       req.body as {
@@ -313,7 +313,7 @@ router.post('/:id/knowledge', authMiddleware, async (req: Request, res: Response
 });
 
 // PATCH /api/activities/:id/knowledge/:knowledgeId
-router.patch('/:id/knowledge/:knowledgeId', authMiddleware, async (req: Request, res: Response) => {
+router.patch('/:id/knowledge/:knowledgeId', ownerAuth, async (req: Request, res: Response) => {
   try {
     const { title, content, knowledgeType, targetGroupId } =
       req.body as {
@@ -348,7 +348,7 @@ router.patch('/:id/knowledge/:knowledgeId', authMiddleware, async (req: Request,
 });
 
 // DELETE /api/activities/:id/knowledge/:knowledgeId
-router.delete('/:id/knowledge/:knowledgeId', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id/knowledge/:knowledgeId', ownerAuth, async (req: Request, res: Response) => {
   try {
     const ok = await deleteKnowledge(
       getDb(),

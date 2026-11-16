@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { getDb } from '../../firebase';
-import { authMiddleware } from '../../middleware/auth';
+import { ownerAuth } from '../../hub/http/auth';
 import { createLLMProvider } from '../../services/llmProvider';
 import { checkRateLimit, isNearLimit } from '../../services/rateLimitService';
 import { executeHarness } from '../../services/harnessOrchestrator';
@@ -18,7 +18,7 @@ function toClientErrorMessage(err: unknown): string {
 
 // POST /api/agent/chat
 // Returns immediately with { status: 'queued' } (prod) or { status: 'completed' } (dev/no Cloud Tasks).
-router.post('/chat', authMiddleware, async (req: Request, res: Response) => {
+router.post('/chat', ownerAuth, async (req: Request, res: Response) => {
   const { activityId, message, sessionId, action } = req.body as {
     activityId?: string;
     message?: string;

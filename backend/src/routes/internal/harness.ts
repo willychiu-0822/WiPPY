@@ -1,32 +1,15 @@
-import { timingSafeEqual } from 'crypto';
 import express, { Request, Response } from 'express';
 import { getDb } from '../../firebase';
 import { createLLMProvider } from '../../services/llmProvider';
+import { requireHarnessSecret } from '../../hub/http/secretAuth';
 import { executeHarness } from '../../services/harnessOrchestrator';
 
 const router = express.Router();
 
-// Missing or empty secret must fail closed. Comparing against '' would let a
-// blank x-harness-secret header through when the env var is unset.
-function harnessSecretMatches(header: string | string[] | undefined): boolean {
-  const expected = process.env.INTERNAL_HARNESS_SECRET;
-  if (!expected || typeof header !== 'string') return false;
-
-  const providedBuf = Buffer.from(header);
-  const expectedBuf = Buffer.from(expected);
-  if (providedBuf.length !== expectedBuf.length) return false;
-  return timingSafeEqual(providedBuf, expectedBuf);
-}
-
 // POST /api/internal/harness/run
 // Called by Cloud Tasks. Executes the harness pipeline synchronously and returns 200 when done.
 // Cloud Tasks retries on non-2xx responses.
-router.post('/harness/run', async (req: Request, res: Response) => {
-  if (!harnessSecretMatches(req.headers['x-harness-secret'])) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-
+router.post('/harness/run', requireHarnessSecret, async (req: Request, res: Response) => {
   const { runId, activityId, userId, userMessage, sessionId, action } = req.body as {
     runId: string;
     activityId: string;

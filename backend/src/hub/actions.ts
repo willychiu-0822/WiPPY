@@ -257,6 +257,7 @@ async function perform(ctx: HubContext, actionId: string, doc: ActionDoc): Promi
         targetGroups: [gid],
         triggerType: 'scheduled',
         triggerValue: taipeiIso(sendAt),
+        triggerAt: sendAt,
         cooldownMinutes: null,
         status: 'pending',
         reviewStatus: 'approved',

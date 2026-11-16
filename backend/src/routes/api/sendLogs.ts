@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
 import { getDb } from '../../firebase';
-import { authMiddleware } from '../../middleware/auth';
+import { ownerAuth } from '../../hub/http/auth';
 
 const router = express.Router();
 
 // GET /api/send-logs
-router.get('/', authMiddleware, async (req: Request, res: Response) => {
+router.get('/', ownerAuth, async (req: Request, res: Response) => {
   try {
     const db = getDb();
     const limit = Math.min(Number(req.query['limit'] as string) || 30, 100);

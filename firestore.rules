@@ -74,6 +74,7 @@ service cloud.firestore {
     }
 
     // ── Agent Hub: backend only (agents and the owner use /api/hub) ─────────
+    match /systemState/{id} { allow read, write: if false; }
     match /groupMessages/{id} { allow read, write: if false; }
     match /mediaAssets/{id} { allow read, write: if false; }
     match /agents/{id} { allow read, write: if false; }

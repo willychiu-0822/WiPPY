@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import * as admin from 'firebase-admin';
 import { ensureFirebaseApp } from '../../firebase';
-import { AgentDisabledError, resolveApiKeyActor, resolveFirebaseActor } from '../accounts';
+import { AgentDisabledError, isProduction, resolveApiKeyActor, resolveFirebaseActor } from '../accounts';
 import type { Actor, ActorVia } from '../core/types';
 import { getHub } from '../runtime';
 
@@ -9,6 +9,8 @@ declare global {
   namespace Express {
     interface Request {
       hubActor?: Actor;
+      /** Firebase uid of the signed-in owner; set by `ownerAuth` for back-office routes. */
+      userId: string;
     }
   }
 }
@@ -30,6 +32,20 @@ export function verifyIdToken(token: string): Promise<{ uid: string }> {
 }
 
 /**
+ * Production with no OWNER_USER_ID must fail closed; local dev may omit it.
+ * Returns true when the request was already answered with 503.
+ */
+export function rejectWhenOwnerMissing(res: Response): boolean {
+  if (!isProduction() || process.env['OWNER_USER_ID']?.trim()) return false;
+  console.warn(JSON.stringify({ severity: 'WARNING', event: 'owner_not_configured' }));
+  res.status(503).json({ error: 'WiPPY 尚未設定擁有者，請聯絡管理員', code: 'owner_not_configured' });
+  return true;
+}
+
+/**
+ * The only auth middleware in the backend: back-office routes (`ownerAuth`)
+ * and Agent Hub routes share it, so a rule changes in one place.
+ *
  * Authenticates owner (Firebase), agent accounts (Firebase, e.g. Instinct) and
  * agent API keys (`wpy_…`, e.g. Grok Bot), then enforces the allowed roles.
  */
@@ -44,6 +60,7 @@ export function hubAuth(opts: { allow: Array<'owner' | 'agent'>; via?: ActorVia 
       res.status(401).json({ error: 'Missing Authorization header', code: 'unauthenticated' });
       return;
     }
+    if (rejectWhenOwnerMissing(res)) return;
     try {
       const ctx = getHub();
       let actor: Actor | null;
@@ -71,6 +88,8 @@ export function hubAuth(opts: { allow: Array<'owner' | 'agent'>; via?: ActorVia 
           return;
         }
         if (opts.via && opts.via !== 'ui') actor = { ...actor, via: opts.via } as Actor;
+        // Back-office data is keyed by the owner's Firebase uid.
+        if (actor.kind === 'owner') req.userId = uid;
       }
       if (actor.kind === 'system' || !opts.allow.includes(actor.kind)) {
         res.status(403).json({ error: 'Forbidden', code: 'forbidden' });
@@ -88,3 +107,6 @@ export function hubAuth(opts: { allow: Array<'owner' | 'agent'>; via?: ActorVia 
     }
   };
 }
+
+/** Owner-only guard for the back-office API (groups, activities, broadcast…). */
+export const ownerAuth = hubAuth({ allow: ['owner'] });

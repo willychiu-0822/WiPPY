@@ -97,6 +97,25 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "triggerType", "order": "ASCENDING" },
         { "fieldPath": "reviewStatus", "order": "ASCENDING" },
+        { "fieldPath": "triggerAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activityMessages",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "triggerType", "order": "ASCENDING" },
+        { "fieldPath": "triggerValue", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activityMessages",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "triggerType", "order": "ASCENDING" },
+        { "fieldPath": "reviewStatus", "order": "ASCENDING" },
         { "fieldPath": "processingAt", "order": "ASCENDING" },
         { "fieldPath": "triggerValue", "order": "ASCENDING" }
       ]

@@ -68,6 +68,15 @@ export type TriggerType = 'scheduled' | 'keyword';
 export type MessageStatus = 'pending' | 'sent' | 'failed';
 export type MessageReviewStatus = 'pending_review' | 'approved' | 'rejected';
 
+export interface MessageDelivery {
+  status: 'sent' | 'failed';
+  attempts: number;
+  lineMessageId: string | null;
+  errorMessage: string | null;
+  retryable: boolean;
+  updatedAt: Timestamp;
+}
+
 export interface ActivityMessage {
   id: string;
   activityId: string;              // Denormalized for collectionGroup queries
@@ -85,7 +94,11 @@ export interface ActivityMessage {
   sendWindowStart: Timestamp | null; // Do not send before this time (lifecycle binding)
   sendWindowEnd: Timestamp | null;   // Do not send after this time
   sentAt: Timestamp | null;
-  processingAt: Timestamp | null;  // Set during send to prevent double-send
+  processingAt: Timestamp | null;  // Send lock; older than SEND_LOCK_TTL_MS counts as abandoned
+  triggerAt?: Timestamp | Date | null;      // Same instant as triggerValue (scheduled only); what the scheduler queries
+  deliveries?: Record<string, MessageDelivery>; // Per-group result, so a retry only touches groups that did not get it
+  sendAttempts?: number;           // Scheduler rounds that tried to deliver this message
+  nextRetryAt?: Timestamp | Date | null;    // Backoff: do not retry before this
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

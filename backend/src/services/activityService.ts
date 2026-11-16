@@ -1,4 +1,5 @@
 import * as admin from 'firebase-admin';
+import { isSendLockActive, scheduledTriggerAt } from './activitySchedule';
 import { ActivityInputError, validateMessageContent, validateScheduledTime } from './activityValidation';
 import { Firestore } from 'firebase-admin/firestore';
 import type {
@@ -105,7 +106,7 @@ export async function updateActivity(
         const currentActivity = await transaction.get(ref);
         if (!currentActivity.exists || currentActivity.data()!['userId'] !== userId) throw new ActivityInputError('Activity not found');
         const pending = await transaction.get(ref.collection('activityMessages').where('status', '==', 'pending'));
-        if (pending.docs.some(message => message.data()['processingAt'] != null)) {
+        if (pending.docs.some(message => isSendLockActive(message.data()['processingAt'], Date.now()))) {
           throw new ActivityInputError('訊息正在發送，請稍後再修改群組');
         }
         const now = admin.firestore.Timestamp.now();
@@ -253,6 +254,7 @@ export async function createMessage(
     targetGroups: data.targetGroups,
     triggerType: data.triggerType,
     triggerValue: data.triggerValue,
+    triggerAt: scheduledTriggerAt(data.triggerType, data.triggerValue),
     cooldownMinutes: null,
     status: 'pending',
     reviewStatus: 'pending_review',
@@ -291,7 +293,13 @@ export async function updateMessage(
 
   if (patch.content !== undefined) validateMessageContent(patch.content);
   if (patch.triggerValue !== undefined && (snap.data() as ActivityMessage).triggerType === 'scheduled') validateScheduledTime(patch.triggerValue);
-  await ref.update({ ...patch, updatedAt: admin.firestore.Timestamp.now() });
+  const current = snap.data() as ActivityMessage;
+  await ref.update({
+    ...patch,
+    // Keep the queryable instant in step with the edited time.
+    ...(patch.triggerValue !== undefined ? { triggerAt: scheduledTriggerAt(current.triggerType, patch.triggerValue) } : {}),
+    updatedAt: admin.firestore.Timestamp.now(),
+  });
   const updated = await ref.get();
   return updated.data() as ActivityMessage;
 }

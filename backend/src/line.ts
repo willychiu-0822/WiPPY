@@ -1,4 +1,4 @@
-import { Client, ClientConfig, MiddlewareConfig } from '@line/bot-sdk';
+import { Client, ClientConfig, MiddlewareConfig, messagingApi } from '@line/bot-sdk';
 
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -34,4 +34,22 @@ export function getLineMiddlewareConfig(): MiddlewareConfig {
     channelSecret: requireEnv('LINE_CHANNEL_SECRET'),
     channelAccessToken: requireEnv('LINE_CHANNEL_ACCESS_TOKEN'),
   };
+}
+
+/**
+ * Pushes one text message with LINE's retry key, so sending the same
+ * (message, group) pair twice delivers it once. Returns the LINE message id,
+ * or null when LINE says this retry key was already accepted (HTTP 409).
+ */
+export async function pushLineText(to: string, text: string, retryKey: string): Promise<string | null> {
+  const client = new messagingApi.MessagingApiClient({
+    channelAccessToken: requireEnv('LINE_CHANNEL_ACCESS_TOKEN'),
+  });
+  try {
+    const resp = await client.pushMessage({ to, messages: [{ type: 'text', text }] }, retryKey);
+    return resp?.sentMessages?.[0]?.id ?? null;
+  } catch (err) {
+    if ((err as { status?: number }).status === 409) return null;
+    throw err;
+  }
 }

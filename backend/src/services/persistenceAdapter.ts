@@ -1,3 +1,4 @@
+import { scheduledTriggerAt } from './activitySchedule';
 import * as admin from 'firebase-admin';
 import { Firestore } from 'firebase-admin/firestore';
 import type { ActivityMessage } from '../types';
@@ -67,6 +68,7 @@ export async function persistEffects(
       targetGroups: draft.targetGroups,
       triggerType: 'scheduled',
       triggerValue: draft.triggerValue,
+      triggerAt: scheduledTriggerAt('scheduled', draft.triggerValue),
       cooldownMinutes: null,
       status: 'pending',
       reviewStatus: 'pending_review',

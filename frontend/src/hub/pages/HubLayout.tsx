@@ -2,7 +2,6 @@ import { NavLink, Outlet } from 'react-router-dom';
 
 const TABS = [
   { to: '/hub', label: '總覽', end: true },
-  { to: '/hub/groups', label: '群組開放' },
   { to: '/hub/agents', label: 'Agent' },
   { to: '/hub/rules', label: '規則' },
   { to: '/hub/records', label: '紀錄' },

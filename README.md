@@ -1,6 +1,6 @@
 # WiPPY
 
-LINE 群組 × AI Agent 中樞。WiPPY 收下 LINE 群組的訊息與媒體，依你設定的規則交給外部 Agent（xAI Grok Bot、Instinct）判斷；Agent 再透過 WiPPY 發訊息、發預警、記錄重點，或把它們做好的網頁和媒體發到群組。另外保留原本的「AI 規劃活動推播」。
+LINE 群組 × AI Agent 中樞。WiPPY 收下 LINE 群組的訊息與媒體，依你設定的規則交給外部 Agent（xAI Grok Bot、Instinct）判斷；Agent 再透過 WiPPY 發訊息、發預警、記錄重點，或把它們做好的網頁和媒體發到群組。原本的「AI 規劃活動推播」也在同一套底下：同一個登入檢查、同一個排程入口、同一個「群組」頁。
 
 ---
 

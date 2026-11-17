@@ -287,6 +287,7 @@ test('UAT-05 排程編輯刪除、核准鎖定與修改暫停', async ({ page })
   await editFirst(page, '編輯後的活動提醒');
   await expect(page.getByText('編輯後的活動提醒', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '刪除', exact: true }).nth(1).click();
+  await page.getByRole('button', { name: '確定刪除', exact: true }).click();
   await expect(page.getByRole('button', { name: '編輯', exact: true })).toHaveCount(2);
   await page.getByRole('button', { name: '核准企畫', exact: true }).click();
   await expect(page.getByText('企畫已核准', { exact: true })).toBeVisible();
@@ -796,12 +797,14 @@ test('UAT-23 斷線刪除與編輯企畫可復原，不遺失待發訊息或草�
   const original = (await api(page, `/api/activities/${id}/messages`)).data.messages;
   await context.setOffline(true);
   await page.getByRole('button', { name: '刪除', exact: true }).first().click();
+  await page.getByRole('button', { name: '確定刪除', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('刪除失敗，請檢查網路連線後重試');
   await expect(page.getByRole('button', { name: '刪除', exact: true })).toHaveCount(3);
   await expect(page.getByText(original[0].content, { exact: true })).toBeVisible();
   await context.setOffline(false);
   expect((await api(page, `/api/activities/${id}/messages`)).data.messages).toHaveLength(3);
   await page.getByRole('button', { name: '刪除', exact: true }).first().click();
+  await page.getByRole('button', { name: '確定刪除', exact: true }).click();
   await expect(page.getByRole('button', { name: '刪除', exact: true })).toHaveCount(2);
   await expect(page.getByRole('alert')).toHaveCount(0);
   const remaining = (await api(page, `/api/activities/${id}/messages`)).data.messages;

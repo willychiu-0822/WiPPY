@@ -120,7 +120,7 @@ function ActionForm({ defaultGroupId }: { defaultGroupId: string | null }) {
   );
 }
 
-export default function WorkbenchPage() {
+export default function WorkbenchPage({ title }: { title?: string }) {
   const inbox = useLoad(() => hubApi.agent.inbox('open').then((r) => r.items));
   const [selected, setSelected] = useState<InboxItem | null>(null);
   const [detail, setDetail] = useState<DispatchPayload | null>(null);
@@ -183,6 +183,7 @@ export default function WorkbenchPage() {
 
   return (
     <div className="space-y-4">
+      {title && <h1 className="text-lg font-bold text-gray-900">{title}</h1>}
       <Card title="收件匣（待處理）" actions={<Button variant="secondary" onClick={() => void inbox.reload()}>重新整理</Button>}>
         <ErrorText error={inbox.error} />
         {inbox.data?.length === 0 && <p className="text-sm text-gray-400">目前沒有待處理的項目</p>}

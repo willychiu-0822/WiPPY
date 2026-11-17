@@ -17,7 +17,7 @@ Instinct 不會取得 WiPPY API key，也不能把密碼直接填在 Bearer head
 ## 1. 先開放群組
 
 1. 確認 WiPPY LINE bot 已加入測試群組，而且 WiPPY 的「群組」頁面已看得到它。若沒有，先在群組傳一則訊息，並請 Willy 檢查 LINE webhook。
-2. 到「Agent Hub → 群組開放」，開啟要讀寫的群組。
+2. 到「群組 → 交給 Agent」，開啟要讀寫的群組。舊網址 `/hub/groups` 會開到這個分頁。
 3. 建立 Agent 時還要勾選該群組。**群組已開放 + Agent 允許清單勾選**必須同時成立。
 
 驗收：Agent 列出的群組只有同時符合這兩個條件的群組。空清單通常是其中一個開關沒開，不是安裝成功後一定會看到所有群組。
@@ -73,7 +73,7 @@ curl -sS '<API_BASE_URL>/api/hub/mcp' \
 
 驗收：`initialize` 回傳 `serverInfo.name=wippy-agent-hub`；工具清單包含 `list_groups`、`get_messages`、`send_message`，`list_groups` 的 `structuredContent.groups` 與 REST 相同。
 
-## 3. 發送、記錄與排程
+## 3. 發送、紀錄與排程
 
 確認測試群組可以接收訊息，再執行：
 
@@ -112,7 +112,7 @@ Hub 沒有草稿 API，也不提供活動 CRUD（例如 `list_activities`）。�
 1. 「Agent Hub → 規則」建立規則，選剛建立的 Grok，勾選群組；條件選關鍵字，填「測試WiPPY」，指令填「讀活動並回覆收到」。
 2. 可先不勾「附重點整理」以免依賴 LLM；勾「附原始訊息」。
 3. Routine 的指令：收到 `kind=wippy.test` 只確認連線；收到 `kind=wippy.dispatch` 讀 `rule.instruction`、`messages`、`digest`（可能 null），以 WiPPY REST/MCP 執行需要的動作。
-4. 在測試群組傳「測試WiPPY 請回覆收到」。「執行紀錄 → 派送」應出現 `sent`；這不是完成。
+4. 在測試群組傳「測試WiPPY 請回覆收到」。「紀錄 → 處理過程 → 派送」應出現 `sent`；這不是完成。
 5. Agent 做完必須呼叫 `complete_dispatch`；REST 如下，或 MCP 同名工具帶 `jobId`、`summary`、新的 `idempotencyKey`：
 
 ```bash
@@ -176,7 +176,7 @@ curl -sS '<API_BASE_URL>/api/hub/v1/inbox/<ITEM_ID>/complete' \
 | 403 `agent_disabled` | 請 Owner 啟用 Agent |
 | 403 `account_disabled`／網站「此帳號已停用」 | 請 Owner 啟用 Instinct。Firebase 可能在重整時自動登出，回登入頁後重新登入；若仍在停用提示畫面，按「重試」 |
 | 403 `forbidden` | 正在用 Agent 身分打 Owner 專用 admin API |
-| 403 `group_not_allowed`／群組清單空白 | 檢查群組開放、Agent 允許清單與 bot 是否仍在群組 |
+| 403 `group_not_allowed`／群組清單空白 | 檢查「群組 → 交給 Agent」、Agent 允許清單與 bot 是否仍在群組 |
 | `agent_daily_limit` | 等台北時間隔日或由 Owner 調整每日上限 |
 | `line_quota_reserve` | LINE 本月剩餘量已達預警保留值；不要反覆重試 |
 | `invalid_params`／`invalid_request` | 查 `/api/hub/v1/tools` 的必填欄位；REST params 和 MCP arguments 格式不同 |

@@ -211,7 +211,7 @@ describe('不該發的不發', () => {
 });
 
 describe('鎖的逾時回收', () => {
-  it('鎖定後當機：鎖還新時不碰，逾時後重領，已記錄的群不重發', async () => {
+  it('鎖定後當機：鎖還新時不碰，逾時後重領，已記下的群不重發', async () => {
     seedMessage('msg_1', { targetGroups: ['Ca', 'Cb', 'Cc'] });
     // 發到 Cb 的當下行程掛掉：LINE 已收下 Cb，但之後什麼都寫不進去。
     mockPush.mockImplementation(async (to) => {
@@ -235,7 +235,7 @@ describe('鎖的逾時回收', () => {
     // 逾時後重領。
     mockNowMs = START + SEND_LOCK_TTL_MS + MIN;
     expect(await processScheduledActivityMessages()).toBe(1);
-    expect(pushedGroups()).toEqual(['Cb', 'Cc']); // Ca 已記錄成功，不再發
+    expect(pushedGroups()).toEqual(['Cb', 'Cc']); // Ca 已記下成功，不再發
     expect(mockStore.get(MSG)).toMatchObject({ status: 'sent', processingAt: null });
 
     // 再跑一輪也不會再發。
@@ -244,7 +244,7 @@ describe('鎖的逾時回收', () => {
     expect(mockPush).toHaveBeenCalledTimes(2);
   });
 
-  it('沒來得及記錄的那一群，重發時帶同一個 retry key（LINE 端只收一次）', async () => {
+  it('沒來得及記下的那一群，重發時帶同一個 retry key（LINE 端只收一次）', async () => {
     seedMessage('msg_1', { targetGroups: ['Ca', 'Cb'] });
     mockPush.mockImplementation(async (to) => {
       if (to === 'Cb') mockState.failWrites = true;

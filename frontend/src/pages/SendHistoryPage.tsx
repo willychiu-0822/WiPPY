@@ -50,10 +50,10 @@ export default function SendHistoryPage() {
 
   return (
     <>
-      <h1 className="text-lg font-bold text-gray-900 mb-4">發送記錄</h1>
+      <h2 className="text-base font-semibold text-gray-900 mb-4">發出去的訊息</h2>
 
       {logs.length === 0 && (
-        <p className="text-center text-gray-400 text-sm mt-12">尚無發送記錄</p>
+        <p className="text-center text-gray-400 text-sm mt-12">還沒發過訊息，發出去之後會出現在這裡</p>
       )}
 
       <div className="space-y-2">

@@ -22,7 +22,7 @@ describe('UAT-28 — LINE drawer recovery', () => {
     vi.mocked(api.groups.messages).mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(history);
     await openGroup();
     expect(await screen.findByRole('alert')).toHaveTextContent('無法載入訊息');
-    expect(screen.queryByText('尚無訊息記錄')).not.toBeInTheDocument();
+    expect(screen.queryByText('這個群組還沒有訊息')).not.toBeInTheDocument();
     fireEvent.change(screen.getByPlaceholderText('輸入訊息...'), { target: { value: '想提醒大家' } });
     fireEvent.click(screen.getByRole('button', { name: '重新載入訊息' }));
     expect(await screen.findByText('帶一本書')).toBeInTheDocument();

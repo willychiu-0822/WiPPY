@@ -1,6 +1,6 @@
 # WiPPY
 
-LINE 群組 × AI Agent 中樞。WiPPY 收下 LINE 群組的訊息與媒體，依你設定的規則交給外部 Agent（xAI Grok Bot、Instinct）判斷；Agent 再透過 WiPPY 發訊息、發預警、記錄重點，或把它們做好的網頁和媒體發到群組。原本的「AI 規劃活動推播」也在同一套底下：同一個登入檢查、同一個排程入口、同一個「群組」頁。
+LINE 群組 × AI Agent 中樞。WiPPY 收下 LINE 群組的訊息與媒體，依你設定的規則交給外部 Agent（xAI Grok Bot、Instinct）判斷；Agent 再透過 WiPPY 發訊息、發預警、記下重點，或把它們做好的網頁和媒體發到群組。原本的「AI 規劃活動推播」也在同一套底下：同一個登入檢查、同一個排程入口、同一個「群組」頁。
 
 ---
 
@@ -10,7 +10,7 @@ LINE 群組 × AI Agent 中樞。WiPPY 收下 LINE 群組的訊息與媒體，�
   - 收訊：開放的群組才會保存文字、圖片、影片、語音、檔案（媒體立刻下載到私有 bucket）
   - 規則：關鍵字、訊息類型、@機器人、訊息量、定時；可附免費模型做的重點整理
   - 派送：Grok Bot 走 Routine webhook，Instinct 進工作台收件匣
-  - 執行：Agent 透過 REST `/api/hub/v1` 或 MCP `/api/hub/mcp` 要求 WiPPY 發送、記錄、排程；WiPPY 只做硬流程驗證（https、免登入可開、LINE 規格、額度），不製作也不修改內容
+  - 執行：Agent 透過 REST `/api/hub/v1` 或 MCP `/api/hub/mcp` 要求 WiPPY 發送、存紀錄、排程；WiPPY 只做硬流程驗證（https、免登入可開、LINE 規格、額度），不製作也不修改內容
   - 保護：群組預設關閉、每日發送上限、LINE 額度保留 5% 給預警、70%/90% 額度預警、冪等鍵、稽核紀錄、失敗自動重試
 - **活動推播**（Harness Pipeline）：用自然語言規劃訊息，核准後排程推送
 - 規格：`docs/specs/2026-11-04-agent-hub.md`；上線步驟：`docs/agent-hub-setup-guide.md`
@@ -70,7 +70,7 @@ HarnessRun (Firestore, status: queued)
 | `extract_knowledge` | 從對話中萃取知識，更新群組知識庫 |
 | `general_chat` | 一般問答，不觸發副作用 |
 
-每次執行都建立一筆 `harnessRuns/{runId}`，記錄 `currentStage`、`llmCallCount`、`status` 供觀測與重試。
+每次執行都建立一筆 `harnessRuns/{runId}`，記下 `currentStage`、`llmCallCount`、`status` 供觀測與重試。
 
 ---
 

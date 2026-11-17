@@ -85,7 +85,7 @@ function MessageDrawer({
           </div>
         )}
         {!loading && !loadError && messages.length === 0 && (
-          <p className="text-center text-gray-400 text-sm mt-8">尚無訊息記錄</p>
+          <p className="text-center text-gray-400 text-sm mt-8">這個群組還沒有訊息</p>
         )}
         {[...messages].reverse().map((msg) => (
           <div key={msg.id} className="space-y-0.5">

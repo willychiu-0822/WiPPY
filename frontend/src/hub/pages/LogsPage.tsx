@@ -43,7 +43,7 @@ export default function LogsPage() {
   }
 
   return (
-    <Card title="執行紀錄">
+    <Card title="處理過程">
       <div className="flex flex-wrap gap-1" role="tablist">
         {TABS.map((t) => (
           <button key={t.name} type="button" role="tab" aria-selected={tab === t.name} onClick={() => setTab(t.name)} className={`px-3 py-1.5 rounded-lg text-sm ${tab === t.name ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}>

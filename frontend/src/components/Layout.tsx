@@ -30,7 +30,7 @@ export default function Layout() {
             <>
               <NavLink to="/groups" className={linkClass}>群組</NavLink>
               <NavLink to="/activities" className={linkClass}>活動</NavLink>
-              <NavLink to="/history" className={linkClass}>記錄</NavLink>
+              <NavLink to="/records" className={linkClass}>紀錄</NavLink>
               <NavLink to="/hub" className={linkClass}>Agent Hub</NavLink>
             </>
           )}

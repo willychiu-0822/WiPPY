@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { hubApi } from '../hubApi';
 import { Card, ErrorText } from '../ui';
 import { formatTime } from '../format';
@@ -30,7 +31,7 @@ export default function DashboardPage() {
         <ul className="text-sm text-gray-700 space-y-1">
           {d.agents.map((a) => <li key={a.id}>{a.name}：今天 {a.sendsToday} / {a.dailySendLimit} 次{a.enabled ? '' : '（已停用）'}</li>)}
         </ul>
-        <p className="text-xs text-gray-500">待處理收件匣 {d.openInbox} 項・失敗：派送 {d.failed.dispatches}、動作 {d.failed.actions}、媒體 {d.failed.media}</p>
+        <p className="text-xs text-gray-500">待處理收件匣 {d.openInbox} 項・失敗：派送 {d.failed.dispatches}、動作 {d.failed.actions}、媒體 {d.failed.media}・<Link to="/records?type=runs" className="text-blue-600 underline">到紀錄的處理過程重試</Link></p>
       </Card>
       <Card title="最近預警">
         {d.recentAlerts.length === 0 && <p className="text-sm text-gray-400">沒有預警</p>}

@@ -71,7 +71,7 @@ const READ_TOOLS: Record<string, ToolDef> = {
     run: (ctx, actor, a) => getMediaFor(ctx, actor, a.mediaAssetId),
   },
   list_records: {
-    description: '查詢已記錄的重點資訊（可依群組、分類、關鍵字篩選）。',
+    description: '查詢已存下的重點資訊（可依群組、分類、關鍵字篩選）。',
     schema: z.object({
       groupId: z.string().optional(),
       category: z.string().optional(),

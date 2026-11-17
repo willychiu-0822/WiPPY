@@ -103,7 +103,7 @@ test('UAT-28 群組載入與回覆斷線可原地重試，不誤報空對話或�
   await context.setOffline(true);
   await page.getByText('UAT 讀書會', { exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('無法載入訊息');
-  await expect(page.getByText('尚無訊息記錄', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('這個群組還沒有訊息', { exact: true })).toHaveCount(0);
   const reply = page.getByPlaceholder('輸入訊息...', { exact: true });
   await reply.fill('第一次辦讀書會，請大家帶一本書');
   await expect(page.getByRole('button', { name: '重新載入訊息', exact: true })).toHaveCount(1);
@@ -301,7 +301,7 @@ test('UAT-05 排程編輯刪除、核准鎖定與修改暫停', async ({ page })
   await expect(page.getByText('重新核准的活動提醒', { exact: true })).toBeVisible();
 });
 
-test('UAT-06 審核後發送、活動記錄與去重', async ({ page }) => {
+test('UAT-06 審核後發送、活動紀錄與去重', async ({ page }) => {
   await register(page); const id = await createActivity(page); await plan(page);
   await editFirst(page, '立即發送驗收', '2026-01-01T10:00:00+08:00');
   await expect(page.getByText('立即發送驗收', { exact: true })).toBeVisible();
@@ -314,7 +314,7 @@ test('UAT-06 審核後發送、活動記錄與去重', async ({ page }) => {
   await expect(page.getByText('成功', { exact: true })).toBeVisible();
   await api(page, '/scheduler/tick', 'POST');
   expect((await api(page, `/api/send-logs?activityId=${id}`)).data.logs).toHaveLength(1);
-  await page.getByRole('link', { name: '記錄', exact: true }).click();
+  await page.getByRole('link', { name: '紀錄', exact: true }).click();
   await expect(page.getByText('立即發送驗收', { exact: true })).toBeVisible();
   await expect(page.getByText('排程', { exact: true })).toBeVisible();
 });
@@ -328,7 +328,7 @@ test('UAT-07 群組近期訊息與單群回覆', async ({ page }) => {
   await page.getByRole('button', { name: '發送', exact: true }).click();
   await expect(page.getByPlaceholder('輸入訊息...', { exact: true })).toHaveValue('');
   await page.getByRole('button', { name: '←', exact: true }).click();
-  await page.getByRole('link', { name: '記錄', exact: true }).click();
+  await page.getByRole('link', { name: '紀錄', exact: true }).click();
   await expect(page.getByText('手動回覆驗收', { exact: true })).toBeVisible();
   await expect(page.getByText('手動', { exact: true })).toBeVisible();
 });
@@ -347,7 +347,7 @@ test('UAT-08 多群廣播、預覽及個別微調', async ({ page }) => {
   await page.getByRole('button', { name: '確認發送至 2 個群組' }).click();
   await expect(page.getByText('✓ 成功', { exact: true })).toHaveCount(2);
   await page.getByRole('button', { name: '完成', exact: true }).click();
-  await page.getByRole('link', { name: '記錄', exact: true }).click();
+  await page.getByRole('link', { name: '紀錄', exact: true }).click();
   await expect(page.getByText('廣播共同提醒', { exact: true })).toBeVisible();
   await expect(page.getByText('廣播個別提醒', { exact: true })).toBeVisible();
   await expect(page.getByText('廣播', { exact: true })).toHaveCount(2);
@@ -365,7 +365,7 @@ test('UAT-09 LINE 與 AI 失敗回饋及重試', async ({ page }) => {
   await page.getByRole('button', { name: '發送', exact: true }).click();
   await expect(reply).toHaveValue('');
   await page.getByRole('button', { name: '←', exact: true }).click();
-  await page.getByRole('link', { name: '記錄', exact: true }).click();
+  await page.getByRole('link', { name: '紀錄', exact: true }).click();
   await expect(page.getByText('失敗', { exact: true })).toBeVisible();
   await createActivity(page);
   await chat(page, '[模擬失敗] AI 問題');
@@ -559,7 +559,7 @@ test('UAT-16 探索：知識編輯必填、API 防呆與合法保存', async ({ 
   await noOverflow(page);
 });
 
-test('UAT-17 探索：離線知識操作與活動記錄可復原', async ({ page, context }) => {
+test('UAT-17 探索：離線知識操作與活動紀錄可復原', async ({ page, context }) => {
   await register(page); const id = await createActivity(page);
   try {
     await page.getByRole('button', { name: '知識庫', exact: true }).click();
@@ -608,9 +608,9 @@ test('UAT-17 探索：離線知識操作與活動記錄可復原', async ({ page
     await expect(page.getByText('離線恢復後的發送紀錄', { exact: true })).toBeVisible();
     await expect(page.getByRole('alert')).toHaveCount(0);
     await context.setOffline(true);
-    await page.getByRole('link', { name: '記錄', exact: true }).click();
+    await page.getByRole('link', { name: '紀錄', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('無法載入發送紀錄');
-    await expect(page.getByText('尚無發送記錄', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('還沒發過訊息，發出去之後會出現在這裡', { exact: true })).toHaveCount(0);
     await context.setOffline(false);
     await page.getByRole('button', { name: '重試', exact: true }).click();
     await expect(page.getByText('離線恢復後的發送紀錄', { exact: true })).toBeVisible();

@@ -175,6 +175,13 @@ describe('RulesPage', () => {
 });
 
 describe('WorkbenchPage', () => {
+  it('uses the same Taipei time label as the message plan', async () => {
+    api.agent.inbox.mockResolvedValue({ items: [] });
+    renderPage(<WorkbenchPage />);
+    await userEvent.selectOptions(await screen.findByLabelText('動作'), 'schedule_message');
+    expect(screen.getByLabelText('發送時間（台北時間）')).toBeInTheDocument();
+  });
+
   it('PR42-UAT-19 preserves completion notes after a failure and allows retry', async () => {
     const item = { id: 'i1', dispatchId: 'd1', ruleName: '復原工作', groupId: 'C2', groupName: 'Beta', instruction: '讀活動', createdAt: '' };
     let completed = false;

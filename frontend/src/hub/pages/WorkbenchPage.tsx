@@ -4,6 +4,7 @@ import { hubApi, type ActionResult, type ActionType, type DispatchPayload, type 
 import { Button, Card, ErrorText, SelectField, TextField } from '../ui';
 import { describeResult, formatTime } from '../format';
 import { useLoad } from '../useLoad';
+import { SEND_AT_LABEL } from '../../lib/timeCopy';
 
 const ACTIONS: Array<{ value: ActionType; label: string }> = [
   { value: 'send_message', label: '發訊息到群組' },
@@ -112,7 +113,7 @@ function ActionForm({ defaultGroupId }: { defaultGroupId: string | null }) {
       {type === 'send_video' && (<>{field('videoUrl', '影片網址', { hint: 'mp4，≤ 200MB' })}{field('previewUrl', '預覽圖網址')}</>)}
       {type === 'send_audio' && (<>{field('audioUrl', '語音網址', { hint: 'm4a' })}{field('durationMs', '長度（毫秒）', { type: 'number' })}</>)}
       {type === 'record' && (<>{field('category', '分類')}{field('title', '標題')}{field('content', '內容', { multiline: true })}{field('tags', '標籤（逗號分隔）')}</>)}
-      {type === 'schedule_message' && (<>{field('text', '訊息內容', { multiline: true })}{field('sendAt', '發送時間（台北時間）', { type: 'datetime-local' })}</>)}
+      {type === 'schedule_message' && (<>{field('text', '訊息內容', { multiline: true })}{field('sendAt', SEND_AT_LABEL, { type: 'datetime-local' })}</>)}
       <ErrorText error={error ?? groups.error} />
       <Button type="submit" disabled={busy}>送出動作</Button>
       {result && <p role="status" className={`text-sm ${result.status === 'done' ? 'text-emerald-600' : result.status === 'queued' ? 'text-blue-600' : 'text-red-600'}`}>{describeResult(result)}</p>}

@@ -280,3 +280,13 @@ describe('UAT-23 message failure recovery', () => {
     expect(screen.getByRole('button', { name: '儲存' })).toBeEnabled();
   });
 });
+
+describe('W-23 time wording', () => {
+  it('uses the Taipei time label and a year-free advanced example', () => {
+    render(<MessagePlanTable messages={[makeMessage()]} locked={false} onUpdate={vi.fn()} onDelete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: '編輯' }));
+    expect(screen.getByLabelText('發送時間（台北時間）')).toBeInTheDocument();
+    expect(screen.getByLabelText('發送時間（ISO 格式）')).toHaveAttribute('placeholder', '例：明天上午 10 點');
+    expect(screen.queryByText(/依你的裝置時區/)).not.toBeInTheDocument();
+  });
+});

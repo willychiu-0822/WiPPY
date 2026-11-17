@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ActivityMessage } from '../lib/api';
 import { ConfirmAction } from './ConfirmAction';
+import { SEND_AT_ISO_EXAMPLE, SEND_AT_LABEL, fromTaipeiLocal, taipeiDateTime } from '../lib/timeCopy';
 
 interface Props {
   messages: ActivityMessage[];
@@ -25,6 +26,7 @@ const STATUS_BADGE: Record<ActivityMessage['status'], { label: string; style: st
 function formatTriggerValue(v: string) {
   try {
     return new Date(v).toLocaleString('zh-TW', {
+      timeZone: 'Asia/Taipei',
       month: 'numeric',
       day: 'numeric',
       hour: '2-digit',
@@ -35,22 +37,6 @@ function formatTriggerValue(v: string) {
   }
 }
 
-function localDateTime(value: string) {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return '';
-  const part = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${part(date.getMonth() + 1)}-${part(date.getDate())}T${part(date.getHours())}:${part(date.getMinutes())}:${part(date.getSeconds())}`;
-}
-
-function isoExample() {
-  const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  d.setHours(10, 0, 0, 0);
-  const part = (n: number) => String(n).padStart(2, '0');
-  const off = -d.getTimezoneOffset();
-  const sign = off >= 0 ? '+' : '-';
-  const abs = Math.abs(off);
-  return `${d.getFullYear()}-${part(d.getMonth() + 1)}-${part(d.getDate())}T10:00:00${sign}${part(Math.floor(abs / 60))}:${part(abs % 60)}`;
-}
 
 interface EditState { id: string; content: string; triggerValue: string; triggerType: ActivityMessage['triggerType']; advanced?: boolean }
 
@@ -114,19 +100,18 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
           <div key={msg.id} className="bg-white border border-blue-200 rounded-xl p-4 space-y-3">
             <div>
               {msg.triggerType === 'scheduled' && <>
-                <label htmlFor={`send-at-${msg.id}`} className="text-xs text-gray-500 mb-1 block">發送日期與時間</label>
+                <label htmlFor={`send-at-${msg.id}`} className="text-xs text-gray-500 mb-1 block">{SEND_AT_LABEL}</label>
                 <input
                   id={`send-at-${msg.id}`}
                   type="datetime-local"
                   step="1"
                   className="w-full min-w-0 text-sm border border-gray-200 rounded-lg px-3 py-1.5"
-                  value={localDateTime(editing.triggerValue)}
+                  value={taipeiDateTime(editing.triggerValue)}
                   onChange={e => {
-                    const date = new Date(e.target.value);
-                    setEditing({ ...editing, triggerValue: Number.isFinite(date.getTime()) ? date.toISOString().replace(/\.\d{3}Z$/, 'Z') : '', advanced: false });
+                    setEditing({ ...editing, triggerValue: fromTaipeiLocal(e.target.value), advanced: false });
                   }}
                 />
-                <p className="text-xs text-gray-500 mt-1">依你的裝置時區（{Intl.DateTimeFormat().resolvedOptions().timeZone}）顯示。</p>
+
               </>}
               <details open={msg.triggerType === 'keyword' ? true : undefined} className="mt-2">
               <summary className={`text-xs text-gray-500 cursor-pointer ${msg.triggerType === 'keyword' ? 'hidden' : ''}`}>進階：輸入含時區的時間</summary>
@@ -136,7 +121,7 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 value={editing.triggerValue}
                 onChange={(e) => setEditing({ ...editing, triggerValue: e.target.value, advanced: true })}
-                placeholder={msg.triggerType === 'keyword' ? '例：報名' : `例：${isoExample()}`}
+                placeholder={msg.triggerType === 'keyword' ? '例：報名' : SEND_AT_ISO_EXAMPLE}
               />
               </details>
             </div>

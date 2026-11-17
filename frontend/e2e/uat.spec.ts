@@ -665,7 +665,7 @@ test('UAT-18 探索：中文選字 Enter 不提前建立或發送', async ({ pag
 test('UAT-19 新手用日期時間選擇器設定推播，時區與資料保存正確', async ({ page }) => {
   await register(page); const id = await createActivity(page); await plan(page);
   await page.getByRole('button', { name: '編輯', exact: true }).first().click();
-  const picker = page.getByLabel('發送日期與時間');
+  const picker = page.getByLabel('發送時間（台北時間）');
   await expect(picker).toHaveAttribute('type', 'datetime-local');
   await picker.fill('2035-11-12T18:30:17');
   const saved = page.waitForResponse(response => response.request().method() === 'PATCH'
@@ -810,13 +810,13 @@ test('UAT-23 斷線刪除與編輯企畫可復原，不遺失待發訊息或草�
   const remaining = (await api(page, `/api/activities/${id}/messages`)).data.messages;
   expect(remaining.map((message: { id: string }) => message.id).sort()).toEqual(original.slice(1).map((message: { id: string }) => message.id).sort());
   await page.getByRole('button', { name: '編輯', exact: true }).first().click();
-  await page.getByLabel('發送日期與時間').fill('2035-11-12T18:30:17');
+  await page.getByLabel('發送時間（台北時間）').fill('2035-11-12T18:30:17');
   await page.locator('textarea').fill('手機斷線仍保留的提醒草稿');
   await context.setOffline(true);
   await page.getByRole('button', { name: '儲存', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('儲存失敗，請檢查網路連線後重試');
   await expect(page.locator('textarea')).toHaveValue('手機斷線仍保留的提醒草稿');
-  await expect(page.getByLabel('發送日期與時間')).toHaveValue('2035-11-12T18:30:17');
+  await expect(page.getByLabel('發送時間（台北時間）')).toHaveValue('2035-11-12T18:30:17');
   await context.setOffline(false);
   expect((await api(page, `/api/activities/${id}/messages`)).data.messages[0].content).toBe(original[1].content);
   await page.getByRole('button', { name: '儲存', exact: true }).click();

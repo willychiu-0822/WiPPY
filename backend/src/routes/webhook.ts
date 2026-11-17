@@ -37,15 +37,25 @@ if (hasLineWebhookConfig()) {
       return;
     }
 
-    // Respond quickly — LINE requires a response within a few seconds
-    res.json({ ok: true });
+    // Legacy group bookkeeping also finishes before the acknowledgement:
+    // Cloud Run may take the CPU away once the response is out, so nothing
+    // runs after it. A failure answers 500 and LINE redelivers the batch;
+    // every write below is safe to repeat (merge writes, event-id doc ids).
+    const results = await Promise.allSettled(events.map(handleEvent));
+    const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (failures.length > 0) {
+      console.error(JSON.stringify({
+        severity: 'ERROR',
+        event: 'webhook_group_update_error',
+        failed: failures.length,
+        total: events.length,
+        errors: failures.map((f) => String(f.reason)),
+      }));
+      res.status(500).json({ ok: false });
+      return;
+    }
 
-    // Legacy group bookkeeping runs out-of-band
-    setImmediate(() => {
-      Promise.all(events.map(handleEvent)).catch((err) => {
-        console.error(JSON.stringify({ event: 'webhook_error', error: String(err) }));
-      });
-    });
+    res.json({ ok: true });
   });
 } else {
   router.post('/line', (_req: Request, res: Response) => {
@@ -115,7 +125,8 @@ async function handleEvent(event: WebhookEvent): Promise<void> {
         db, groupId, ownerUserId, OFFICIAL_ACCOUNT_ID, content, event.timestamp
       );
       await appendRecentMessage(
-        db, lineClient, groupId, senderId, content, 'text', event.timestamp
+        db, lineClient, groupId, senderId, content, 'text', event.timestamp,
+        event.webhookEventId
       );
 
       // TODO Phase 4: checkKeywordTriggers(db, lineClient, groupId, content)

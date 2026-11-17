@@ -13,31 +13,29 @@ export async function upsertGroupOnJoin(
   userId: string,
   officialAccountId: string
 ): Promise<void> {
-  let name = groupId; // fallback
-  let memberCount = 0;
-
-  try {
-    const summary = await lineClient.getGroupSummary(groupId);
-    name = summary.groupName;
-  } catch (err) {
-    console.error(JSON.stringify({ event: 'group_summary_error', groupId, error: String(err) }));
-  }
-
-  try {
-    const members = await lineClient.getGroupMembersCount(groupId);
-    memberCount = members.count;
-  } catch {
-    // Non-critical — leave as 0
-  }
+  // Look both up before writing. If LINE can't answer, the group is still
+  // recorded (so it shows up), but the name / head count already stored are
+  // left alone and the error is rethrown at the end so the webhook retries.
+  const [summary, members] = await Promise.allSettled([
+    lineClient.getGroupSummary(groupId),
+    lineClient.getGroupMembersCount(groupId),
+  ]);
 
   const now = admin.firestore.Timestamp.now();
-  await db.collection('groups').doc(groupId).set(
+  const ref = db.collection('groups').doc(groupId);
+  const existing = (await ref.get()).data();
+  const lookedUp: Record<string, unknown> = {};
+  if (summary.status === 'fulfilled') lookedUp.name = summary.value.groupName;
+  else if (existing?.['name'] === undefined) lookedUp.name = groupId; // placeholder until the retry
+  if (members.status === 'fulfilled') lookedUp.memberCount = members.value.count;
+  else if (existing?.['memberCount'] === undefined) lookedUp.memberCount = 0;
+
+  await ref.set(
     {
       groupId,
       officialAccountId,
       userId,
-      name,
-      memberCount,
+      ...lookedUp,
       lastMessageAt: now,
       lastMessagePreview: '',
       isActive: true,
@@ -47,9 +45,13 @@ export async function upsertGroupOnJoin(
   );
 
   // Set createdAt only on first write (merge won't overwrite existing)
-  const snap = await db.collection('groups').doc(groupId).get();
-  if (!snap.data()?.['createdAt']) {
-    await db.collection('groups').doc(groupId).update({ createdAt: now });
+  if (!existing?.['createdAt']) {
+    await ref.update({ createdAt: now });
+  }
+
+  const failed = [summary, members].find((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (failed) {
+    throw new Error(`group info lookup failed for ${groupId}: ${String(failed.reason)}`);
   }
 }
 
@@ -67,15 +69,12 @@ export async function refreshMemberCount(
   lineClient: Client,
   groupId: string
 ): Promise<void> {
-  try {
-    const members = await lineClient.getGroupMembersCount(groupId);
-    await db.collection('groups').doc(groupId).set(
-      { memberCount: members.count, updatedAt: admin.firestore.Timestamp.now() },
-      { merge: true }
-    );
-  } catch (err) {
-    console.error(JSON.stringify({ event: 'member_count_error', groupId, error: String(err) }));
-  }
+  // Errors propagate: the webhook answers 500 and LINE redelivers the event.
+  const members = await lineClient.getGroupMembersCount(groupId);
+  await db.collection('groups').doc(groupId).set(
+    { memberCount: members.count, updatedAt: admin.firestore.Timestamp.now() },
+    { merge: true }
+  );
 }
 
 // ─── Update group metadata on every message ──────────────────────────────────
@@ -88,24 +87,28 @@ export async function updateGroupOnMessage(
   timestamp: number
 ): Promise<void> {
   const now = admin.firestore.Timestamp.fromMillis(timestamp);
-  await db.collection('groups').doc(groupId).set(
+  const ref = db.collection('groups').doc(groupId);
+  const existing = (await ref.get()).data();
+
+  // A redelivered (older) event must not roll the "latest message" back.
+  const last = existing?.['lastMessageAt'] as { toMillis?: () => number } | undefined;
+  const lastMillis = typeof last?.toMillis === 'function' ? last.toMillis() : undefined;
+  const isNewest = lastMillis === undefined || timestamp >= lastMillis;
+
+  await ref.set(
     {
       groupId,
       userId,
       officialAccountId,
-      lastMessageAt: now,
-      lastMessagePreview: content.substring(0, 80),
       isActive: true,
-      updatedAt: now,
+      ...(isNewest
+        ? { lastMessageAt: now, lastMessagePreview: content.substring(0, 80), updatedAt: now }
+        : {}),
+      // Ensure createdAt is set for groups that joined before Phase 1
+      ...(existing?.['createdAt'] ? {} : { createdAt: now }),
     },
     { merge: true }
   );
-
-  // Ensure createdAt is set for groups that joined before Phase 1
-  const snap = await db.collection('groups').doc(groupId).get();
-  if (!snap.data()?.['createdAt']) {
-    await db.collection('groups').doc(groupId).update({ createdAt: now });
-  }
 }
 
 // ─── Append message to recentMessages subcollection (capped at 50) ───────────
@@ -116,7 +119,8 @@ export async function appendRecentMessage(
   senderId: string,
   content: string,
   messageType: string,
-  timestamp: number
+  timestamp: number,
+  eventId?: string
 ): Promise<void> {
   const colRef = db.collection('groups').doc(groupId).collection('recentMessages');
 
@@ -133,7 +137,10 @@ export async function appendRecentMessage(
   const ttl = new Date();
   ttl.setDate(ttl.getDate() + MESSAGE_TTL_DAYS);
 
-  await colRef.add({
+  // Keyed by the LINE event id, so a redelivered event overwrites its own
+  // entry instead of showing up twice.
+  const docRef = eventId ? colRef.doc(eventId) : colRef.doc();
+  await docRef.set({
     senderId,
     senderName,
     content,

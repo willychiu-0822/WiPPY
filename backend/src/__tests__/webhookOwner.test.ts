@@ -5,13 +5,15 @@ import type { AddressInfo } from 'net';
 
 const upsertGroupOnJoin = jest.fn();
 const updateGroupOnMessage = jest.fn();
+const refreshMemberCount = jest.fn();
+const appendRecentMessage = jest.fn();
 
 jest.mock('../services/groupService', () => ({
   upsertGroupOnJoin: (...args: unknown[]) => upsertGroupOnJoin(...args),
   setGroupInactive: jest.fn(),
-  refreshMemberCount: jest.fn(),
+  refreshMemberCount: (...args: unknown[]) => refreshMemberCount(...args),
   updateGroupOnMessage: (...args: unknown[]) => updateGroupOnMessage(...args),
-  appendRecentMessage: jest.fn(),
+  appendRecentMessage: (...args: unknown[]) => appendRecentMessage(...args),
 }));
 
 jest.mock('../line', () => ({
@@ -48,11 +50,6 @@ function signedBody(body: string) {
   return createHmac('sha256', 'test-webhook-secret').update(body).digest('base64');
 }
 
-async function flushWebhookWork(): Promise<void> {
-  await new Promise((resolve) => setImmediate(resolve));
-  await new Promise((resolve) => setImmediate(resolve));
-}
-
 describe('legacy webhook owner id', () => {
   let server: Server;
   let url: string;
@@ -70,6 +67,9 @@ describe('legacy webhook owner id', () => {
   beforeEach(() => {
     upsertGroupOnJoin.mockReset();
     updateGroupOnMessage.mockReset();
+    refreshMemberCount.mockReset();
+    appendRecentMessage.mockReset();
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
@@ -91,7 +91,6 @@ describe('legacy webhook owner id', () => {
       headers: { 'Content-Type': 'application/json', 'x-line-signature': signedBody(body) },
       body,
     });
-    await flushWebhookWork();
 
     expect(res.status).toBe(200);
     expect(upsertGroupOnJoin).not.toHaveBeenCalled();
@@ -107,7 +106,6 @@ describe('legacy webhook owner id', () => {
       headers: { 'Content-Type': 'application/json', 'x-line-signature': signedBody(body) },
       body,
     });
-    await flushWebhookWork();
 
     expect(res.status).toBe(200);
     expect(upsertGroupOnJoin).toHaveBeenCalledWith(
@@ -117,5 +115,88 @@ describe('legacy webhook owner id', () => {
       'owner_uid',
       expect.any(String),
     );
+  });
+
+  // W-12: nothing may be left running after the acknowledgement.
+  function post(events: unknown[]) {
+    const body = JSON.stringify({ events });
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-line-signature': signedBody(body) },
+      body,
+    });
+  }
+
+  const memberJoinedEvent = {
+    type: 'memberJoined',
+    timestamp: 2,
+    mode: 'active',
+    webhookEventId: 'event-2',
+    deliveryContext: { isRedelivery: false },
+    replyToken: 'reply',
+    source: { type: 'group', groupId: joinEvent.source.groupId },
+    joined: { members: [{ type: 'user', userId: 'U1' }] },
+  };
+
+  const textEvent = {
+    type: 'message',
+    timestamp: 3,
+    mode: 'active',
+    webhookEventId: 'event-3',
+    deliveryContext: { isRedelivery: false },
+    replyToken: 'reply',
+    source: { type: 'group', groupId: joinEvent.source.groupId, userId: 'U1' },
+    message: { type: 'text', id: 'm1', text: 'hello', quoteToken: 'q' },
+  };
+
+  it('holds the acknowledgement until the group update has finished', async () => {
+    process.env.OWNER_USER_ID = 'owner_uid';
+    let finishUpdate: () => void = () => {};
+    let updateFinished = false;
+    upsertGroupOnJoin.mockImplementation(
+      () => new Promise<void>((resolve) => {
+        finishUpdate = () => { updateFinished = true; resolve(); };
+      }),
+    );
+
+    let responded = false;
+    const pending = post([joinEvent]).then((res) => { responded = true; return res; });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(upsertGroupOnJoin).toHaveBeenCalledTimes(1);
+    expect(responded).toBe(false);
+
+    finishUpdate();
+    const res = await pending;
+    expect(res.status).toBe(200);
+    expect(updateFinished).toBe(true);
+  });
+
+  it('answers 500 so LINE redelivers when a group update fails', async () => {
+    process.env.OWNER_USER_ID = 'owner_uid';
+    refreshMemberCount.mockRejectedValue(new Error('line api down'));
+
+    const res = await post([memberJoinedEvent]);
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ ok: false });
+  });
+
+  it('still runs the other events of a batch when one of them fails', async () => {
+    process.env.OWNER_USER_ID = 'owner_uid';
+    refreshMemberCount.mockRejectedValue(new Error('line api down'));
+    updateGroupOnMessage.mockResolvedValue(undefined);
+    appendRecentMessage.mockResolvedValue(undefined);
+
+    const res = await post([memberJoinedEvent, textEvent]);
+
+    expect(res.status).toBe(500);
+    expect(updateGroupOnMessage).toHaveBeenCalledTimes(1);
+    // The event id travels along so a redelivery overwrites instead of duplicating.
+    expect(appendRecentMessage.mock.calls[0][7]).toBe('event-3');
+  });
+
+  it('keeps no work scheduled after the response', () => {
+    const source = require('fs').readFileSync(require.resolve('../routes/webhook'), 'utf8') as string;
+    expect(source).not.toMatch(/setImmediate|setTimeout|process\.nextTick/);
   });
 });

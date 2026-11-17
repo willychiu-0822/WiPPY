@@ -1,17 +1,17 @@
-FROM node:20-slim
+FROM node:20-slim AS build
 WORKDIR /app
-
-# Install all deps (including devDeps needed for TypeScript build)
 COPY package*.json ./
 RUN npm ci
-
-# Copy source and compile
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-# Prune dev dependencies after build
-RUN npm prune --production
-
+FROM node:20-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY --from=build /app/dist ./dist
+USER node
 EXPOSE 8080
 CMD ["node", "dist/index.js"]

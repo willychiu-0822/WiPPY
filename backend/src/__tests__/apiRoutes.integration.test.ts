@@ -699,4 +699,19 @@ describe('backend API route integration safety net', () => {
       userMessage: 'go',
     });
   });
+
+  it('does not return raw error text from /api/internal/harness/run failures', async () => {
+    const secret = { leaked: 'super-secret-stack' };
+    mockExecuteHarness.mockRejectedValueOnce(new Error(`boom ${secret.leaked}\n    at hidden.ts:1`));
+    const logical = await postHarness('test-secret');
+    expect(logical.status).toBe(200);
+    expect(logical.body).toEqual({ ok: true, error: 'harness_failed' });
+    expect(JSON.stringify(logical.body)).not.toMatch(/super-secret-stack|hidden\.ts|boom /);
+
+    mockExecuteHarness.mockRejectedValueOnce(new Error('14 UNAVAILABLE: Firestore is down'));
+    const infra = await postHarness('test-secret');
+    expect(infra.status).toBe(500);
+    expect(infra.body).toEqual({ ok: false, error: 'harness_unavailable' });
+    expect(JSON.stringify(infra.body)).not.toContain('Firestore is down');
+  });
 });

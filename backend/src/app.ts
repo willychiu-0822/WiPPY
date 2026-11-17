@@ -10,6 +10,7 @@ import { sendLogsRouter } from './routes/api/sendLogs';
 import { activitiesRouter } from './routes/api/activities';
 import { agentRouter } from './routes/api/agent';
 import { internalRouter } from './routes/internal/harness';
+import { parseCorsOrigins } from './config/corsOrigins';
 import { ensureFirebaseApp } from './firebase';
 import { mountHubRoutes } from './hub/http/routes';
 import './hub/register';
@@ -20,11 +21,7 @@ export function createApp() {
   const app = express();
 
   app.use(cors({
-    origin: [
-      'https://wippy-mvp.web.app',
-      'https://wippy-mvp.firebaseapp.com',
-      'http://localhost:5173',
-    ],
+    origin: parseCorsOrigins(),
     credentials: true,
   }));
 

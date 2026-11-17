@@ -120,11 +120,29 @@ describe('AgentsPage', () => {
     api.admin.updateAgent.mockResolvedValue({ agent: {} });
     renderPage(<AgentsPage />);
     await userEvent.click(await screen.findByRole('button', { name: '停用 Grok' }));
+    expect(api.admin.updateAgent).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: '取消' }));
+    expect(api.admin.updateAgent).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: '停用 Grok' }));
+    await userEvent.click(screen.getByRole('button', { name: '確定停用' }));
     expect(api.admin.updateAgent).toHaveBeenCalledWith('g1', { enabled: false });
   });
 });
 
 describe('RulesPage', () => {
+  it('asks before deleting a rule, and cancel keeps it', async () => {
+    api.admin.rules.mockResolvedValue({ rules: [{ id: 'r1', name: '午間提醒', enabled: true, agentId: 'g1', groupIds: [], trigger: { type: 'keyword', keywords: ['午安'] }, include: { digest: true, raw: false, media: false, contextCount: 0 }, instruction: '', cooldownMinutes: 60, createdAt: '', updatedAt: '' }] });
+    api.admin.deleteRule.mockResolvedValue({});
+    renderPage(<RulesPage />);
+    await userEvent.click(await screen.findByRole('button', { name: '刪除 午間提醒' }));
+    expect(api.admin.deleteRule).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: '取消' }));
+    expect(api.admin.deleteRule).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: '刪除 午間提醒' }));
+    await userEvent.click(screen.getByRole('button', { name: '確定刪除' }));
+    expect(api.admin.deleteRule).toHaveBeenCalledWith('r1');
+  });
+
   it('creates a keyword rule from the form', async () => {
     api.admin.agents.mockResolvedValue({ agents: [{ id: 'g1', name: 'Grok', kind: 'grok_bot', enabled: true, allowedGroupIds: ['C2'] }] });
     api.admin.rules.mockResolvedValue({ rules: [] });

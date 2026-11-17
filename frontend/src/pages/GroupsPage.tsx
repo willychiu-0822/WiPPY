@@ -69,7 +69,7 @@ function MessageDrawer({
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 sticky top-0 bg-white">
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-lg">←</button>
+        <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700 text-sm font-medium" aria-label="返回群組">← 返回群組</button>
         <div>
           <div className="font-semibold text-gray-900">{group.name}</div>
           <div className="text-xs text-gray-400">{group.memberCount} 人</div>
@@ -115,7 +115,7 @@ function MessageDrawer({
           disabled={sending || !reply.trim()}
           className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg disabled:opacity-40 hover:bg-blue-700"
         >
-          {sending ? '發送中...' : '發送'}
+          {sending ? '發送中...' : `發送到 ${group.name}`}
         </button>
       </div>
     </div>
@@ -191,7 +191,7 @@ function BroadcastComposer({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-white">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-lg">←</button>
+        <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700 text-sm font-medium" aria-label="返回群組">← 返回群組</button>
         <span className="font-semibold text-gray-900">
           {step === 'compose' && `廣播至 ${selected.length} 個群組`}
           {step === 'tweak' && '各群組微調'}

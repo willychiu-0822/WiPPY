@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getErrorMessage } from '../../lib/apiError';
 import { hubApi, type MessageType, type RuleInput, type RuleTrigger, type RuleView } from '../hubApi';
+import { ConfirmAction } from '../../components/ConfirmAction';
 import { Button, Card, CheckboxField, ErrorText, GroupChecklist, SelectField, Switch, TextField } from '../ui';
 import { useLoad } from '../useLoad';
 
@@ -146,7 +147,7 @@ export default function RulesPage() {
               <div className="flex items-center gap-2 shrink-0">
                 <Switch label={`${r.name} 啟用`} checked={r.enabled} onChange={(on) => act(() => hubApi.admin.updateRule(r.id, { name: r.name, enabled: on, agentId: r.agentId, groupIds: r.groupIds, trigger: r.trigger, include: r.include, instruction: r.instruction, cooldownMinutes: r.cooldownMinutes }))} />
                 <Button variant="secondary" label={`編輯 ${r.name}`} onClick={() => { setEditing(r); setFormKey((k) => k + 1); }}>編輯</Button>
-                <Button variant="danger" label={`刪除 ${r.name}`} onClick={() => act(() => hubApi.admin.deleteRule(r.id))}>刪除</Button>
+                <ConfirmAction variant="danger" name={`刪除 ${r.name}`} label="刪除" confirmLabel="確定刪除" onConfirm={() => act(() => hubApi.admin.deleteRule(r.id))} />
               </div>
             </li>
           ))}

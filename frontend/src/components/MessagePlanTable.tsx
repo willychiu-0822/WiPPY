@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ActivityMessage } from '../lib/api';
+import { ConfirmAction } from './ConfirmAction';
 
 interface Props {
   messages: ActivityMessage[];
@@ -205,13 +206,14 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
                   >
                     編輯
                   </button>
-                  <button
-                    onClick={() => handleDelete(msg.id)}
-                    disabled={saving || deleting !== null}
-                    className="text-xs text-red-400 hover:text-red-600 px-1 disabled:opacity-50"
-                  >
-                    {deleting === msg.id ? '刪除中...' : '刪除'}
-                  </button>
+                  <ConfirmAction
+                    label="刪除"
+                    confirmLabel="確定刪除"
+                    pendingLabel="刪除中..."
+                    pending={deleting === msg.id}
+                    disabled={saving || (deleting !== null && deleting !== msg.id)}
+                    onConfirm={() => handleDelete(msg.id)}
+                  />
                 </div>
               )}
             </div>

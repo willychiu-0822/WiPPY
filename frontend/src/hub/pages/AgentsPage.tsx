@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getErrorMessage } from '../../lib/apiError';
 import { hubApi, type AgentKind, type AgentView, type HubGroup } from '../hubApi';
+import { ConfirmAction } from '../../components/ConfirmAction';
 import { Button, Card, ErrorText, GroupChecklist, SelectField, TextField } from '../ui';
 import { mcpUrl } from '../format';
 import { useLoad } from '../useLoad';
@@ -137,9 +138,11 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
             {agent.kind === 'grok_bot' && (agent.routineUrl ? '・Webhook 已設定' : '・Webhook 未設定')}
           </p>
         </div>
-        <Button variant={agent.enabled ? 'danger' : 'secondary'} label={`${agent.enabled ? '停用' : '啟用'} ${agent.name}`} onClick={() => run(() => hubApi.admin.updateAgent(agent.id, { enabled: !agent.enabled }))}>
-          {agent.enabled ? '停用' : '啟用'}
-        </Button>
+        {agent.enabled ? (
+          <ConfirmAction variant="danger" name={`停用 ${agent.name}`} label="停用" confirmLabel="確定停用" onConfirm={() => run(() => hubApi.admin.updateAgent(agent.id, { enabled: false }))} />
+        ) : (
+          <Button variant="secondary" label={`啟用 ${agent.name}`} onClick={() => run(() => hubApi.admin.updateAgent(agent.id, { enabled: true }))}>啟用</Button>
+        )}
       </div>
       <GroupChecklist legend="允許使用的群組" groups={groups} selected={allowed} onChange={setAllowed} />
       <TextField label="每日發送上限" value={limit} onChange={setLimit} type="number" />

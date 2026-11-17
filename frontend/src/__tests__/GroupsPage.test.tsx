@@ -35,11 +35,11 @@ describe('UAT-28 — LINE drawer recovery', () => {
     await openGroup();
     await screen.findByText('帶一本書');
     fireEvent.change(screen.getByPlaceholderText('輸入訊息...'), { target: { value: '活動在圖書館' } });
-    fireEvent.click(screen.getByRole('button', { name: '發送' }));
+    fireEvent.click(screen.getByRole('button', { name: '發送到 讀書會' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/無法連線.*輸入內容已保留/);
     expect(screen.getByPlaceholderText('輸入訊息...')).toHaveValue('活動在圖書館');
     expect(screen.getByText('帶一本書')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: '發送' }));
+    fireEvent.click(screen.getByRole('button', { name: '發送到 讀書會' }));
     expect(await screen.findByRole('status')).toHaveTextContent('訊息已送出');
     expect(screen.getByPlaceholderText('輸入訊息...')).toHaveValue('');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -50,12 +50,32 @@ describe('UAT-28 — LINE drawer recovery', () => {
     await openGroup();
     await screen.findByText('帶一本書');
     fireEvent.change(screen.getByPlaceholderText('輸入訊息...'), { target: { value: '已送達的提醒' } });
-    fireEvent.click(screen.getByRole('button', { name: '發送' }));
+    fireEvent.click(screen.getByRole('button', { name: '發送到 讀書會' }));
     expect(await screen.findByRole('status')).toHaveTextContent('訊息已送出');
     expect(await screen.findByRole('alert')).toHaveTextContent('無法載入訊息');
     expect(screen.getByPlaceholderText('輸入訊息...')).toHaveValue('');
     fireEvent.click(screen.getByRole('button', { name: '重新載入訊息' }));
     expect(api.groups.send).toHaveBeenCalledTimes(1);
     expect(await screen.findByText('帶一本書')).toBeInTheDocument();
+  });
+});
+
+describe('W-20 leave and send labels', () => {
+  it('names the conversation leave button so Playwright can find /返回/', async () => {
+    await openGroup();
+    const leave = await screen.findByRole('button', { name: /返回/ });
+    expect(leave).toHaveAccessibleName('返回群組');
+    expect(leave).toHaveTextContent('← 返回群組');
+    expect(screen.getByRole('button', { name: '發送到 讀書會' })).toBeInTheDocument();
+  });
+
+  it('names the broadcast leave button the same way', async () => {
+    render(<GroupsPage />);
+    fireEvent.click(await screen.findByRole('button', { name: '廣播' }));
+    fireEvent.click(screen.getByText('讀書會'));
+    fireEvent.click(screen.getByRole('button', { name: '廣播 (1)' }));
+    const leave = await screen.findByRole('button', { name: /返回/ });
+    expect(leave).toHaveAccessibleName('返回群組');
+    expect(leave).toHaveTextContent('← 返回群組');
   });
 });

@@ -159,7 +159,7 @@ describe('MessagePlanTable — edit / delete controls', () => {
     expect(screen.queryByRole('button', { name: '刪除' })).not.toBeInTheDocument();
   });
 
-  it('calls onDelete with correct id when 刪除 is clicked', () => {
+  it('does not delete until the second confirmation, and cancel keeps the message', () => {
     const onDelete = vi.fn().mockResolvedValue(undefined);
     render(
       <MessagePlanTable
@@ -170,6 +170,12 @@ describe('MessagePlanTable — edit / delete controls', () => {
       />
     );
     fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '取消' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: '刪除' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    fireEvent.click(screen.getByRole('button', { name: '確定刪除' }));
     expect(onDelete).toHaveBeenCalledWith('msg_del');
   });
 
@@ -241,9 +247,11 @@ describe('UAT-23 message failure recovery', () => {
     const onDelete = vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce(undefined);
     render(<MessagePlanTable messages={[makeMessage()]} locked={false} onUpdate={vi.fn()} onDelete={onDelete} />);
     fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    fireEvent.click(screen.getByRole('button', { name: '確定刪除' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('刪除失敗，請檢查網路連線後重試');
     expect(screen.getByText('活動即將開始！')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    fireEvent.click(screen.getByRole('button', { name: '確定刪除' }));
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
     expect(onDelete).toHaveBeenCalledTimes(2);
   });
@@ -253,6 +261,7 @@ describe('UAT-23 message failure recovery', () => {
     const onDelete = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
     render(<MessagePlanTable messages={[makeMessage()]} locked={false} onUpdate={vi.fn()} onDelete={onDelete} />);
     fireEvent.click(screen.getByRole('button', { name: '刪除' }));
+    fireEvent.click(screen.getByRole('button', { name: '確定刪除' }));
     expect(screen.getByRole('button', { name: '刪除中...' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '編輯' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: '刪除中...' }));

@@ -4,7 +4,15 @@ service cloud.firestore {
 
     // ── User profile doc (created on first login) ─────────────────────────────
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Frontend only creates this doc on first login (displayName, email, timezone, createdAt).
+      allow create, update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['displayName', 'email', 'timezone', 'createdAt'])
+        && request.resource.data.timezone is string
+        && request.resource.data.timezone.size() <= 64
+        && (!('displayName' in request.resource.data) || request.resource.data.displayName == null || (request.resource.data.displayName is string && request.resource.data.displayName.size() <= 200))
+        && (!('email' in request.resource.data) || request.resource.data.email == null || (request.resource.data.email is string && request.resource.data.email.size() <= 320));
+      allow delete: if false;
     }
 
     // ── V2: Groups ────────────────────────────────────────────────────────────
@@ -40,14 +48,14 @@ service cloud.firestore {
 
     // ── V2: Activity Knowledge ────────────────────────────────────────────────
     match /activityKnowledge/{knowledgeId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false; // Frontend uses the backend API; only Admin SDK may write.
     }
 
     // ── V2: Agent Sessions ────────────────────────────────────────────────────
     match /agentSessions/{sessionId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false; // Frontend only reads via getDoc; writes go through the backend API.
     }
 
     // ── V2: Captured messages ─────────────────────────────────────────────────

@@ -41,6 +41,16 @@ function localDateTime(value: string) {
   return `${date.getFullYear()}-${part(date.getMonth() + 1)}-${part(date.getDate())}T${part(date.getHours())}:${part(date.getMinutes())}:${part(date.getSeconds())}`;
 }
 
+function isoExample() {
+  const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  d.setHours(10, 0, 0, 0);
+  const part = (n: number) => String(n).padStart(2, '0');
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? '+' : '-';
+  const abs = Math.abs(off);
+  return `${d.getFullYear()}-${part(d.getMonth() + 1)}-${part(d.getDate())}T10:00:00${sign}${part(Math.floor(abs / 60))}:${part(abs % 60)}`;
+}
+
 interface EditState { id: string; content: string; triggerValue: string; triggerType: ActivityMessage['triggerType']; advanced?: boolean }
 
 export default function MessagePlanTable({ messages, groups = [], locked, onUpdate, onDelete }: Props) {
@@ -119,12 +129,13 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
               </>}
               <details open={msg.triggerType === 'keyword' ? true : undefined} className="mt-2">
               <summary className={`text-xs text-gray-500 cursor-pointer ${msg.triggerType === 'keyword' ? 'hidden' : ''}`}>進階：輸入含時區的時間</summary>
-              <label className="text-xs text-gray-500 mb-1 block">{msg.triggerType === 'keyword' ? '觸發關鍵字' : '發送時間（ISO 格式）'}</label>
+              <label htmlFor={`trigger-${msg.id}`} className="text-xs text-gray-500 mb-1 block">{msg.triggerType === 'keyword' ? '觸發關鍵字' : '發送時間（ISO 格式）'}</label>
               <input
+                id={`trigger-${msg.id}`}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 value={editing.triggerValue}
                 onChange={(e) => setEditing({ ...editing, triggerValue: e.target.value, advanced: true })}
-                placeholder={msg.triggerType === 'keyword' ? '例：報名' : '2025-05-10T10:00:00+08:00'}
+                placeholder={msg.triggerType === 'keyword' ? '例：報名' : `例：${isoExample()}`}
               />
               </details>
             </div>

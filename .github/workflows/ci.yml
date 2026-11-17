@@ -68,6 +68,10 @@ jobs:
           docker logs wippy-backend-ci
           exit 1
 
+      - name: Confirm container is non-root and NODE_ENV=production
+        run: |
+          docker exec wippy-backend-ci node -e "if (process.getuid() === 0) { console.error('running as root'); process.exit(1); } if (process.env.NODE_ENV !== 'production') { console.error('NODE_ENV=' + process.env.NODE_ENV); process.exit(2); } console.log('uid=' + process.getuid() + ' NODE_ENV=' + process.env.NODE_ENV);"
+
       - name: Stop backend container
         if: always()
         run: docker stop wippy-backend-ci || true

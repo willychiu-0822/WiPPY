@@ -43,7 +43,7 @@ router.post('/harness/run', requireHarnessSecret, async (req: Request, res: Resp
     const msg = String(err);
     const isInfra = msg.includes('UNAVAILABLE') || msg.includes('DEADLINE_EXCEEDED') || msg.includes('RESOURCE_EXHAUSTED');
     console.log(JSON.stringify({ severity: isInfra ? 'ERROR' : 'WARN', runId, message: msg }));
-    res.status(isInfra ? 500 : 200).json({ ok: !isInfra, error: msg });
+    res.status(isInfra ? 500 : 200).json({ ok: !isInfra, error: isInfra ? 'harness_unavailable' : 'harness_failed' });
   }
 });
 

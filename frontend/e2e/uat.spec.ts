@@ -69,7 +69,7 @@ async function plan(page: Page) {
 async function editFirst(page: Page, content: string, when = '2035-11-12T18:00:00+08:00') {
   await page.getByRole('button', { name: '編輯', exact: true }).first().click();
   await page.getByText('進階：輸入含時區的時間', { exact: true }).click();
-  await page.getByPlaceholder('2025-05-10T10:00:00+08:00').fill(when);
+  await page.getByLabel('發送時間（ISO 格式）').fill(when);
   await page.locator('textarea').fill(content);
   await page.getByRole('button', { name: '儲存', exact: true }).click();
 }
@@ -440,7 +440,7 @@ test('UAT-12 新手探索：無效內容時間與空企畫核准', async ({ page
   await expect(page.getByText('訊息內容不可為空', { exact: true })).toBeVisible();
   await page.locator('textarea').fill('合法內容');
   await page.getByText('進階：輸入含時區的時間', { exact: true }).click();
-  await page.getByPlaceholder('2025-05-10T10:00:00+08:00').fill('不是時間');
+  await page.getByLabel('發送時間（ISO 格式）').fill('不是時間');
   await page.getByRole('button', { name: '儲存', exact: true }).click();
   await expect(page.getByText('請輸入有效的 ISO 發送時間', { exact: true })).toBeVisible();
   expect((await api(page, `/api/activities/${id}/messages`)).data.messages[0].content).toBe('本機活動提醒 1：歡迎參加活動！');

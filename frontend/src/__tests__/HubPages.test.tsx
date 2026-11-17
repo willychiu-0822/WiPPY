@@ -267,5 +267,6 @@ describe('DashboardPage', () => {
     expect(screen.getByText('12 / 500 次')).toBeInTheDocument();
     expect(screen.getByText('Grok：今天 3 / 20 次')).toBeInTheDocument();
     expect(screen.getByText('LINE 額度 75%')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '到紀錄的處理過程重試' })).toHaveAttribute('href', '/records?type=runs');
   });
 });

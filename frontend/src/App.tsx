@@ -65,8 +65,9 @@ export default function App() {
           <Route path="rules" element={<RulesPage />} />
           <Route path="records" element={<Navigate to="/records?type=notes" replace />} />
           <Route path="logs" element={<Navigate to="/records?type=runs" replace />} />
-          <Route path="settings" element={<Navigate to="/hub" replace />} />
-          <Route path="workbench" element={<WorkbenchPage />} />
+          <Route path="settings" element={<Navigate to="/hub?section=settings" replace />} />
+          <Route path="workbench" element={<WorkbenchPage title="試跑台" />} />
+          <Route path="*" element={<Navigate to="/hub" replace />} />
         </Route>
         {/* Agent accounts (Instinct) */}
         <Route path="/workbench" element={<WorkbenchPage />} />

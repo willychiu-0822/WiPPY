@@ -132,6 +132,6 @@ export async function onDispatchFailed(ctx: HubContext, dispatchId: string, erro
   await raiseAlert(ctx, {
     severity: 'critical',
     source: 'dispatch',
-    text: `規則「${dispatch.ruleName}」派送給 ${agent?.name ?? dispatch.agentId} 失敗，已重試 ${dispatch.attempts} 次：${error.message}。可在後台「執行紀錄」手動重試。`,
+    text: `規則「${dispatch.ruleName}」派送給 ${agent?.name ?? dispatch.agentId} 失敗，已重試 ${dispatch.attempts} 次：${error.message}。可在後台「紀錄」的「處理過程」手動重試。`,
   });
 }

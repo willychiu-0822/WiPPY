@@ -42,8 +42,30 @@ describe('W-18 — one 紀錄 page, fewer entries', () => {
   });
 
   it('old links land on the right filter', () => {
-    renderAt('/records?type=runs');
+    const runs = renderAt('/records?type=runs');
     expect(screen.getByText('runs list')).toBeInTheDocument();
+    runs.unmount();
+
+    const notes = renderAt('/records?type=notes');
+    expect(screen.getByText('notes list Agent 記下的事')).toBeInTheDocument();
+    notes.unmount();
+
+    renderAt('/records?type=nope');
+    expect(screen.getByText('sent list')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '發出去的訊息' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('a settings bookmark lands on the settings section of the overview', () => {
+    const previous = HTMLElement.prototype.scrollIntoView;
+    const scroll = vi.fn();
+    HTMLElement.prototype.scrollIntoView = scroll;
+    try {
+      renderAt('/hub?section=settings');
+      expect(screen.getByRole('region', { name: '設定' })).toContainElement(screen.getByText('settings'));
+      expect(scroll).toHaveBeenCalled();
+    } finally {
+      HTMLElement.prototype.scrollIntoView = previous;
+    }
   });
 
   it('Agent Hub is down to three tabs; overview and settings share one, workbench is not a tab', () => {

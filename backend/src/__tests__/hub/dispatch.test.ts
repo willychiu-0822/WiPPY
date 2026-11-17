@@ -107,6 +107,8 @@ describe('dispatch to agents', () => {
     const alert = Object.values(hub.store.dump('hubAlerts'))[0];
     expect(alert).toMatchObject({ severity: 'critical', source: 'dispatch' });
     expect(String(alert['text'])).toContain('Grok');
+    expect(String(alert['text'])).toContain('「紀錄」的「處理過程」');
+    expect(String(alert['text'])).not.toContain('執行紀錄');
   });
 
   it('delivers Instinct dispatches to its inbox (no network call)', async () => {

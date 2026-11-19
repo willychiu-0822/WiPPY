@@ -102,13 +102,23 @@ jobs:
           echo "/api/hub/me without credentials -> ${code}"
           test "${code}" = "401"
 
+      # 導流量不能再用 deploy-cloudrun：它會再跑一次 gcloud run deploy，沒帶映像檔就失敗。
+      # 改用 update-traffic，把 100% 流量導到剛檢查過、標記 next 的那個版本。
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
       - name: Route traffic to the new revision
-        uses: google-github-actions/deploy-cloudrun@v3
-        with:
-          project_id: ${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}
-          service: ${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}
-          region: ${{ steps.deploy-target.outputs.GCP_REGION }}
-          revision_traffic: LATEST=100
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run services update-traffic "${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}" \
+            --project "${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}" \
+            --region "${{ steps.deploy-target.outputs.GCP_REGION }}" \
+            --to-tags next=100
+          gcloud run services describe "${{ steps.deploy-target.outputs.CLOUD_RUN_SERVICE }}" \
+            --project "${{ steps.deploy-target.outputs.GCP_PROJECT_ID }}" \
+            --region "${{ steps.deploy-target.outputs.GCP_REGION }}" \
+            --format 'value(status.traffic)'
 
       - name: Install frontend dependencies
         working-directory: frontend

@@ -1,6 +1,8 @@
+import { lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import GroupAccessPage from '../hub/pages/GroupAccessPage';
 import GroupsPage from './GroupsPage';
+
+const GroupAccessPage = lazy(() => import('../hub/pages/GroupAccessPage'));
 
 const TABS = [
   { id: 'chat', label: '聊天與廣播' },
@@ -31,7 +33,11 @@ export default function GroupsSection() {
           </button>
         ))}
       </div>
-      {active === 'agent' ? <GroupAccessPage /> : <GroupsPage />}
+      {active === 'agent' ? (
+        <Suspense fallback={<p>載入中...</p>}>
+          <GroupAccessPage />
+        </Suspense>
+      ) : <GroupsPage />}
     </div>
   );
 }

@@ -34,20 +34,20 @@ describe('W-18 — one 紀錄 page, fewer entries', () => {
     expect(screen.getByRole('tab', { name: '發出去的訊息' })).toHaveAttribute('aria-selected', 'true');
 
     await userEvent.click(screen.getByRole('tab', { name: 'Agent 記下的事' }));
-    expect(screen.getByText('notes list Agent 記下的事')).toBeInTheDocument();
+    expect(await screen.findByText('notes list Agent 記下的事')).toBeInTheDocument();
     expect(screen.queryByText('sent list')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('tab', { name: '處理過程' }));
-    expect(screen.getByText('runs list')).toBeInTheDocument();
+    expect(await screen.findByText('runs list')).toBeInTheDocument();
   });
 
-  it('old links land on the right filter', () => {
+  it('old links land on the right filter', async () => {
     const runs = renderAt('/records?type=runs');
-    expect(screen.getByText('runs list')).toBeInTheDocument();
+    expect(await screen.findByText('runs list')).toBeInTheDocument();
     runs.unmount();
 
     const notes = renderAt('/records?type=notes');
-    expect(screen.getByText('notes list Agent 記下的事')).toBeInTheDocument();
+    expect(await screen.findByText('notes list Agent 記下的事')).toBeInTheDocument();
     notes.unmount();
 
     renderAt('/records?type=nope');

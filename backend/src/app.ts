@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import * as admin from 'firebase-admin';
 import express from 'express';
 import cors from 'cors';
 

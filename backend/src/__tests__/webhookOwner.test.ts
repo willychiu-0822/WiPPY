@@ -1,4 +1,6 @@
 import { createHmac } from 'crypto';
+import { readFileSync } from 'fs';
+import path from 'path';
 import express from 'express';
 import type { Server } from 'http';
 import type { AddressInfo } from 'net';
@@ -196,7 +198,7 @@ describe('legacy webhook owner id', () => {
   });
 
   it('keeps no work scheduled after the response', () => {
-    const source = require('fs').readFileSync(require.resolve('../routes/webhook'), 'utf8') as string;
+    const source = readFileSync(path.join(__dirname, '../routes/webhook.ts'), 'utf8');
     expect(source).not.toMatch(/setImmediate|setTimeout|process\.nextTick/);
   });
 });

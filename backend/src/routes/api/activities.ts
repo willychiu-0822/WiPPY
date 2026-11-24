@@ -75,7 +75,7 @@ router.get('/:id', ownerAuth, async (req: Request, res: Response) => {
 // PATCH /api/activities/:id
 router.patch('/:id', ownerAuth, async (req: Request, res: Response) => {
   try {
-    const { name, targetGroups, status, eventStartAt, eventEndAt, agentSessionId } =
+    const { name, targetGroups, status, agentSessionId } =
       req.body as {
         name?: string;
         targetGroups?: string[];

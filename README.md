@@ -325,6 +325,7 @@ Frontend 預設跑在 `http://localhost:5173`，backend 在 `http://localhost:80
 | `npm run dev` | 以 ts-node 啟動（單次） |
 | `npm run dev:watch` | nodemon 熱重載 |
 | `npm run build` | 編譯 TypeScript → dist/ |
+| `npm run lint` | ESLint 檢查 |
 | `npm start` | 執行編譯後的 dist/index.js |
 | `npm test` | Jest 跑一次 |
 | `npm run test:watch` | Jest watch 模式 |

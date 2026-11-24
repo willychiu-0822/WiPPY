@@ -1,6 +1,7 @@
 // Loaded only by browser UAT to verify the real emulator security rules.
 import { disableNetwork, enableNetwork, doc, setDoc, updateDoc } from 'firebase/firestore';
-import { auth, db } from '../src/firebase';
+import { auth } from '../src/firebase';
+import { db } from '../src/firebaseDb';
 export function currentUid() { return auth.currentUser!.uid; }
 export async function setFirestoreOnline(online: boolean) {
   await (online ? enableNetwork(db) : disableNetwork(db));

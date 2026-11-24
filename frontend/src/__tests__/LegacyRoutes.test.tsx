@@ -114,7 +114,7 @@ describe('W-18 owner navigation', () => {
     HTMLElement.prototype.scrollIntoView = scroll;
     try {
       await expectLanding('/hub/settings', '/hub?section=settings');
-      expect(screen.getByRole('region', { name: '設定' })).toContainElement(screen.getByText('settings form'));
+      expect(await screen.findByRole('region', { name: '設定' })).toContainElement(await screen.findByText('settings form'));
       expect(scroll).toHaveBeenCalled();
     } finally {
       HTMLElement.prototype.scrollIntoView = previous;

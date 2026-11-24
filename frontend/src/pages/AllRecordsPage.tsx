@@ -1,7 +1,9 @@
+import { lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import LogsPage from '../hub/pages/LogsPage';
-import RecordsPage from '../hub/pages/RecordsPage';
 import SendHistoryPage from './SendHistoryPage';
+
+const RecordsPage = lazy(() => import('../hub/pages/RecordsPage'));
+const LogsPage = lazy(() => import('../hub/pages/LogsPage'));
 
 const FILTERS = [
   { id: 'sent', label: '發出去的訊息', hint: '活動排程和手動發送，發到哪些群、有沒有成功。' },
@@ -39,8 +41,16 @@ export default function AllRecordsPage() {
       </div>
       <p className="text-xs text-gray-500">{current.hint}</p>
       {active === 'sent' && <SendHistoryPage />}
-      {active === 'notes' && <RecordsPage title="Agent 記下的事" />}
-      {active === 'runs' && <LogsPage />}
+      {active === 'notes' && (
+        <Suspense fallback={<p>載入中...</p>}>
+          <RecordsPage title="Agent 記下的事" />
+        </Suspense>
+      )}
+      {active === 'runs' && (
+        <Suspense fallback={<p>載入中...</p>}>
+          <LogsPage />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -16,7 +16,7 @@ vi.mock('firebase/firestore', () => ({
   }),
 }));
 
-vi.mock('../firebase', () => ({ db: {} }));
+vi.mock('../firebaseDb', () => ({ db: {} }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

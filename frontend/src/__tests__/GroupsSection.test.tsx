@@ -25,13 +25,13 @@ describe('one 群組 entry', () => {
     renderAt('/groups');
     expect(screen.getByText('chat list')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: '交給 Agent' }));
-    expect(screen.getByText('agent access')).toBeInTheDocument();
+    expect(await screen.findByText('agent access')).toBeInTheDocument();
     expect(screen.queryByText('chat list')).not.toBeInTheDocument();
   });
 
-  it('lands on Agent access when linked with ?tab=agent', () => {
+  it('lands on Agent access when linked with ?tab=agent', async () => {
     renderAt('/groups?tab=agent');
-    expect(screen.getByText('agent access')).toBeInTheDocument();
+    expect(await screen.findByText('agent access')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '交給 Agent' })).toHaveAttribute('aria-selected', 'true');
   });
 

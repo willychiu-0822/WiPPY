@@ -232,6 +232,11 @@ export interface HarnessRun {
   ttlExpiry: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  /**
+   * Process executing this run. Omitted on older documents and on runs that
+   * are still waiting to be picked up.
+   */
+  instanceId?: string;
 }
 
 // ─── Run Trace (Harness v2 · Layer 1) ─────────────────────────────────────────

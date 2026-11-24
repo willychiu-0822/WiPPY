@@ -2,6 +2,11 @@ import * as admin from 'firebase-admin';
 import { getDb } from './firebase';
 import { createApp } from './app';
 import { reportConfigGaps } from './config/startupCheck';
+import {
+  getProcessRunTracker,
+  handleInstanceShutdown,
+  startStuckRunReclaimer,
+} from './services/harnessRunShutdown';
 
 const PORT = process.env.PORT || 8080;
 const app = createApp();
@@ -16,26 +21,31 @@ const server = app.listen(PORT, () => {
   }
 });
 
-// SIGTERM handler: Cloud Run sends SIGTERM before terminating the instance.
-// Mark all queued/running HarnessRuns as failed so they don't become zombies.
+let stopReclaimer = (): void => {};
+try {
+  stopReclaimer = startStuckRunReclaimer(getDb(), getProcessRunTracker());
+} catch (err) {
+  console.log(JSON.stringify({ severity: 'ERROR', message: `Stuck harness run reclaim failed to start: ${String(err)}` }));
+}
+
+// SIGTERM is per Cloud Run instance. Fail only runs this process owns.
+// Stuck runs (updatedAt older than 5 minutes) are reclaimed separately.
 process.on('SIGTERM', async () => {
   console.log(JSON.stringify({ severity: 'WARN', message: 'SIGTERM received, starting graceful shutdown' }));
+  stopReclaimer();
   server.close();
 
   try {
-    const db = getDb();
-    const runningSnap = await db.collection('harnessRuns')
-      .where('status', 'in', ['queued', 'running'])
-      .get();
-
-    if (!runningSnap.empty) {
-      const batch = db.batch();
-      const now = admin.firestore.Timestamp.now();
-      for (const doc of runningSnap.docs) {
-        batch.update(doc.ref, { status: 'failed', lastError: 'cloud_run_terminated', updatedAt: now });
-      }
-      await batch.commit();
-      console.log(JSON.stringify({ severity: 'WARN', message: `Marked ${runningSnap.size} runs as failed on shutdown` }));
+    const result = await handleInstanceShutdown(getDb(), getProcessRunTracker(), {
+      nowMs: Date.now(),
+      now: admin.firestore.Timestamp.now(),
+    });
+    if (result.ownedFailed.length > 0 || result.reclaimed.length > 0) {
+      console.log(JSON.stringify({
+        severity: 'WARN',
+        message: `Marked ${result.ownedFailed.length} owned runs as failed on shutdown`,
+        reclaimed: result.reclaimed.length,
+      }));
     }
   } catch (err) {
     console.log(JSON.stringify({ severity: 'ERROR', message: `SIGTERM cleanup failed: ${String(err)}` }));

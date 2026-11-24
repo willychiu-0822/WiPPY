@@ -20,6 +20,7 @@ jest.mock('../services/persistenceAdapter', () => ({
 }));
 
 import { executeHarness } from '../services/harnessOrchestrator';
+import { getProcessRunTracker } from '../services/harnessRunShutdown';
 import { buildContextEnvelope } from '../services/contextBuilder';
 import { persistEffects } from '../services/persistenceAdapter';
 import type { LLMProvider } from '../services/llmProvider';
@@ -147,6 +148,16 @@ describe('executeHarness — stage checkpoints', () => {
     const calls = (db.runRef.update as jest.Mock).mock.calls;
     const lastCall = calls[calls.length - 1][0] as Record<string, unknown>;
     expect(lastCall.status).toBe('completed');
+  });
+
+  it('stamps the executing instance and releases the claim when the run finishes', async () => {
+    const db = buildDb();
+    await executeHarness(db as any, makeLLM('ok'), { runId: RUN_ID, activityId: ACT_ID, userId: USER_ID, userMessage: '你好' });
+    const stamp = (db.runRef.update as jest.Mock).mock.calls
+      .map((call: unknown[]) => call[0] as Record<string, unknown>)
+      .find((patch) => typeof patch.instanceId === 'string');
+    expect(stamp?.instanceId).toEqual(expect.any(String));
+    expect(getProcessRunTracker().ownedRunIds.has(RUN_ID)).toBe(false);
   });
 
   it('marks run as failed and rethrows on error', async () => {

@@ -5,6 +5,7 @@ import type { AgentSession, AgentSessionMessage, HarnessRun, HarnessStage, Agent
 import { buildContextEnvelope, type ContextEnvelope } from './contextBuilder';
 import { RunTracer, type TraceStage } from './runTrace';
 import { intentRegistry, type AnyIntentHandler } from '../harness/intents/registry';
+import { claimHarnessRun, releaseHarnessRun, startOwnedRunHeartbeat } from './harnessRunShutdown';
 
 const MAX_LLM_CALLS = 3;
 const MAX_SESSION_HISTORY = 20;
@@ -240,6 +241,8 @@ export async function executeHarness(
     }
   };
 
+  await claimHarnessRun(db, runId);
+  const stopHeartbeat = startOwnedRunHeartbeat(db, runId);
   try {
     // Load the run's ttlExpiry so trace events expire alongside the run.
     const runSnap = await db.collection('harnessRuns').doc(runId).get();
@@ -361,5 +364,8 @@ export async function executeHarness(
     try { await tracer?.flush(); } catch { /* trace flush is best-effort; never mask the original error */ }
     await finishRun(db, runId, { status: 'failed', lastError: errMsg });
     throw err;
+  } finally {
+    stopHeartbeat();
+    releaseHarnessRun(runId);
   }
 }

@@ -1,16 +1,10 @@
-import { Timestamp } from 'firebase-admin/firestore';
-
 // ── Firestore mock ─────────────────────────────────────────────────────────────
 // We mock the entire firebase-admin module so no real Firestore connection is needed.
 
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
-const mockGet = jest.fn();
 const mockSet = jest.fn();
 const mockAdd = jest.fn();
-const mockWhere = jest.fn();
-const mockOrderBy = jest.fn();
-const mockLimit = jest.fn();
 const mockBatchUpdate = jest.fn();
 const mockBatchCommit = jest.fn();
 
@@ -36,9 +30,6 @@ function makeQuerySnap(docs: Record<string, unknown>[]) {
     docs: docs.map((d) => ({ id: 'mock_id', data: () => d, ref: makeDocRef(d) })),
   };
 }
-
-const mockDocFn = jest.fn();
-const mockCollectionFn = jest.fn();
 
 jest.mock('firebase-admin', () => ({
   firestore: {

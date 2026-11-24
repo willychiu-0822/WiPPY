@@ -220,7 +220,6 @@ describe('executeHarness — LLM guards', () => {
 
   it('throws max_llm_calls_exceeded after 3 LLM calls', async () => {
     // Return invalid JSON each time so repair keeps looping
-    const badReply = '[{invalid json}]';
     const llm = makeLLM([PLAN_JSON.slice(0, 5), PLAN_JSON.slice(0, 5), PLAN_JSON.slice(0, 5), PLAN_JSON.slice(0, 5)]);
     // Override: always return unparseable content
     (llm.chat as jest.Mock).mockResolvedValue('not json and no EXTRACTED_KNOWLEDGE');

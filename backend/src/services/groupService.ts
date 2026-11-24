@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
-import { Firestore, FieldValue } from 'firebase-admin/firestore';
-import { Client, WebhookEvent } from '@line/bot-sdk';
+import { Firestore } from 'firebase-admin/firestore';
+import { Client } from '@line/bot-sdk';
 
 const MESSAGE_TTL_DAYS = 90;
 

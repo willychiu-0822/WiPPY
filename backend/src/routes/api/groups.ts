@@ -6,8 +6,6 @@ import { getLineClient } from '../../line';
 
 const router = express.Router();
 
-const OFFICIAL_ACCOUNT_ID = process.env.LINE_OFFICIAL_ACCOUNT_ID || 'default';
-
 async function loadOwnedGroupOr404(req: Request, res: Response) {
   const groupId = req.params['groupId'] as string;
   const groupSnap = await getDb().collection('groups').doc(groupId).get();
@@ -103,7 +101,7 @@ router.post('/:groupId/messages', ownerAuth, async (req: Request, res: Response)
       return;
     }
 
-    let lineMessageId: string | null = null;
+    const lineMessageId: string | null = null;
     let status: 'success' | 'failed' = 'success';
     let errorMessage: string | null = null;
 

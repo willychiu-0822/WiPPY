@@ -4,7 +4,7 @@ import { resetSenderNameCache } from '../../hub/ingest';
 import { setHubContext } from '../../hub/runtime';
 import { saveSettings } from '../../hub/settings';
 import { processHubWebhookEvents } from '../../hub/webhook';
-import { GROUP, jsonResponse, makeTestHub, seedGrokAgent, seedGroup, seedInstinctAgent, seedRule, textEvent, type TestHub } from './helpers';
+import { jsonResponse, makeTestHub, seedGrokAgent, seedGroup, seedInstinctAgent, seedRule, textEvent, type TestHub } from './helpers';
 import { startHubServer } from './httpHelpers';
 
 describe('P3 end-to-end: LINE message → rule → agent', () => {

@@ -249,7 +249,7 @@ npm run test:e2e
 
 登入頁不開放註冊。瀏覽器開 `http://127.0.0.1:4121` 前，先用 Auth emulator（`127.0.0.1:4123`）建一個測試帳號再登入（`frontend/e2e/uat.spec.ts` 的 `createAccount` 就是這樣做）。建立活動、選擇模擬群組並請 AI 規劃推播；本機不會發送真實 LINE 訊息。Ctrl+C 關閉所有服務，資料在重啟後清空。
 
-[完整 UAT 計畫與環境](docs/uat/UAT-PLAN.md) · [執行結果與截圖](docs/uat/UAT-RESULTS.md) · 目前狀態看 CI 的 E2E job（`UAT-STATUS.json` 由 CI 產生，不進版控）
+[完整 UAT 計畫與環境](docs/uat/UAT-PLAN.md) · [執行結果](docs/uat/UAT-RESULTS.md) · [截圖不進版控](docs/uat/evidence/README.md) · 目前狀態看 CI 的 E2E job（`UAT-STATUS.json` 由 CI 產生，不進版控）
 
 ### Prerequisites
 

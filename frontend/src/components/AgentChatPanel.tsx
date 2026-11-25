@@ -2,6 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseDb';
 import type { AgentChatApiResponse, HarnessRunSnapshot } from '../lib/api';
+import type { ActivityWorkflowPrimary } from './activityWorkflow';
+
+const CONFIRM_SCHEDULE_DISPLAY = '就照這樣排';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,6 +22,9 @@ interface Props {
     sessionId: string | null,
     action?: 'confirm_schedule',
   ) => Promise<AgentChatApiResponse>;
+  /** Which single action is solid. Defaults to 送出 so the composer stays usable on its own. */
+  workflowPrimary?: ActivityWorkflowPrimary;
+  onScheduleConfirmed?: () => void;
 }
 
 export default function AgentChatPanel({
@@ -27,6 +33,8 @@ export default function AgentChatPanel({
   onMessagesGenerated,
   onKnowledgeExtracted,
   onSendMessage,
+  workflowPrimary = 'send',
+  onScheduleConfirmed,
 }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -38,6 +46,11 @@ export default function AgentChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const unsubRef = useRef<(() => void) | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const confirmRunRef = useRef(false);
+  const onScheduleConfirmedRef = useRef(onScheduleConfirmed);
+  useEffect(() => {
+    onScheduleConfirmedRef.current = onScheduleConfirmed;
+  }, [onScheduleConfirmed]);
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -50,9 +63,13 @@ export default function AgentChatPanel({
     getDoc(doc(db, 'agentSessions', sessionId)).then(snap => {
       if (cancelled || !snap.exists()) return;
       const history = (snap.data().messages ?? []) as Array<Message & { displayContent?: string }>;
-      setMessages(current => current.length ? current : history
+      const visible = history
         .filter(m => m.role === 'user' || m.role === 'assistant')
-        .map(m => ({ role: m.role, content: m.displayContent ?? m.content.split('EXTRACTED_KNOWLEDGE:')[0].trim() })));
+        .map(m => ({ role: m.role, content: m.displayContent ?? m.content.split('EXTRACTED_KNOWLEDGE:')[0].trim() }));
+      setMessages(current => current.length ? current : visible);
+      if (history.some(m => m.role === 'user' && (m.displayContent ?? m.content).trim() === CONFIRM_SCHEDULE_DISPLAY)) {
+        onScheduleConfirmedRef.current?.();
+      }
     }).catch(() => { if (!cancelled) setError('無法載入歷史對話，請重新開啟活動'); })
       .finally(() => { if (!cancelled) setRestoring(false); });
     return () => { cancelled = true; };
@@ -88,9 +105,14 @@ export default function AgentChatPanel({
         setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
         if (run.generatedMessageCount > 0) onMessagesGenerated();
         if (run.extractedKnowledgeCount > 0) onKnowledgeExtracted();
+        if (confirmRunRef.current) {
+          confirmRunRef.current = false;
+          onScheduleConfirmedRef.current?.();
+        }
       } else if (run.status === 'failed') {
         unsub();
         setLoading(false);
+        confirmRunRef.current = false;
         const errMsg = run.lastError?.includes('max_llm_calls_exceeded')
           ? 'AI 嘗試次數已達上限，請稍後再試'
           : run.lastError?.includes('llm_rate_limit_error')
@@ -104,9 +126,10 @@ export default function AgentChatPanel({
   }, [onMessagesGenerated, onKnowledgeExtracted]);
 
   async function send(text: string, action?: 'confirm_schedule') {
-    const display = action === 'confirm_schedule' ? '就照這樣排' : text;
+    const display = action === 'confirm_schedule' ? CONFIRM_SCHEDULE_DISPLAY : text;
     if (!display || loading || restoring || countdown > 0) return;
 
+    confirmRunRef.current = action === 'confirm_schedule';
     setInput('');
     setError(null);
     setRateLimitWarning(null);
@@ -119,6 +142,7 @@ export default function AgentChatPanel({
         : await onSendMessage(display, sessionId);
 
       if (result.status === 'rate_limited') {
+        confirmRunRef.current = false;
         setMessages((prev) => prev.slice(0, -1));
         if (!action) setInput(text);
         setLoading(false);
@@ -138,11 +162,16 @@ export default function AgentChatPanel({
         setMessages((prev) => [...prev, { role: 'assistant', content: result.reply ?? '（已完成）' }]);
         if ((result.generatedMessageCount ?? 0) > 0) onMessagesGenerated();
         if ((result.extractedKnowledgeCount ?? 0) > 0) onKnowledgeExtracted();
+        if (confirmRunRef.current) {
+          confirmRunRef.current = false;
+          onScheduleConfirmedRef.current?.();
+        }
       } else {
         // Async mode — subscribe to Firestore
         subscribeToRun(result.runId);
       }
     } catch (err) {
+      confirmRunRef.current = false;
       setError(err instanceof TypeError
         ? '無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留'
         : String(err).replace(/^Error:\s*/, ''));
@@ -163,6 +192,12 @@ export default function AgentChatPanel({
   }
 
   const isBlocked = loading || restoring || countdown > 0;
+  const confirmIsPrimary = workflowPrimary === 'confirm';
+  const showConfirm = confirmIsPrimary || (workflowPrimary === 'send' && messages.length > 0);
+  const planCtaIsPrimary = workflowPrimary === 'plan' && messages.length === 0;
+  const sendIsPrimary = workflowPrimary === 'send' || (workflowPrimary === 'plan' && messages.length > 0);
+  const solidClass = 'text-white disabled:opacity-40 transition-colors';
+  const quietClass = 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 disabled:opacity-40 transition-colors';
 
   return (
     <div className="flex flex-col h-[480px]">
@@ -175,7 +210,8 @@ export default function AgentChatPanel({
             <button
               onClick={() => send('幫我規劃三則活動前的暖場推播訊息')}
               disabled={isBlocked}
-              className="text-sm bg-blue-600 text-white rounded-lg px-4 py-2 disabled:opacity-50"
+              data-primary={planCtaIsPrimary ? 'true' : undefined}
+              className={`text-sm rounded-lg px-4 py-2 ${planCtaIsPrimary ? `bg-blue-600 hover:bg-blue-700 ${solidClass}` : quietClass}`}
             >請 AI 規劃第一份推播</button>
             <div className="flex flex-col gap-1.5 mt-4">
               {[
@@ -239,11 +275,15 @@ export default function AgentChatPanel({
             AI 助理需要稍作休息，請 <span className="font-semibold">{countdown}</span> 秒後再試
           </p>
         )}
-        {messages.length > 0 && (
+        {showConfirm && (
           <button
+            type="button"
             onClick={() => send('', 'confirm_schedule')}
             disabled={isBlocked}
-            className="w-full text-sm bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded-xl px-4 py-2 font-medium disabled:opacity-40 transition-colors"
+            data-primary={confirmIsPrimary ? 'true' : undefined}
+            className={`w-full text-sm rounded-xl px-4 py-2 font-medium ${
+              confirmIsPrimary ? `bg-green-600 hover:bg-green-700 ${solidClass}` : quietClass
+            }`}
           >
             ✅ 討論好了，確認排程
           </button>
@@ -259,9 +299,13 @@ export default function AgentChatPanel({
             disabled={isBlocked}
           />
           <button
+            type="button"
             onClick={handleSend}
             disabled={isBlocked || !input.trim()}
-            className="bg-blue-500 hover:bg-blue-600 text-white rounded-xl px-4 py-2 text-sm font-medium disabled:opacity-40 shrink-0 transition-colors"
+            data-primary={sendIsPrimary ? 'true' : undefined}
+            className={`rounded-xl px-4 py-2 text-sm font-medium shrink-0 ${
+              sendIsPrimary ? `bg-blue-500 hover:bg-blue-600 ${solidClass}` : quietClass
+            }`}
           >
             送出
           </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import type { Activity, ActivityMessage, ActivityKnowledge, AgentChatApiResponse, Group } from '../lib/api';
@@ -6,6 +6,14 @@ import ReviewBanner from '../components/ReviewBanner';
 import KnowledgeEditor from '../components/KnowledgeEditor';
 import AgentChatPanel from '../components/AgentChatPanel';
 import MessagePlanTable from '../components/MessagePlanTable';
+import ActivityWorkflowIndicator from '../components/ActivityWorkflowIndicator';
+import {
+  activityWorkflowPrimary,
+  activityWorkflowStep,
+  readScheduleConfirmed,
+  writeScheduleConfirmed,
+  type ActivityWorkflowPrimary,
+} from '../components/activityWorkflow';
 
 type Tab = 'knowledge' | 'agent' | 'plan' | 'history';
 
@@ -31,6 +39,8 @@ export default function ActivityDetailPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [groupSaving, setGroupSaving] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [scheduleConfirmed, setScheduleConfirmed] = useState(() => (id ? readScheduleConfirmed(id) : false));
+  const reviewStatusRef = useRef(activity?.reviewStatus ?? null);
 
   const lsKey = id ? `wippy_session_${id}` : null;
 
@@ -72,6 +82,18 @@ export default function ActivityDetailPage() {
     void loadAll();
   }, [loadAll]);
 
+  useEffect(() => {
+    if (!id) return;
+    setScheduleConfirmed(readScheduleConfirmed(id));
+  }, [id]);
+
+  useEffect(() => {
+    reviewStatusRef.current = activity?.reviewStatus ?? null;
+    if (!id || !activity || activity.reviewStatus === 'approved') return;
+    writeScheduleConfirmed(id, false);
+    setScheduleConfirmed(false);
+  }, [id, activity]);
+
   async function handleApprove() {
     if (!id || groupSaving) return;
     setError(null);
@@ -108,6 +130,12 @@ export default function ActivityDetailPage() {
     action?: 'confirm_schedule',
   ): Promise<AgentChatApiResponse> {
     return api.agent.chat(id!, message, sid ?? undefined, action);
+  }
+
+  function handleScheduleConfirmed() {
+    if (!id || reviewStatusRef.current !== 'approved') return;
+    writeScheduleConfirmed(id, true);
+    setScheduleConfirmed(true);
   }
 
   function handleSessionId(newId: string) {
@@ -185,6 +213,11 @@ export default function ActivityDetailPage() {
   );
 
   const planLocked = activity.reviewStatus === 'approved';
+  const hasPendingMessages = messages.some(message => message.status === 'pending');
+  const workflowStep = activityWorkflowStep(activity.reviewStatus, scheduleConfirmed);
+  const workflowPrimary = activityWorkflowPrimary(activity.reviewStatus, scheduleConfirmed, hasPendingMessages);
+  const detachedPrimary: Exclude<ActivityWorkflowPrimary, 'approve'> | null =
+    tab !== 'agent' && workflowPrimary !== 'approve' ? workflowPrimary : null;
 
   return (
     <div className="space-y-4">
@@ -232,6 +265,12 @@ export default function ActivityDetailPage() {
           <button onClick={() => setError(null)} className="ml-2 text-red-400 hover:text-red-600">✕</button>
         </div>
       )}
+
+      <ActivityWorkflowIndicator
+        step={workflowStep}
+        detachedPrimary={detachedPrimary}
+        onOpenAgent={() => setTab('agent')}
+      />
 
       {/* Review banner */}
       <ReviewBanner
@@ -288,6 +327,8 @@ export default function ActivityDetailPage() {
               api.activities.knowledge.list(id!).then((r) => setKnowledge(r.knowledge));
             }}
             onSendMessage={handleAgentChat}
+            workflowPrimary={workflowPrimary}
+            onScheduleConfirmed={handleScheduleConfirmed}
           />
         )}
 

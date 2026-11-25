@@ -66,8 +66,10 @@ export default function ReviewBanner({ activity, onApprove, onRequestRevision, l
         )}
         {config.primary && (
           <button
+            type="button"
             onClick={config.primary.action === 'approve' ? onApprove : onRequestRevision}
             disabled={loading || needsGroup}
+            data-primary="true"
             className={`text-xs px-3 py-1.5 rounded-lg font-medium ${config.primary.style} disabled:opacity-50`}
           >
             {loading ? '處理中...' : config.primary.label}

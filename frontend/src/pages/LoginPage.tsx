@@ -46,12 +46,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-soft to-white flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🤖</div>
-          <h1 className="text-3xl font-bold text-gray-900">WiPPY</h1>
+          <img src="/favicon.svg" alt="" width={48} height={48} className="mx-auto mb-3 h-12 w-12" />
+          <h1 className="text-3xl font-bold text-ink">WiPPY</h1>
           <p className="text-gray-500 mt-1 text-sm">LINE 群組 × AI Agent 中樞</p>
         </div>
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="w-full bg-brand text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
               {loading ? '處理中...' : '登入'}
             </button>

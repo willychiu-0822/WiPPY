@@ -22,4 +22,12 @@ describe('LoginPage', () => {
     expect(screen.queryByRole('button', { name: /使用 Google 繼續/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '改用 Google 帳號登入' })).toBeInTheDocument();
   });
+
+  it('uses the WiPPY mark instead of an emoji', () => {
+    const { container } = render(<MemoryRouter><LoginPage /></MemoryRouter>);
+    const mark = container.querySelector('img');
+    expect(mark).toHaveAttribute('src', '/favicon.svg');
+    expect(mark).toHaveAttribute('alt', '');
+    expect(container.textContent).not.toContain('🤖');
+  });
 });

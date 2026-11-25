@@ -2,6 +2,8 @@
 
 最新結果：**64/64 pass，ready_for_user_test=true（本機 emulator/mock）**。本輪結果與增量提交清單見文末。
 
+截圖不在 git 內。下文的證據連結指向本機證據目錄，說明見 [evidence/README.md](evidence/README.md)。新的執行結果寫入該目錄的 `report.md`，不再追加本檔。
+
 每次執行保留紀錄；pass 只代表 emulator/mock 範圍。案例與正式環境限制見 [計畫](UAT-PLAN.md)。
 
 ## 2026-11-09 23:37 ～ 2026-11-09 23:37（台北）

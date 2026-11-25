@@ -63,3 +63,10 @@ run/install-uat/
 # 由 CI 產生，不手動提交
 docs/uat/UAT-STATUS.json
 docs/uat/install/UAT-STATUS.json
+
+# UAT / PR42 evidence stays outside git (W-09).
+# Ignore directory contents so the README in each folder can stay tracked.
+docs/uat/evidence/*
+!docs/uat/evidence/README.md
+docs/pr42-fixes/*
+!docs/pr42-fixes/README.md

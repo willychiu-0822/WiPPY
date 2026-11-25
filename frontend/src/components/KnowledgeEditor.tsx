@@ -83,7 +83,7 @@ export default function KnowledgeEditor({ knowledge, onAdd, onUpdate, onDelete }
     <div className="space-y-4">
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       {knowledge.length === 0 && !showAdd && (
-        <p className="text-sm text-gray-400 text-center py-8">尚無知識條目，請新增活動背景資訊，或直接在「Agent 對話」描述活動。</p>
+        <p className="text-sm text-gray-400 text-center py-8">還沒有記下活動資料。可以在這裡新增，或到「Agent 對話」直接跟小幫手說。</p>
       )}
 
       {KNOWLEDGE_TYPES.map((type) => {

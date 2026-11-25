@@ -75,7 +75,7 @@ describe('KnowledgeEditor — empty state', () => {
         onDelete={vi.fn()}
       />
     );
-    expect(screen.getByText(/尚無知識條目/)).toBeInTheDocument();
+    expect(screen.getByText(/還沒有記下活動資料/)).toBeInTheDocument();
   });
 
   it('shows + 新增知識條目 button', () => {

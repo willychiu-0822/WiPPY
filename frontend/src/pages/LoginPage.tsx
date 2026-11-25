@@ -52,7 +52,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <img src="/favicon.svg" alt="" width={48} height={48} className="mx-auto mb-3 h-12 w-12" />
           <h1 className="text-3xl font-bold text-ink">WiPPY</h1>
-          <p className="text-gray-500 mt-1 text-sm">LINE 群組 × AI Agent 中樞</p>
+          <p className="text-gray-500 mt-1 text-sm">幫你顧 LINE 群組的小幫手</p>
         </div>
 
         {/* Card */}

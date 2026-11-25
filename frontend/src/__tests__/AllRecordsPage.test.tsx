@@ -33,8 +33,8 @@ describe('W-18 — one 紀錄 page, fewer entries', () => {
     expect(screen.getByText('sent list')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: '發出去的訊息' })).toHaveAttribute('aria-selected', 'true');
 
-    await userEvent.click(screen.getByRole('tab', { name: 'Agent 記下的事' }));
-    expect(await screen.findByText('notes list Agent 記下的事')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: '小幫手記下的事' }));
+    expect(await screen.findByText('notes list 小幫手記下的事')).toBeInTheDocument();
     expect(screen.queryByText('sent list')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('tab', { name: '處理過程' }));
@@ -47,7 +47,7 @@ describe('W-18 — one 紀錄 page, fewer entries', () => {
     runs.unmount();
 
     const notes = renderAt('/records?type=notes');
-    expect(await screen.findByText('notes list Agent 記下的事')).toBeInTheDocument();
+    expect(await screen.findByText('notes list 小幫手記下的事')).toBeInTheDocument();
     notes.unmount();
 
     renderAt('/records?type=nope');
@@ -70,8 +70,8 @@ describe('W-18 — one 紀錄 page, fewer entries', () => {
 
   it('Agent Hub is down to three tabs; overview and settings share one, workbench is not a tab', () => {
     renderAt('/hub');
-    const tabs = within(screen.getByRole('navigation', { name: 'Agent Hub' })).getAllByRole('link');
-    expect(tabs.map((t) => t.textContent)).toEqual(['總覽與設定', 'Agent', '規則']);
+    const tabs = within(screen.getByRole('navigation', { name: '小幫手' })).getAllByRole('link');
+    expect(tabs.map((t) => t.textContent)).toEqual(['總覽與設定', '小幫手名單', '規則']);
     expect(screen.getByText('dashboard')).toBeInTheDocument();
     expect(screen.getByText('settings')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '打開試跑台' })).toHaveAttribute('href', '/hub/workbench');

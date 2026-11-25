@@ -65,9 +65,9 @@ describe('W-18 owner navigation', () => {
     renderAt('/hub');
     expect(await screen.findByText('dashboard')).toBeInTheDocument();
     const main = within(screen.getByRole('navigation', { name: '主選單' })).getAllByRole('link');
-    const hub = within(screen.getByRole('navigation', { name: 'Agent Hub' })).getAllByRole('link');
-    expect(main.map((link) => link.textContent)).toEqual(['群組', '活動', '紀錄', 'Agent Hub']);
-    expect(hub.map((link) => link.textContent)).toEqual(['總覽與設定', 'Agent', '規則']);
+    const hub = within(screen.getByRole('navigation', { name: '小幫手' })).getAllByRole('link');
+    expect(main.map((link) => link.textContent)).toEqual(['群組', '活動', '紀錄', '小幫手']);
+    expect(hub.map((link) => link.textContent)).toEqual(['總覽與設定', '小幫手名單', '規則']);
     expect(main.length + hub.length).toBe(7);
     expect(screen.queryByRole('link', { name: '記錄' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '執行紀錄' })).not.toBeInTheDocument();
@@ -104,8 +104,8 @@ describe('W-18 owner navigation', () => {
     renderAt('/hub/workbench');
     expect(await screen.findByRole('heading', { name: '試跑台' })).toBeInTheDocument();
     expect(screen.getByTestId('where').textContent).toBe('/hub/workbench');
-    const hub = within(screen.getByRole('navigation', { name: 'Agent Hub' })).getAllByRole('link');
-    expect(hub.map((link) => link.textContent)).toEqual(['總覽與設定', 'Agent', '規則']);
+    const hub = within(screen.getByRole('navigation', { name: '小幫手' })).getAllByRole('link');
+    expect(hub.map((link) => link.textContent)).toEqual(['總覽與設定', '小幫手名單', '規則']);
   });
 
   it('scrolls a settings bookmark to the settings section', async () => {

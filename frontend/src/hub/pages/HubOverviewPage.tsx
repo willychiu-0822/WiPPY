@@ -27,7 +27,7 @@ export default function HubOverviewPage() {
         <HubSettingsPage />
       </section>
       <p className="text-xs text-gray-500">
-        想親手走一遍 Agent 會做的事？
+        想親手走一遍小幫手會做的事？
         <Link to="/hub/workbench" className="ml-1 text-blue-600 underline">打開試跑台</Link>
       </p>
     </div>

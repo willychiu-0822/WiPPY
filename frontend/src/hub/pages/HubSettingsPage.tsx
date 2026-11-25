@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getErrorMessage } from '../../lib/apiError';
+import { shownError } from '../../lib/helperCopy';
 import { hubApi, type HubGroup, type HubSettings } from '../hubApi';
 import { Button, Card, ErrorText, SelectField, TextField } from '../ui';
 import { useLoad } from '../useLoad';
@@ -50,12 +50,12 @@ function SettingsForm({ initial, groups }: { initial: HubSettings; groups: HubGr
       });
       setMessage('已儲存');
     } catch (err) {
-      setError(getErrorMessage(err, '儲存失敗'));
+      setError(shownError(err, '沒有儲存成功。請稍後再試一次。'));
     }
   }
 
   return (
-    <Card title="Agent Hub 設定">
+    <Card title="小幫手設定">
       <form onSubmit={save} className="space-y-3">
         <SelectField label="預警群組" value={f['alertGroupId'] ?? ''} onChange={set('alertGroupId')} options={[{ value: '', label: '未設定' }, ...groups.map((g) => ({ value: g.groupId, label: `${g.name}（${g.memberCount} 人）` }))]} />
         <p className="text-xs text-gray-400">建議用只有你和機器人的群組：發到群組按人數扣額度，這樣每則預警只扣 1 則。</p>
@@ -64,9 +64,9 @@ function SettingsForm({ initial, groups }: { initial: HubSettings; groups: HubGr
         <TextField label="資料保存天數" value={f['retention'] ?? ''} onChange={set('retention')} type="number" />
         <TextField label="媒體下載上限（MB）" value={f['mediaMb'] ?? ''} onChange={set('mediaMb')} type="number" />
         <TextField label="媒體連結有效天數" value={f['signedDays'] ?? ''} onChange={set('signedDays')} type="number" hint="1–7 天" />
-        <TextField label="免費模型每分鐘上限" value={f['rpm'] ?? ''} onChange={set('rpm')} type="number" />
-        <TextField label="免費模型每日上限" value={f['rpd'] ?? ''} onChange={set('rpd')} type="number" />
-        <TextField label="兩次呼叫最短間隔（毫秒）" value={f['interval'] ?? ''} onChange={set('interval')} type="number" />
+        <TextField label="自動整理每分鐘最多幾次" value={f['rpm'] ?? ''} onChange={set('rpm')} type="number" hint="不確定就維持現在的數字。" />
+        <TextField label="自動整理每天最多幾次" value={f['rpd'] ?? ''} onChange={set('rpd')} type="number" hint="不確定就維持現在的數字。" />
+        <TextField label="兩次自動整理至少隔多久" value={f['interval'] ?? ''} onChange={set('interval')} type="number" hint="請填數字，1000 等於 1 秒。不確定就維持現在的數字。" />
         <ErrorText error={error} />
         {message && <p className="text-sm text-emerald-600" role="status">{message}</p>}
         <Button type="submit">儲存設定</Button>

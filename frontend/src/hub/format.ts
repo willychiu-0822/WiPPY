@@ -1,9 +1,18 @@
 import type { ActionResult } from './hubApi';
+import { explainKnownCode, isPlainChinese, plain, type HelperNotice } from '../lib/helperCopy';
 
-export function describeResult(r: ActionResult): string {
-  if (r.status === 'done') return r.replayed ? '已完成（重複的要求，未再執行）' : '已完成';
-  if (r.status === 'queued') return '已排入自動重試';
-  return `${r.status}：${r.code ?? ''}${r.detail ? ` — ${r.detail}` : ''}`;
+export function describeResult(r: ActionResult): HelperNotice {
+  if (r.status === 'done') return plain(r.replayed ? '已完成（這次跟上次一樣，沒有再做一次）' : '已完成');
+  if (r.status === 'queued') return plain('已先排好，系統會自動再試。你可以先做別的事。');
+  const detail = r.detail?.trim() ?? '';
+  const mapped = explainKnownCode(r.code);
+  const message = mapped ?? (detail && isPlainChinese(detail) ? detail : '這次沒有完成。請檢查內容後再送一次。');
+  const raw = [r.status, r.code, detail].filter(Boolean).join(' — ');
+  if (mapped || r.code || (detail && !isPlainChinese(detail))) {
+    console.warn('[wippy] raw error', raw);
+    return { message, raw };
+  }
+  return plain(message);
 }
 
 export function formatTime(iso: string | null | undefined): string {

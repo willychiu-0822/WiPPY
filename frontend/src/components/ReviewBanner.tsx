@@ -29,7 +29,7 @@ const STATUS_CONFIG = {
     bg: 'bg-orange-50 border-orange-200',
     text: 'text-orange-800',
     label: '修改中 — 待發訊息已暫停',
-    desc: '請在「Agent 對話」重新規劃，或直接在「推播企畫」編輯後重新核准。',
+    desc: '請在「Agent 對話」請小幫手再排一次，或直接在「推播企畫」編輯後重新核准。',
     primary: { label: '重新核准', action: 'approve' as const, style: 'bg-orange-500 hover:bg-orange-600 text-white' },
     secondary: null,
   },
@@ -39,7 +39,7 @@ export default function ReviewBanner({ activity, onApprove, onRequestRevision, l
   if (!hasMessages && activity.reviewStatus !== 'approved') return (
     <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
       <p className="text-sm font-semibold text-blue-900">先建立推播企畫</p>
-      <p className="text-xs text-blue-800 mt-1">在「Agent 對話」描述活動，或請 AI 規劃第一份推播。產生訊息後，確認群組、內容與時間，再核准發送。</p>
+      <p className="text-xs text-blue-800 mt-1">在「Agent 對話」描述活動，或按「請小幫手安排第一則訊息」。產生訊息後，確認群組、內容與時間，再核准發送。</p>
     </div>
   );
   const config = STATUS_CONFIG[activity.reviewStatus];

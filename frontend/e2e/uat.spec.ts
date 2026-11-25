@@ -372,7 +372,8 @@ test('UAT-09 LINE 與 AI 失敗回饋及重試', async ({ page }) => {
   await expect(page.getByText('失敗', { exact: true })).toBeVisible();
   await createActivity(page);
   await chat(page, '[模擬失敗] AI 問題');
-  await expect(page.getByText('Agent request failed', { exact: true })).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('沒能送出');
+  await expect(page.getByText('Agent request failed', { exact: true })).toBeHidden();
   await expect(page.getByPlaceholder('輸入訊息... (Enter 送出，Shift+Enter 換行)')).toHaveValue('[模擬失敗] AI 問題');
   await chat(page, '你好');
   await expect(page.getByText('你好！我可以協助整理活動資訊、萃取知識與規劃推播（本機模擬）。')).toBeVisible();
@@ -690,7 +691,7 @@ test('UAT-20 第一個活動先引導 AI 產生企畫，再顯示核准操作', 
   await register(page); const id = await createActivity(page);
   await expect(page.getByRole('button', { name: '核准企畫', exact: true })).toHaveCount(0);
   await expect(page.getByText('先建立推播企畫', { exact: true })).toBeVisible();
-  const firstPlan = page.getByRole('button', { name: '請 AI 規劃第一份推播', exact: true });
+  const firstPlan = page.getByRole('button', { name: '請小幫手安排第一則訊息', exact: true });
   await expect(firstPlan).toHaveCount(1);
   await firstPlan.click();
   await expect(page.getByRole('button', { name: '編輯', exact: true })).toHaveCount(3);
@@ -917,7 +918,7 @@ test('UAT-26 AI 斷線用中文說明並保留草稿，重試僅保存一份對�
     const failed = page.waitForEvent('requestfailed', request => request.method() === 'POST' && request.url().includes('/agent/'));
     await page.getByRole('button', { name: '送出', exact: true }).click();
     await failed;
-    await expect(page.getByRole('alert')).toHaveText('無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留');
+    await expect(page.getByRole('alert')).toHaveText('沒有連上小幫手。請檢查網路後再按一次送出，剛才打的字還在。');
     await expect(input).toHaveValue(text);
     await expect(page.getByText('TypeFailed to fetch', { exact: true })).toHaveCount(0);
     await context.setOffline(false);

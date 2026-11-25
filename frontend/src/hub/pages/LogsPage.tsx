@@ -1,9 +1,23 @@
 import { useState } from 'react';
-import { getErrorMessage } from '../../lib/apiError';
+import { FriendlyNotice } from '../../components/FriendlyNotice';
+import { explainRaw, messageKindLabel, shownError, statusLabel } from '../../lib/helperCopy';
 import { hubApi, type LogItem, type LogName } from '../hubApi';
 import { Button, Card, ErrorText } from '../ui';
 import { formatTime } from '../format';
 import { useLoad } from '../useLoad';
+
+const ACTION_LABEL: Record<string, string> = {
+  send_message: '發訊息到群組',
+  send_alert: '發提醒給擁有者',
+  send_link: '發連結',
+  send_image: '發圖片',
+  send_video: '發影片',
+  send_audio: '發語音',
+  record: '存一筆紀錄',
+  schedule_message: '排程訊息',
+  complete_inbox: '標記完成',
+  complete_dispatch: '完成這次工作',
+};
 
 const TABS: Array<{ name: LogName; label: string }> = [
   { name: 'dispatches', label: '派送' },
@@ -18,12 +32,12 @@ const RETRYABLE: LogName[] = ['dispatches', 'actions', 'media'];
 function summary(name: LogName, item: LogItem): string {
   const s = (k: string) => (item[k] === undefined || item[k] === null ? '' : String(item[k]));
   switch (name) {
-    case 'dispatches': return `${s('ruleName')} → ${s('agentId')}｜嘗試 ${s('attempts')} 次`;
-    case 'actions': return `${s('actorKey')}：${s('type')}${s('code') ? `｜${s('code')}` : ''}`;
+    case 'dispatches': return `${s('ruleName') || '一則規則'}｜試了 ${s('attempts') || '0'} 次`;
+    case 'actions': return ACTION_LABEL[s('type')] ?? '一項動作';
     case 'inbox': return `${s('ruleName')}｜${s('groupName')}`;
-    case 'alerts': return `[${s('severity')}] ${s('text')}`;
-    case 'media': return `${s('messageType')} ${s('fileName')}`;
-    case 'audit': return `${s('actor')}（${s('via')}）${s('action')} → ${s('status')}${s('code') ? `｜${s('code')}` : ''}`;
+    case 'alerts': return s('text');
+    case 'media': return `${messageKindLabel(s('messageType'))}${s('fileName') ? ` ${s('fileName')}` : ''}`.trim();
+    case 'audit': return statusLabel(s('status')) || '有一筆操作紀錄';
   }
 }
 
@@ -38,7 +52,7 @@ export default function LogsPage() {
       await hubApi.admin.retry(tab as 'dispatches' | 'actions' | 'media', id);
       await log.reload();
     } catch (err) {
-      setError(getErrorMessage(err, '重試失敗'));
+      setError(shownError(err, '沒有重試成功。請稍後再試一次。'));
     }
   }
 
@@ -58,9 +72,20 @@ export default function LogsPage() {
           <li key={item.id} className="py-2 flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-sm text-gray-900 break-words">{summary(tab, item)}</p>
-              <p className="text-xs text-gray-400">{formatTime(String(item['createdAt'] ?? item['at'] ?? ''))}・{item.status ?? ''}・{item.id}</p>
-              {typeof item['lastError'] === 'string' && <p className="text-xs text-red-600 break-words">{String(item['lastError'])}</p>}
-              {typeof item['detail'] === 'string' && <p className="text-xs text-gray-500 break-words">{String(item['detail'])}</p>}
+              <p className="text-xs text-gray-400">{formatTime(String(item['createdAt'] ?? item['at'] ?? ''))}・{statusLabel(typeof item.status === 'string' ? item.status : '')}・{item.id}</p>
+              {typeof item['lastError'] === 'string' && (
+                <FriendlyNotice
+                  notice={explainRaw(item['lastError'], '這一步沒有完成。請按重試；若一直失敗，把下方細節轉給協助你的人。')}
+                  role="alert"
+                  className="text-xs text-red-600"
+                />
+              )}
+              {typeof item['detail'] === 'string' && (
+                <FriendlyNotice
+                  notice={explainRaw(item['detail'], '這裡有一則系統說明。請把下方細節轉給協助你的人。')}
+                  className="text-xs text-gray-500"
+                />
+              )}
             </div>
             {RETRYABLE.includes(tab) && item.status === 'failed' && (
               <Button variant="secondary" label={`重試 ${item.id}`} onClick={() => void retry(item.id)}>重試</Button>

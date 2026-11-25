@@ -65,7 +65,7 @@ test('W-21 活動詳情依狀態只顯示一個主要動作', async ({ page }, t
     await expect(page.getByRole('navigation', { name: '活動流程' })).toContainText('3 送出');
     await expect(page.locator('[aria-current="step"]')).toHaveText(/核准企畫/);
     await expect(primary(page)).toHaveCount(1);
-    await expect(primary(page)).toHaveText('請 AI 規劃第一份推播');
+    await expect(primary(page)).toHaveText('請小幫手安排第一則訊息');
     await expect(page.getByRole('button', { name: '核准企畫', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /確認排程/ })).toHaveCount(0);
   });

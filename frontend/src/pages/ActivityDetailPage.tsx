@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { shownError } from '../lib/helperCopy';
 import { api } from '../lib/api';
 import type { Activity, ActivityMessage, ActivityKnowledge, AgentChatApiResponse, Group } from '../lib/api';
 import ReviewBanner from '../components/ReviewBanner';
@@ -103,7 +104,7 @@ export default function ActivityDetailPage() {
       setActivity(res.activity);
       await api.activities.messages.list(id).then((r) => setMessages(r.messages));
     } catch (err) {
-      setError(String(err));
+      setError(shownError(err, '沒有完成，請稍後再試一次。'));
     } finally {
       setReviewLoading(false);
     }
@@ -118,7 +119,7 @@ export default function ActivityDetailPage() {
       setActivity(res.activity);
       await api.activities.messages.list(id).then((r) => setMessages(r.messages));
     } catch (err) {
-      setError(String(err));
+      setError(shownError(err, '沒有完成，請稍後再試一次。'));
     } finally {
       setReviewLoading(false);
     }
@@ -193,7 +194,7 @@ export default function ActivityDetailPage() {
       setMessages(updatedMessages.messages);
     } catch (err) {
       setActivity(previousActivity);
-      setError(String(err));
+      setError(shownError(err, '沒有完成，請稍後再試一次。'));
     } finally {
       setGroupSaving(false);
     }

@@ -28,7 +28,7 @@ describe('Layout', () => {
     expect(screen.getByRole('link', { name: '群組' })).toHaveAttribute('href', '/groups');
     expect(screen.getByRole('link', { name: '活動' })).toHaveAttribute('href', '/activities');
     expect(screen.getByRole('link', { name: '紀錄' })).toHaveAttribute('href', '/records');
-    expect(screen.getByRole('link', { name: 'Agent Hub' })).toHaveAttribute('href', '/hub');
+    expect(screen.getByRole('link', { name: '小幫手' })).toHaveAttribute('href', '/hub');
     expect(within(screen.getByRole('navigation', { name: '主選單' })).getAllByRole('link')).toHaveLength(4);
     expect(screen.queryByRole('link', { name: '設定' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '探索' })).not.toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('Layout', () => {
     expect(screen.getByRole('link', { name: '工作台' })).toHaveAttribute('href', '/workbench');
     expect(screen.getByRole('link', { name: '紀錄' })).toHaveAttribute('href', '/workbench/records');
     expect(screen.queryByRole('link', { name: '群組' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Agent Hub' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '小幫手' })).not.toBeInTheDocument();
     expect(screen.getByText('Instinct')).toBeInTheDocument();
   });
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { getErrorMessage } from '../../lib/apiError';
+import { shownError } from '../../lib/helperCopy';
 import { hubApi, type MessageType, type RuleInput, type RuleTrigger, type RuleView } from '../hubApi';
 import { ConfirmAction } from '../../components/ConfirmAction';
 import { Button, Card, CheckboxField, ErrorText, GroupChecklist, SelectField, Switch, TextField } from '../ui';
@@ -8,7 +8,7 @@ import { useLoad } from '../useLoad';
 const TRIGGERS: Array<{ value: RuleTrigger['type']; label: string }> = [
   { value: 'keyword', label: '出現關鍵字' },
   { value: 'message_type', label: '某種訊息類型（例如有人傳檔案）' },
-  { value: 'mention', label: '有人 @ 機器人' },
+  { value: 'mention', label: '有人標記小幫手' },
   { value: 'volume', label: '訊息量（X 分鐘內超過 Y 則）' },
   { value: 'schedule', label: '定時（每 N 分鐘打包新訊息）' },
 ];
@@ -24,9 +24,9 @@ const EMPTY: RuleInput = {
 
 function describeTrigger(t: RuleTrigger): string {
   switch (t.type) {
-    case 'keyword': return `關鍵字：${t.keywords.join('、')}${t.regex ? `／regex ${t.regex}` : ''}`;
+    case 'keyword': return `關鍵字：${t.keywords.join('、')}${t.regex ? `／文字比對 ${t.regex}` : ''}`;
     case 'message_type': return `訊息類型：${t.messageTypes.join('、')}`;
-    case 'mention': return '@ 機器人';
+    case 'mention': return '有人標記小幫手';
     case 'volume': return `${t.windowMinutes} 分鐘內 ≥ ${t.threshold} 則`;
     case 'schedule': return `每 ${t.intervalMinutes} 分鐘`;
   }
@@ -71,20 +71,20 @@ function RuleForm({ initial, onSaved, onCancel }: { initial: RuleView | null; on
       else await hubApi.admin.createRule(input);
       onSaved();
     } catch (err) {
-      setError(getErrorMessage(err, '儲存失敗'));
+      setError(shownError(err, '沒有儲存成功。請稍後再試一次。'));
     }
   }
 
   return (
     <form onSubmit={submit} className="space-y-3">
       <TextField label="規則名稱" value={name} onChange={setName} required />
-      <SelectField label="交給哪個 Agent" value={agentId} onChange={setAgentId} options={[{ value: '', label: '請選擇' }, ...(agents.data ?? []).map((a) => ({ value: a.id, label: `${a.name}（${a.kind === 'grok_bot' ? 'Grok Bot' : 'Instinct'}）` }))]} />
+      <SelectField label="交給哪個小幫手" value={agentId} onChange={setAgentId} options={[{ value: '', label: '請選擇' }, ...(agents.data ?? []).map((a) => ({ value: a.id, label: `${a.name}（${a.kind === 'grok_bot' ? '自動通知' : '登入後自己操作'}）` }))]} />
       <GroupChecklist legend="套用的群組" groups={groups.data ?? []} selected={groupIds} onChange={setGroupIds} />
       <SelectField label="觸發條件" value={triggerType} onChange={(v) => setTriggerType(v as RuleTrigger['type'])} options={TRIGGERS} />
       {triggerType === 'keyword' && (
         <>
           <TextField label="關鍵字（用逗號分隔）" value={keywords} onChange={setKeywords} />
-          <TextField label="Regex（選填）" value={regex} onChange={setRegex} />
+          <TextField label="文字比對（選填）" value={regex} onChange={setRegex} hint="例如「停電|停水」會在出現其中一個詞時觸發。不確定請留空。" />
         </>
       )}
       {triggerType === 'message_type' && (
@@ -103,14 +103,14 @@ function RuleForm({ initial, onSaved, onCancel }: { initial: RuleView | null; on
       )}
       {triggerType === 'schedule' && <TextField label="每隔幾分鐘" value={intervalMinutes} onChange={setInterval} type="number" hint="最少 5 分鐘" />}
       <fieldset className="space-y-1">
-        <legend className="text-xs font-medium text-gray-600">交給 Agent 的內容</legend>
-        <CheckboxField label="附重點整理（會用免費模型）" checked={include.digest} onChange={(v) => setInclude({ ...include, digest: v })} />
-        <CheckboxField label="附原始訊息" checked={include.raw} onChange={(v) => setInclude({ ...include, raw: v })} />
-        <CheckboxField label="附媒體下載連結" checked={include.media} onChange={(v) => setInclude({ ...include, media: v })} />
+        <legend className="text-xs font-medium text-gray-600">交給小幫手看的內容</legend>
+        <CheckboxField label="附上重點整理" checked={include.digest} onChange={(v) => setInclude({ ...include, digest: v })} />
+        <CheckboxField label="附上原本的對話" checked={include.raw} onChange={(v) => setInclude({ ...include, raw: v })} />
+        <CheckboxField label="附上圖片與檔案的下載連結" checked={include.media} onChange={(v) => setInclude({ ...include, media: v })} />
       </fieldset>
-      <TextField label="上下文訊息數" value={String(include.contextCount)} onChange={(v) => setInclude({ ...include, contextCount: Number(v) })} type="number" hint="即時觸發時，連同前幾則訊息一起送出" />
-      <TextField label="給 Agent 的指令" value={instruction} onChange={setInstruction} multiline required />
-      <TextField label="冷卻時間（分鐘）" value={cooldown} onChange={setCooldown} type="number" hint="觸發後這段時間內不再觸發" />
+      <TextField label="一起附上前幾則訊息" value={String(include.contextCount)} onChange={(v) => setInclude({ ...include, contextCount: Number(v) })} type="number" hint="一觸發就連同前面幾則對話一起送出" />
+      <TextField label="給小幫手的吩咐" value={instruction} onChange={setInstruction} multiline required />
+      <TextField label="觸發後先暫停幾分鐘" value={cooldown} onChange={setCooldown} type="number" hint="觸發一次之後，這段時間內不會再觸發。" />
       <CheckboxField label="啟用" checked={enabled} onChange={setEnabled} />
       <ErrorText error={error} />
       <div className="flex gap-2">
@@ -129,7 +129,7 @@ export default function RulesPage() {
 
   async function act(fn: () => Promise<unknown>) {
     setError(null);
-    try { await fn(); await rules.reload(); } catch (err) { setError(getErrorMessage(err, '操作失敗')); }
+    try { await fn(); await rules.reload(); } catch (err) { setError(shownError(err, '沒有完成。請稍後再試一次。')); }
   }
 
   return (
@@ -142,7 +142,7 @@ export default function RulesPage() {
             <li key={r.id} className="py-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900">{r.name}</p>
-                <p className="text-xs text-gray-500">{describeTrigger(r.trigger)}・冷卻 {r.cooldownMinutes} 分鐘</p>
+                <p className="text-xs text-gray-500">{describeTrigger(r.trigger)}・暫停 {r.cooldownMinutes} 分鐘</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <Switch label={`${r.name} 啟用`} checked={r.enabled} onChange={(on) => act(() => hubApi.admin.updateRule(r.id, { name: r.name, enabled: on, agentId: r.agentId, groupIds: r.groupIds, trigger: r.trigger, include: r.include, instruction: r.instruction, cooldownMinutes: r.cooldownMinutes }))} />

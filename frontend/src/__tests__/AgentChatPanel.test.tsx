@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AgentChatPanel from '../components/AgentChatPanel';
+import type { ActivityWorkflowPrimary } from '../components/activityWorkflow';
 import type { AgentChatApiResponse, HarnessRunSnapshot } from '../lib/api';
 
 // ─── Mock firebase/firestore & ../firebase ────────────────────────────────────
@@ -37,7 +38,10 @@ function triggerSnapshot(data: Partial<HarnessRunSnapshot>) {
   });
 }
 
-function renderPanel(onSendMessage = vi.fn()) {
+function renderPanel(
+  onSendMessage = vi.fn(),
+  extra: { workflowPrimary?: ActivityWorkflowPrimary; onScheduleConfirmed?: () => void } = {},
+) {
   const onSessionId = vi.fn();
   const onMessagesGenerated = vi.fn();
   const onKnowledgeExtracted = vi.fn();
@@ -50,9 +54,18 @@ function renderPanel(onSendMessage = vi.fn()) {
       onMessagesGenerated={onMessagesGenerated}
       onKnowledgeExtracted={onKnowledgeExtracted}
       onSendMessage={onSendMessage}
+      workflowPrimary={extra.workflowPrimary}
+      onScheduleConfirmed={extra.onScheduleConfirmed}
     />
   );
   return { ...utils, onSessionId, onMessagesGenerated, onKnowledgeExtracted };
+}
+
+function onlyPrimary(name: RegExp) {
+  const buttons = screen.getAllByRole('button').filter((button) => button.getAttribute('data-primary') === 'true');
+  expect(buttons).toHaveLength(1);
+  expect(buttons[0]).toHaveAccessibleName(name);
+  return buttons[0];
 }
 
 beforeEach(() => {
@@ -272,5 +285,52 @@ describe('AgentChatPanel — input behavior', () => {
     expect(screen.getAllByText('請幫我整理親子活動說明')).toHaveLength(1);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(input).toHaveValue('');
+  });
+});
+
+describe('AgentChatPanel — one primary action per state', () => {
+  it('keeps 送出 secondary and hides 確認排程 while the plan is not approved', () => {
+    renderPanel(vi.fn(), { workflowPrimary: 'approve' });
+    expect(screen.queryByRole('button', { name: /確認排程/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '送出' })).not.toHaveAttribute('data-primary');
+    expect(screen.queryAllByRole('button').filter((button) => button.getAttribute('data-primary') === 'true')).toHaveLength(0);
+  });
+
+  it('uses 請 AI 規劃 as the only primary when there is no plan yet', () => {
+    renderPanel(vi.fn(), { workflowPrimary: 'plan' });
+    onlyPrimary(/請 AI 規劃第一份推播/);
+    expect(screen.queryByRole('button', { name: /確認排程/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '送出' })).not.toHaveAttribute('data-primary');
+  });
+
+  it('uses 確認排程 as the only primary once the plan is approved', () => {
+    renderPanel(vi.fn(), { workflowPrimary: 'confirm' });
+    onlyPrimary(/確認排程/);
+    expect(screen.getByRole('button', { name: '送出' })).not.toHaveAttribute('data-primary');
+  });
+
+  it('uses 送出 as the only primary after the schedule is confirmed, and keeps 確認排程 secondary', async () => {
+    renderPanel(vi.fn().mockResolvedValue(makeSyncResponse()), { workflowPrimary: 'send' });
+    onlyPrimary(/^送出$/);
+    expect(screen.queryByRole('button', { name: /確認排程/ })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText(/輸入訊息/), { target: { value: '再調整一句' } });
+    fireEvent.click(screen.getByRole('button', { name: '送出' }));
+    const confirm = await screen.findByRole('button', { name: /確認排程/ });
+    expect(confirm).not.toHaveAttribute('data-primary');
+    onlyPrimary(/^送出$/);
+  });
+
+  it('records a confirmed schedule only after 確認排程 succeeds', async () => {
+    const onScheduleConfirmed = vi.fn();
+    const onSendMessage = vi.fn()
+      .mockRejectedValueOnce(new Error('Agent request failed'))
+      .mockResolvedValueOnce(makeSyncResponse());
+    renderPanel(onSendMessage, { workflowPrimary: 'confirm', onScheduleConfirmed });
+    fireEvent.click(screen.getByRole('button', { name: /確認排程/ }));
+    expect(await screen.findByText(/Agent request failed/)).toBeInTheDocument();
+    expect(onScheduleConfirmed).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /確認排程/ }));
+    await waitFor(() => expect(onScheduleConfirmed).toHaveBeenCalledTimes(1));
+    expect(onSendMessage).toHaveBeenLastCalledWith('就照這樣排', null, 'confirm_schedule');
   });
 });

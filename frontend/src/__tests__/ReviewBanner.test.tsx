@@ -57,7 +57,8 @@ describe('ReviewBanner — pending_review', () => {
         onRequestRevision={vi.fn()}
       />
     );
-    expect(screen.getByRole('button', { name: '核准企畫' })).toBeInTheDocument();
+    const approve = screen.getByRole('button', { name: '核准企畫' });
+    expect(approve).toHaveAttribute('data-primary', 'true');
   });
 
   it('calls onApprove when 核准企畫 is clicked', () => {
@@ -100,7 +101,9 @@ describe('ReviewBanner — approved', () => {
     render(
       <ReviewBanner activity={approved} onApprove={vi.fn()} onRequestRevision={vi.fn()} />
     );
-    expect(screen.getByRole('button', { name: '要求修改' })).toBeInTheDocument();
+    const revise = screen.getByRole('button', { name: '要求修改' });
+    expect(revise).toBeInTheDocument();
+    expect(revise).not.toHaveAttribute('data-primary');
   });
 
   it('calls onRequestRevision when 要求修改 is clicked', () => {
@@ -134,7 +137,7 @@ describe('ReviewBanner — revision_requested', () => {
     render(
       <ReviewBanner activity={revision} onApprove={vi.fn()} onRequestRevision={vi.fn()} />
     );
-    expect(screen.getByRole('button', { name: '重新核准' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '重新核准' })).toHaveAttribute('data-primary', 'true');
   });
 
   it('calls onApprove when 重新核准 is clicked', () => {

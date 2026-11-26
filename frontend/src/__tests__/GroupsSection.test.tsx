@@ -24,7 +24,7 @@ describe('one 群組 entry', () => {
   it('opens on chat and switches to Agent access in the same page', async () => {
     renderAt('/groups');
     expect(screen.getByText('chat list')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('tab', { name: '交給 Agent' }));
+    await userEvent.click(screen.getByRole('tab', { name: '交給小幫手' }));
     expect(await screen.findByText('agent access')).toBeInTheDocument();
     expect(screen.queryByText('chat list')).not.toBeInTheDocument();
   });
@@ -32,7 +32,7 @@ describe('one 群組 entry', () => {
   it('lands on Agent access when linked with ?tab=agent', async () => {
     renderAt('/groups?tab=agent');
     expect(await screen.findByText('agent access')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '交給 Agent' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: '交給小幫手' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('Agent Hub no longer has a second 群組 tab', () => {

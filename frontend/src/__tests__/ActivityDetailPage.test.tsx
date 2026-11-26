@@ -173,8 +173,8 @@ describe('Activity detail — one primary action', () => {
     mocks.getActivity.mockResolvedValue({ activity: activity() });
     mocks.listMessages.mockResolvedValue({ messages: [] });
     renderPage();
-    expect(await screen.findByRole('button', { name: '請 AI 規劃第一份推播' })).toBeVisible();
-    onlyPrimary(/請 AI 規劃第一份推播/);
+    expect(await screen.findByRole('button', { name: '請小幫手安排第一則訊息' })).toBeVisible();
+    onlyPrimary(/請小幫手安排第一則訊息/);
     expect(screen.queryByRole('button', { name: '核准企畫' })).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: '活動流程' }).querySelector('[aria-current="step"]')).toHaveTextContent('核准企畫');
   });

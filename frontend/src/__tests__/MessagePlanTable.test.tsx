@@ -90,7 +90,7 @@ describe('MessagePlanTable — rendering', () => {
         onDelete={vi.fn()}
       />
     );
-    expect(screen.getByText('AI')).toBeInTheDocument();
+    expect(screen.getByText('小幫手')).toBeInTheDocument();
   });
 
   it('renders messages sorted by sequenceOrder', () => {

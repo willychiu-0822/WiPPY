@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ActivityMessage } from '../lib/api';
 import { ConfirmAction } from './ConfirmAction';
+import { shownError } from '../lib/helperCopy';
 import { SEND_AT_ISO_EXAMPLE, SEND_AT_LABEL, fromTaipeiLocal, taipeiDateTime } from '../lib/timeCopy';
 
 interface Props {
@@ -64,7 +65,7 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
       setEditing(null);
     } catch (err) {
       setError(err instanceof TypeError ? '儲存失敗，請檢查網路連線後重試'
-        : err instanceof Error ? err.message : '儲存失敗，請稍後重試');
+        : shownError(err, '沒有儲存成功。請稍後再試一次。'));
     } finally {
       setSaving(false);
     }
@@ -78,7 +79,7 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
       await onDelete(id);
     } catch (err) {
       setError(err instanceof TypeError ? '刪除失敗，請檢查網路連線後重試'
-        : err instanceof Error ? err.message : '刪除失敗，請稍後重試');
+        : shownError(err, '沒有刪除成功。請稍後再試一次。'));
     } finally {
       setDeleting(null);
     }
@@ -87,7 +88,7 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
   if (messages.length === 0) {
     return (
       <p className="text-sm text-gray-400 text-center py-12">
-        尚無推播訊息，請在「Agent 對話」讓 Agent 規劃企畫。
+        尚無推播訊息，請在「Agent 對話」讓小幫手安排。
       </p>
     );
   }
@@ -168,7 +169,7 @@ export default function MessagePlanTable({ messages, groups = [], locked, onUpda
                     </span>
                   )}
                   {msg.generatedByAgent && (
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600">AI</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-600">小幫手</span>
                   )}
                 </div>
 

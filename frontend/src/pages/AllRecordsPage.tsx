@@ -7,7 +7,7 @@ const LogsPage = lazy(() => import('../hub/pages/LogsPage'));
 
 const FILTERS = [
   { id: 'sent', label: '發出去的訊息', hint: '活動排程和手動發送，發到哪些群、有沒有成功。' },
-  { id: 'notes', label: 'Agent 記下的事', hint: 'Agent 從群組對話裡幫你存下來的重點。' },
+  { id: 'notes', label: '小幫手記下的事', hint: '小幫手從群組對話裡幫你存下來的重點。' },
   { id: 'runs', label: '處理過程', hint: '每一步交給誰、做了什麼、哪裡卡住，卡住的可以在這裡重試。' },
 ] as const;
 
@@ -43,7 +43,7 @@ export default function AllRecordsPage() {
       {active === 'sent' && <SendHistoryPage />}
       {active === 'notes' && (
         <Suspense fallback={<p>載入中...</p>}>
-          <RecordsPage title="Agent 記下的事" />
+          <RecordsPage title="小幫手記下的事" />
         </Suspense>
       )}
       {active === 'runs' && (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getErrorMessage } from '../lib/apiError';
+import { shownError } from '../lib/helperCopy';
 
 /** Loads data once (and on `reload`), tracking loading and error state. */
 export function useLoad<T>(load: () => Promise<T>, deps: unknown[] = []) {
@@ -15,7 +15,7 @@ export function useLoad<T>(load: () => Promise<T>, deps: unknown[] = []) {
       setData(await run());
       setError(null);
     } catch (err) {
-      setError(getErrorMessage(err, '載入失敗'));
+      setError(shownError(err, '載入失敗，請重新整理頁面後再試。'));
     } finally {
       setLoading(false);
     }

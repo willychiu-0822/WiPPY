@@ -6,7 +6,7 @@ const GroupAccessPage = lazy(() => import('../hub/pages/GroupAccessPage'));
 
 const TABS = [
   { id: 'chat', label: '聊天與廣播' },
-  { id: 'agent', label: '交給 Agent' },
+  { id: 'agent', label: '交給小幫手' },
 ] as const;
 
 /**

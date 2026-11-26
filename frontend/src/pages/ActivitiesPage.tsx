@@ -167,7 +167,7 @@ export default function ActivitiesPage() {
       {activities.length === 0 && !showCreate ? (
         <div className="text-center py-16 space-y-2">
           <p className="text-gray-400 text-sm">尚無活動</p>
-          <p className="text-gray-300 text-xs">建立第一個活動，讓 Agent 協助規劃推播企畫</p>
+          <p className="text-gray-300 text-xs">建立第一個活動，讓小幫手幫你安排要發的訊息</p>
         </div>
       ) : (
         <div className="space-y-2">

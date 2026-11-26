@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { getErrorMessage } from '../../lib/apiError';
+import { explainError, explainRaw, plain, shownError, type HelperNotice } from '../../lib/helperCopy';
 import { hubApi, type AgentKind, type AgentView, type HubGroup } from '../hubApi';
 import { ConfirmAction } from '../../components/ConfirmAction';
 import { Button, Card, ErrorText, GroupChecklist, SelectField, TextField } from '../ui';
 import { mcpUrl } from '../format';
 import { useLoad } from '../useLoad';
+import { FriendlyNotice } from '../../components/FriendlyNotice';
 
 type Secret = { kind: AgentKind; name: string; apiKey?: string; password?: string; email?: string | null };
 
@@ -21,9 +22,9 @@ function SecretBox({ secret, onClose }: { secret: Secret; onClose: () => void })
       <p className="font-semibold text-amber-900">只顯示這一次，請立刻複製保存：{secret.name}</p>
       {secret.apiKey && (
         <>
-          <p className="text-xs text-amber-800">API Key（在 Grok Bot 加入 MCP 時，header 填 <code>Authorization: Bearer &lt;key&gt;</code>）</p>
+          <p className="text-xs text-amber-800">連線金鑰。貼到 Grok 的連線設定時，授權方式選 Bearer，再貼上這組金鑰。</p>
           <code className="block break-all bg-white rounded px-2 py-1">{secret.apiKey}</code>
-          <p className="text-xs text-amber-800">MCP 網址</p>
+          <p className="text-xs text-amber-800">連線網址</p>
           <code className="block break-all bg-white rounded px-2 py-1">{mcpUrl()}</code>
         </>
       )}
@@ -54,7 +55,7 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setError('請填寫 Agent 名稱'); return; }
+    if (!name.trim()) { setError('請填寫小幫手名稱'); return; }
     const validation = settingsError(dailySendLimit, kind === 'instinct' ? inboxAlertHours : undefined);
     if (validation) { setError(validation); return; }
     setSaving(true);
@@ -68,7 +69,7 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
       onCreated({ kind, name: res.agent.name, apiKey: res.apiKey, password: res.password, email: res.agent.accountEmail });
       setName(''); setRoutineUrl(''); setRoutineKey(''); setEmail(''); setAllowed([]);
     } catch (err) {
-      setError(getErrorMessage(err, '建立失敗'));
+      setError(shownError(err, '沒有建立成功。請稍後再試一次。'));
     } finally {
       setSaving(false);
     }
@@ -76,12 +77,12 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <SelectField label="類型" value={kind} onChange={(v) => setKind(v as AgentKind)} options={[{ value: 'grok_bot', label: 'Grok Bot（WiPPY 主動呼叫 + MCP/API）' }, { value: 'instinct', label: 'Instinct（用帳號登入工作台）' }]} />
+      <SelectField label="類型" value={kind} onChange={(v) => setKind(v as AgentKind)} options={[{ value: 'grok_bot', label: 'Grok Bot（由 WiPPY 主動通知）' }, { value: 'instinct', label: 'Instinct（用帳號登入後自己操作）' }]} />
       <TextField label="名稱" value={name} onChange={setName} required />
       {kind === 'grok_bot' ? (
         <>
-          <TextField label="Routine Webhook 網址" value={routineUrl} onChange={setRoutineUrl} placeholder="https://..." hint="Grok Bot Routine 的 Webhook「POST to」網址" />
-          <TextField label="Routine Webhook Key" value={routineKey} onChange={setRoutineKey} type="password" hint="Routine 的 Webhook key，會加密保存" />
+          <TextField label="自動通知網址" value={routineUrl} onChange={setRoutineUrl} placeholder="https://..." hint="貼上 Grok 例行工作裡「發送到這個網址」的那一欄。" />
+          <TextField label="自動通知金鑰" value={routineKey} onChange={setRoutineKey} type="password" hint="會加密保存。不確定可以先留空。" />
         </>
       ) : (
         <>
@@ -92,7 +93,7 @@ function CreateAgentForm({ groups, onCreated }: { groups: HubGroup[]; onCreated:
       <TextField label="每日發送上限" value={dailySendLimit} onChange={setLimit} type="number" />
       <GroupChecklist legend="允許使用的群組" groups={groups} selected={allowedGroupIds} onChange={setAllowed} />
       <ErrorText error={error} />
-      <Button type="submit" disabled={saving}>建立 Agent</Button>
+      <Button type="submit" disabled={saving}>建立小幫手</Button>
     </form>
   );
 }
@@ -103,7 +104,7 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
   const [inboxAlertHours, setHours] = useState(String(agent.inboxAlertHours));
   const [routineUrl, setRoutineUrl] = useState(agent.routineUrl ?? '');
   const [routineKey, setRoutineKey] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<HelperNotice | null>(null);
 
   function settingsPatch(): Record<string, unknown> {
     const patch: Record<string, unknown> = { allowedGroupIds: allowed, dailySendLimit: Number(limit) };
@@ -119,10 +120,10 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
     setMessage(null);
     try {
       await fn();
-      if (done) setMessage(done);
+      if (done) setMessage(plain(done));
       onChanged();
     } catch (err) {
-      setMessage(getErrorMessage(err, '操作失敗'));
+      setMessage(explainError(err, '沒有完成。請稍後再試一次。'));
     }
   }
 
@@ -133,9 +134,9 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
           <p className="text-sm font-medium text-gray-900">{agent.name} <span className="text-xs text-gray-400">{agent.kind === 'grok_bot' ? 'Grok Bot' : 'Instinct'}</span></p>
           <p className="text-xs text-gray-400">
             {agent.enabled ? '啟用中' : '已停用'}
-            {agent.apiKeyPrefix && `・Key ${agent.apiKeyPrefix}…`}
+            {agent.apiKeyPrefix && `・金鑰 ${agent.apiKeyPrefix}…`}
             {agent.accountEmail && `・${agent.accountEmail}`}
-            {agent.kind === 'grok_bot' && (agent.routineUrl ? '・Webhook 已設定' : '・Webhook 未設定')}
+            {agent.kind === 'grok_bot' && (agent.routineUrl ? '・自動通知已設定' : '・自動通知尚未設定')}
           </p>
         </div>
         {agent.enabled ? (
@@ -151,26 +152,31 @@ function AgentRow({ agent, groups, onChanged, onSecret }: { agent: AgentView; gr
       )}
       {agent.kind === 'grok_bot' && (
         <>
-          <TextField label={`Routine 網址（${agent.name}）`} value={routineUrl} onChange={setRoutineUrl} placeholder="https://..." />
-          <TextField label={`Routine Key（${agent.name}，留空表示不變）`} value={routineKey} onChange={setRoutineKey} type="password" />
+          <TextField label={`自動通知網址（${agent.name}）`} value={routineUrl} onChange={setRoutineUrl} placeholder="https://..." />
+          <TextField label={`自動通知金鑰（${agent.name}，留空表示不改）`} value={routineKey} onChange={setRoutineKey} type="password" />
         </>
       )}
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" label={`儲存 ${agent.name} 設定`} onClick={() => {
           const validation = settingsError(limit, agent.kind === 'instinct' ? inboxAlertHours : undefined);
-          if (validation) { setMessage(validation); return; }
+          if (validation) { setMessage(plain(validation)); return; }
           void run(async () => { await hubApi.admin.updateAgent(agent.id, settingsPatch()); setRoutineKey(''); }, '已儲存');
         }}>儲存設定</Button>
         {agent.kind === 'grok_bot' ? (
           <>
-            <Button variant="secondary" onClick={() => run(async () => { const r = await hubApi.admin.testAgent(agent.id); setMessage(r.ok ? `Webhook 測試成功（HTTP ${r.status}）` : `Webhook 測試失敗：${r.status ?? ''} ${r.detail ?? ''}`); })}>測試 Webhook</Button>
-            <Button variant="secondary" onClick={() => run(async () => { const r = await hubApi.admin.rotateKey(agent.id); onSecret({ kind: 'grok_bot', name: agent.name, apiKey: r.apiKey }); })}>重新產生 API Key</Button>
+            <Button variant="secondary" onClick={() => run(async () => {
+              const r = await hubApi.admin.testAgent(agent.id);
+              setMessage(r.ok
+                ? plain('自動通知測試成功')
+                : explainRaw([r.status, r.detail].filter((part) => part !== null && part !== undefined && String(part) !== '').join(' '), '自動通知沒有打通。請檢查網址和金鑰後再試一次。'));
+            })}>測試自動通知</Button>
+            <Button variant="secondary" onClick={() => run(async () => { const r = await hubApi.admin.rotateKey(agent.id); onSecret({ kind: 'grok_bot', name: agent.name, apiKey: r.apiKey }); })}>重新產生連線金鑰</Button>
           </>
         ) : (
           <Button variant="secondary" onClick={() => run(async () => { const r = await hubApi.admin.resetPassword(agent.id); onSecret({ kind: 'instinct', name: agent.name, password: r.password, email: agent.accountEmail }); })}>重設密碼</Button>
         )}
       </div>
-      {message && <p className="text-xs text-gray-600" role="status">{message}</p>}
+      <FriendlyNotice notice={message} role="status" className="text-xs text-gray-600" />
     </li>
   );
 }
@@ -183,14 +189,14 @@ export default function AgentsPage() {
   return (
     <div className="space-y-4">
       {secret && <SecretBox secret={secret} onClose={() => setSecret(null)} />}
-      <Card title="Agent 清單">
+      <Card title="小幫手名單">
         <ErrorText error={agents.error} />
-        {agents.data?.length === 0 && <p className="text-sm text-gray-400">還沒有 Agent</p>}
+        {agents.data?.length === 0 && <p className="text-sm text-gray-400">還沒有小幫手</p>}
         <ul className="divide-y divide-gray-100">
           {agents.data?.map((a) => <AgentRow key={a.id} agent={a} groups={groups.data ?? []} onChanged={agents.reload} onSecret={setSecret} />)}
         </ul>
       </Card>
-      <Card title="新增 Agent">
+      <Card title="新增小幫手">
         <CreateAgentForm groups={groups.data ?? []} onCreated={(s) => { setSecret(s); void agents.reload(); }} />
       </Card>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { shownError } from '../lib/helperCopy';
 import { api, type Group, type RecentMessage, type BroadcastPreview } from '../lib/api';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ function MessageDrawer({
     } catch (err) {
       setError(err instanceof TypeError
         ? '無法連線，請檢查網路連線後重新發送；輸入內容已保留'
-        : err instanceof Error ? err.message : '發送失敗，請重試');
+        : shownError(err, '發送失敗，請再試一次。'));
     } finally {
       setSending(false);
     }
@@ -163,7 +164,7 @@ function BroadcastComposer({
     } catch (err) {
       setError(err instanceof TypeError
         ? '無法連線，請檢查網路連線後重新產生預覽；輸入內容已保留'
-        : err instanceof Error ? err.message : '無法產生預覽，請重試');
+        : shownError(err, '沒能產生預覽。請稍後再試一次。'));
     } finally {
       setLoading(false);
     }
@@ -182,7 +183,7 @@ function BroadcastComposer({
     } catch (err) {
       setError(err instanceof TypeError
         ? '無法連線，請檢查網路連線後重新發送；各群組內容已保留'
-        : err instanceof Error ? err.message : '廣播失敗，請重試');
+        : shownError(err, '沒有發送成功。請稍後再試一次。'));
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { hubApi } from '../hubApi';
 import { Card, ErrorText } from '../ui';
+import { explainRaw, statusLabel } from '../../lib/helperCopy';
 import { formatTime } from '../format';
 import { useLoad } from '../useLoad';
 
@@ -22,12 +23,12 @@ export default function DashboardPage() {
             </>
           )}
         </Card>
-        <Card title="免費模型（今天）">
+        <Card title="自動整理（今天）">
           <p className="text-lg font-semibold text-gray-900">{d.llm.today} / {d.llm.maxRpd} 次</p>
         </Card>
       </div>
-      <Card title="Agent 今日發送">
-        {d.agents.length === 0 && <p className="text-sm text-gray-400">還沒有 Agent</p>}
+      <Card title="小幫手今天發了幾次">
+        {d.agents.length === 0 && <p className="text-sm text-gray-400">還沒有小幫手</p>}
         <ul className="text-sm text-gray-700 space-y-1">
           {d.agents.map((a) => <li key={a.id}>{a.name}：今天 {a.sendsToday} / {a.dailySendLimit} 次{a.enabled ? '' : '（已停用）'}</li>)}
         </ul>
@@ -39,7 +40,7 @@ export default function DashboardPage() {
           {d.recentAlerts.map((a) => (
             <li key={a.id} className="text-sm">
               <p className="text-gray-900">{a.text}</p>
-              <p className="text-xs text-gray-400">{formatTime(a.createdAt)}・{a.severity}・{a.delivered ? '已送到預警群組' : `未送出（${a.deliveryError ?? '未知'}）`}</p>
+              <p className="text-xs text-gray-400">{formatTime(a.createdAt)}・{statusLabel(a.severity)}・{a.delivered ? '已送到預警群組' : `沒有送到（${explainRaw(a.deliveryError, '原因不明，請稍後再看一次。').message}）`}</p>
             </li>
           ))}
         </ul>

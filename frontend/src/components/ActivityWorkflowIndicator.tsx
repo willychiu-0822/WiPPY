@@ -1,9 +1,10 @@
+import { PLAN_BUTTON_LABEL } from '../lib/helperCopy';
 import { ACTIVITY_WORKFLOW_STEPS, type ActivityWorkflowPrimary, type ActivityWorkflowStep } from './activityWorkflow';
 
 const STEP_ORDER: Record<ActivityWorkflowStep, number> = { approve: 0, confirm: 1, send: 2 };
 
 const DETACHED_LABEL: Record<Exclude<ActivityWorkflowPrimary, 'approve'>, string> = {
-  plan: '請 AI 規劃第一份推播',
+  plan: PLAN_BUTTON_LABEL,
   confirm: '✅ 討論好了，確認排程',
   send: '送出',
 };

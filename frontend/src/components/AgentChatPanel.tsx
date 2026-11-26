@@ -2,7 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebaseDb';
 import type { AgentChatApiResponse, HarnessRunSnapshot } from '../lib/api';
+import { explainError, explainRaw, OFFLINE_CHAT_MESSAGE, PLAN_BUTTON_LABEL, plain, type HelperNotice } from '../lib/helperCopy';
 import type { ActivityWorkflowPrimary } from './activityWorkflow';
+import { FriendlyNotice } from './FriendlyNotice';
 
 const CONFIRM_SCHEDULE_DISPLAY = '就照這樣排';
 
@@ -40,7 +42,7 @@ export default function AgentChatPanel({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(Boolean(sessionId));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<HelperNotice | null>(null);
   const [countdown, setCountdown] = useState(0);
   const [rateLimitWarning, setRateLimitWarning] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -70,7 +72,7 @@ export default function AgentChatPanel({
       if (history.some(m => m.role === 'user' && (m.displayContent ?? m.content).trim() === CONFIRM_SCHEDULE_DISPLAY)) {
         onScheduleConfirmedRef.current?.();
       }
-    }).catch(() => { if (!cancelled) setError('無法載入歷史對話，請重新開啟活動'); })
+    }).catch(() => { if (!cancelled) setError(plain('無法載入歷史對話，請重新開啟活動')); })
       .finally(() => { if (!cancelled) setRestoring(false); });
     return () => { cancelled = true; };
   }, [sessionId]);
@@ -113,12 +115,7 @@ export default function AgentChatPanel({
         unsub();
         setLoading(false);
         confirmRunRef.current = false;
-        const errMsg = run.lastError?.includes('max_llm_calls_exceeded')
-          ? 'AI 嘗試次數已達上限，請稍後再試'
-          : run.lastError?.includes('llm_rate_limit_error')
-          ? 'AI 服務忙碌中，請稍後再試'
-          : `處理失敗：${run.lastError ?? '未知錯誤'}`;
-        setError(errMsg);
+        setError(explainRaw(run.lastError, '這次沒有完成。請再送出一次。'));
         setMessages((prev) => prev.slice(0, -1));
       }
     });
@@ -153,7 +150,7 @@ export default function AgentChatPanel({
       if (result.sessionId && !sessionId) onSessionId(result.sessionId);
 
       if (result.rateLimitWarning) {
-        setRateLimitWarning(`本分鐘剩餘 ${result.rateLimitWarning.remaining} 次 AI 請求，${result.rateLimitWarning.windowResetInSeconds} 秒後重置`);
+        setRateLimitWarning(`我先喘口氣，這一分鐘還能再回 ${result.rateLimitWarning.remaining} 次，${result.rateLimitWarning.windowResetInSeconds} 秒後恢復。`);
       }
 
       if (result.status === 'completed') {
@@ -173,8 +170,8 @@ export default function AgentChatPanel({
     } catch (err) {
       confirmRunRef.current = false;
       setError(err instanceof TypeError
-        ? '無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留'
-        : String(err).replace(/^Error:\s*/, ''));
+        ? plain(OFFLINE_CHAT_MESSAGE)
+        : explainError(err, '沒能送出。請檢查網路後再按一次送出，剛才打的字還在。'));
       setMessages((prev) => prev.slice(0, -1));
       if (!action) setInput(text);
       setLoading(false);
@@ -206,13 +203,13 @@ export default function AgentChatPanel({
         {restoring && <p className="text-sm text-gray-400">載入歷史對話...</p>}
         {messages.length === 0 && (
           <div className="text-center py-12 space-y-2">
-            <p className="text-sm text-gray-400">向 Agent 描述活動，或直接請它規劃推播企畫</p>
+            <p className="text-sm text-gray-400">跟小幫手說你的活動，或直接請它安排要發的訊息</p>
             <button
               onClick={() => send('幫我規劃三則活動前的暖場推播訊息')}
               disabled={isBlocked}
               data-primary={planCtaIsPrimary ? 'true' : undefined}
               className={`text-sm rounded-lg px-4 py-2 ${planCtaIsPrimary ? `bg-blue-600 hover:bg-blue-700 ${solidClass}` : quietClass}`}
-            >請 AI 規劃第一份推播</button>
+            >{PLAN_BUTTON_LABEL}</button>
             <div className="flex flex-col gap-1.5 mt-4">
               {[
                 '幫我規劃三則活動前的暖場推播訊息',
@@ -261,9 +258,7 @@ export default function AgentChatPanel({
       </div>
 
       {/* Status messages */}
-      {error && (
-        <p role="alert" className="text-xs text-red-500 px-1 pb-1">{error}</p>
-      )}
+      <FriendlyNotice notice={error} role="alert" className="text-xs text-red-500 px-1 pb-1" />
       {rateLimitWarning && !error && (
         <p className="text-xs text-amber-500 px-1 pb-1">{rateLimitWarning}</p>
       )}
@@ -272,7 +267,7 @@ export default function AgentChatPanel({
       <div className="border-t border-gray-100 pt-3 space-y-2">
         {countdown > 0 && (
           <p className="text-xs text-orange-500 text-center">
-            AI 助理需要稍作休息，請 <span className="font-semibold">{countdown}</span> 秒後再試
+            我先喘口氣，請 <span className="font-semibold">{countdown}</span> 秒後再試
           </p>
         )}
         {showConfirm && (

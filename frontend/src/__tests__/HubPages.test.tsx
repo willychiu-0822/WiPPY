@@ -47,7 +47,7 @@ describe('GroupAccessPage', () => {
   it('lists groups closed by default and opens one to agents', async () => {
     api.admin.setGroupAccess.mockResolvedValue({ group: { ...GROUPS[0], agentEnabled: true } });
     renderPage(<GroupAccessPage />);
-    const toggle = await screen.findByRole('switch', { name: 'Alpha 允許 Agent 讀取' });
+    const toggle = await screen.findByRole('switch', { name: 'Alpha 交給小幫手' });
     expect(toggle).toHaveAttribute('aria-checked', 'false');
     await userEvent.click(toggle);
     expect(api.admin.setGroupAccess).toHaveBeenCalledWith('C1', true);
@@ -60,10 +60,10 @@ describe('AgentsPage', () => {
     api.admin.createAgent.mockResolvedValue({ agent: { id: 'g1', name: 'Grok', kind: 'grok_bot', enabled: true, allowedGroupIds: ['C2'], dailySendLimit: 20, inboxAlertHours: 24, routineUrl: 'https://grok.example/r', hasRoutineKey: true, apiKeyPrefix: 'wpy_abcdef', accountUid: null, accountEmail: null, createdAt: '' }, apiKey: 'wpy_secret_key' });
     renderPage(<AgentsPage />);
     await userEvent.type(await screen.findByLabelText('名稱'), 'Grok');
-    await userEvent.type(screen.getByLabelText('Routine Webhook 網址'), 'https://grok.example/r');
-    await userEvent.type(screen.getByLabelText('Routine Webhook Key'), 'rk');
+    await userEvent.type(screen.getByLabelText('自動通知網址'), 'https://grok.example/r');
+    await userEvent.type(screen.getByLabelText('自動通知金鑰'), 'rk');
     await userEvent.click(screen.getByRole('checkbox', { name: 'Beta' }));
-    await userEvent.click(screen.getByRole('button', { name: '建立 Agent' }));
+    await userEvent.click(screen.getByRole('button', { name: '建立小幫手' }));
     expect(api.admin.createAgent).toHaveBeenCalledWith({ kind: 'grok_bot', name: 'Grok', allowedGroupIds: ['C2'], dailySendLimit: 20, inboxAlertHours: 24, routineUrl: 'https://grok.example/r', routineKey: 'rk' });
     const secret = await screen.findByRole('region', { name: '只顯示一次的憑證' });
     expect(within(secret).getByText('wpy_secret_key')).toBeInTheDocument();
@@ -76,7 +76,7 @@ describe('AgentsPage', () => {
     await userEvent.selectOptions(await screen.findByLabelText('類型'), 'instinct');
     await userEvent.type(screen.getByLabelText('名稱'), 'Instinct');
     await userEvent.type(screen.getByLabelText('登入 Email'), 'i@example.com');
-    await userEvent.click(screen.getByRole('button', { name: '建立 Agent' }));
+    await userEvent.click(screen.getByRole('button', { name: '建立小幫手' }));
     expect(api.admin.createAgent).toHaveBeenCalledWith(expect.objectContaining({ kind: 'instinct', email: 'i@example.com' }));
     const secret = await screen.findByRole('region', { name: '只顯示一次的憑證' });
     expect(within(secret).getByText('Pw-123456789abcdefg')).toBeInTheDocument();
@@ -87,10 +87,10 @@ describe('AgentsPage', () => {
     api.admin.agents.mockResolvedValue({ agents: [{ id: 'g1', name: 'Grok', kind: 'grok_bot', enabled: true, allowedGroupIds: ['C2'], dailySendLimit: 20, inboxAlertHours: 24, routineUrl: null, hasRoutineKey: false, apiKeyPrefix: 'wpy_x', accountUid: null, accountEmail: null, createdAt: '' }] });
     api.admin.updateAgent.mockResolvedValue({ agent: {} });
     renderPage(<AgentsPage />);
-    await userEvent.type(await screen.findByLabelText('Routine 網址（Grok）'), 'https://grok.example/r/2');
+    await userEvent.type(await screen.findByLabelText('自動通知網址（Grok）'), 'https://grok.example/r/2');
     await userEvent.click(screen.getByRole('button', { name: '儲存 Grok 設定' }));
     expect(api.admin.updateAgent).toHaveBeenCalledWith('g1', { allowedGroupIds: ['C2'], dailySendLimit: 20, routineUrl: 'https://grok.example/r/2' });
-    await userEvent.type(screen.getByLabelText('Routine Key（Grok，留空表示不變）'), 'new-key');
+    await userEvent.type(screen.getByLabelText('自動通知金鑰（Grok，留空表示不改）'), 'new-key');
     await userEvent.click(screen.getByRole('button', { name: '儲存 Grok 設定' }));
     expect(api.admin.updateAgent).toHaveBeenLastCalledWith('g1', { allowedGroupIds: ['C2'], dailySendLimit: 20, routineUrl: 'https://grok.example/r/2', routineKey: 'new-key' });
   });
@@ -149,13 +149,13 @@ describe('RulesPage', () => {
     api.admin.createRule.mockResolvedValue({ rule: { id: 'r1' } });
     renderPage(<RulesPage />);
     await userEvent.type(await screen.findByLabelText('規則名稱'), '緊急通知');
-    await userEvent.selectOptions(screen.getByLabelText('交給哪個 Agent'), 'g1');
+    await userEvent.selectOptions(screen.getByLabelText('交給哪個小幫手'), 'g1');
     await userEvent.click(screen.getByRole('checkbox', { name: 'Beta' }));
     await userEvent.type(screen.getByLabelText('關鍵字（用逗號分隔）'), '緊急, 停電');
-    await userEvent.click(screen.getByRole('checkbox', { name: '附重點整理（會用免費模型）' }));
-    await userEvent.type(screen.getByLabelText('給 Agent 的指令'), '判斷是否需要預警');
-    await userEvent.clear(screen.getByLabelText('冷卻時間（分鐘）'));
-    await userEvent.type(screen.getByLabelText('冷卻時間（分鐘）'), '10');
+    await userEvent.click(screen.getByRole('checkbox', { name: '附上重點整理' }));
+    await userEvent.type(screen.getByLabelText('給小幫手的吩咐'), '判斷是否需要預警');
+    await userEvent.clear(screen.getByLabelText('觸發後先暫停幾分鐘'));
+    await userEvent.type(screen.getByLabelText('觸發後先暫停幾分鐘'), '10');
     await userEvent.click(screen.getByRole('button', { name: '儲存規則' }));
     expect(api.admin.createRule).toHaveBeenCalledWith({
       name: '緊急通知', enabled: true, agentId: 'g1', groupIds: ['C2'],
@@ -255,7 +255,10 @@ describe('WorkbenchPage', () => {
     await userEvent.type(screen.getByLabelText('標題'), '報告');
     await userEvent.click(screen.getByRole('button', { name: '送出動作' }));
     expect(api.agent.act).toHaveBeenCalledWith('send_link', { groupId: 'C2', url: 'https://x.example/p', title: '報告' });
-    expect(await screen.findByRole('status')).toHaveTextContent('url_requires_login');
+    const status = await screen.findByRole('status');
+    expect(status).toHaveTextContent('不用登入就能打開');
+    expect(status).not.toHaveTextContent('url_requires_login');
+    expect(document.querySelector('details')?.textContent).toContain('url_requires_login');
   });
 });
 
@@ -277,7 +280,9 @@ describe('LogsPage', () => {
     api.admin.log.mockResolvedValue({ items: [{ id: 'd1', status: 'failed', ruleName: '緊急', lastError: 'Grok down', createdAt: '2026-11-04T02:00:00.000Z' }] });
     api.admin.retry.mockResolvedValue({ ok: true });
     renderPage(<LogsPage />);
-    expect(await screen.findByText('Grok down')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('這一步沒有完成');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Grok down');
+    expect(document.querySelector('details')?.textContent).toContain('Grok down');
     await userEvent.click(screen.getByRole('button', { name: '重試 d1' }));
     expect(api.admin.retry).toHaveBeenCalledWith('dispatches', 'd1');
   });

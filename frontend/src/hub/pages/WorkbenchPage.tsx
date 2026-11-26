@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getErrorMessage } from '../../lib/apiError';
+import { FriendlyNotice } from '../../components/FriendlyNotice';
+import { explainRaw, messageKindLabel, plain, shownError, type HelperNotice } from '../../lib/helperCopy';
 import { hubApi, type ActionResult, type ActionType, type DispatchPayload, type InboxItem, type MessageView } from '../hubApi';
 import { Button, Card, ErrorText, SelectField, TextField } from '../ui';
 import { describeResult, formatTime } from '../format';
@@ -19,6 +20,32 @@ const ACTIONS: Array<{ value: ActionType; label: string }> = [
 
 const GROUP_ACTIONS: ActionType[] = ['send_message', 'send_link', 'send_image', 'send_video', 'send_audio', 'schedule_message'];
 
+function DigestSummary({ digest }: { digest: NonNullable<DispatchPayload['digest']> }) {
+  if (!digest.skipped) {
+    return (
+      <div>
+        <p className="text-xs font-medium text-gray-600">重點整理</p>
+        {digest.summary && <p className="text-sm text-gray-900">{digest.summary}</p>}
+        <ul className="list-disc pl-5 text-sm text-gray-700">{digest.points.map((p) => <li key={p}>{p}</li>)}</ul>
+      </div>
+    );
+  }
+  const notice = explainRaw(digest.skipReason, '這次沒有整理重點。請先看下面的對話。');
+  return (
+    <div>
+      <p className="text-xs font-medium text-gray-600">重點整理（{notice.message}）</p>
+      {digest.summary && <p className="text-sm text-gray-900">{digest.summary}</p>}
+      <ul className="list-disc pl-5 text-sm text-gray-700">{digest.points.map((p) => <li key={p}>{p}</li>)}</ul>
+      {notice.raw && (
+        <details className="text-xs text-gray-500">
+          <summary className="cursor-pointer">技術細節</summary>
+          <p className="break-words">{notice.raw}</p>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function MessageList({ messages }: { messages: MessageView[] }) {
   if (!messages.length) return <p className="text-xs text-gray-400">沒有訊息</p>;
   return (
@@ -26,8 +53,8 @@ function MessageList({ messages }: { messages: MessageView[] }) {
       {messages.map((m) => (
         <li key={m.id} className="text-sm">
           <span className="text-xs text-gray-400">{formatTime(m.at)}・{m.sender}</span>
-          <div className="text-gray-800 whitespace-pre-wrap">{m.text ?? `[${m.type}${m.fileName ? ` ${m.fileName}` : ''}]`}</div>
-          {m.media?.url && <a className="text-xs text-blue-600 underline" href={m.media.url} target="_blank" rel="noreferrer">下載媒體（{m.media.contentType ?? m.type}）</a>}
+          <div className="text-gray-800 whitespace-pre-wrap">{m.text ?? `[${messageKindLabel(m.type)}${m.fileName ? ` ${m.fileName}` : ''}]`}</div>
+          {m.media?.url && <a className="text-xs text-blue-600 underline" href={m.media.url} target="_blank" rel="noreferrer">下載{messageKindLabel(m.type)}</a>}
         </li>
       ))}
     </ul>
@@ -81,7 +108,7 @@ function ActionForm({ defaultGroupId }: { defaultGroupId: string | null }) {
     try {
       setResult(await hubApi.agent.act(type, params()));
     } catch (err) {
-      setError(getErrorMessage(err, '送出失敗'));
+      setError(shownError(err, '沒有送出。請稍後再試一次。'));
     } finally {
       setBusy(false);
     }
@@ -103,20 +130,26 @@ function ActionForm({ defaultGroupId }: { defaultGroupId: string | null }) {
       )}
       {type === 'send_link' && (
         <>
-          {field('url', '網址', { hint: '必須是 https，而且不用登入就能打開' })}
+          {field('url', '網址', { hint: '請貼上 https:// 開頭、不用登入就能打開的網址' })}
           {field('title', '標題')}
           {field('description', '說明（選填）')}
           {field('imageUrl', '封面圖網址（選填）')}
         </>
       )}
-      {type === 'send_image' && (<>{field('imageUrl', '圖片網址', { hint: '直接指向 jpeg/png 檔案，≤ 10MB' })}{field('previewUrl', '預覽圖網址（選填）', { hint: '原圖超過 1MB 時必填，≤ 1MB' })}</>)}
-      {type === 'send_video' && (<>{field('videoUrl', '影片網址', { hint: 'mp4，≤ 200MB' })}{field('previewUrl', '預覽圖網址')}</>)}
-      {type === 'send_audio' && (<>{field('audioUrl', '語音網址', { hint: 'm4a' })}{field('durationMs', '長度（毫秒）', { type: 'number' })}</>)}
+      {type === 'send_image' && (<>{field('imageUrl', '圖片網址', { hint: '請貼上可以直接打開的圖片網址，JPG 或 PNG，不要超過 10MB' })}{field('previewUrl', '預覽圖網址（選填）', { hint: '原圖超過 1MB 時要再貼一張較小的預覽圖，不要超過 1MB' })}</>)}
+      {type === 'send_video' && (<>{field('videoUrl', '影片網址', { hint: '請貼上 MP4 影片網址，不要超過 200MB' })}{field('previewUrl', '預覽圖網址')}</>)}
+      {type === 'send_audio' && (<>{field('audioUrl', '語音網址', { hint: '請貼上 M4A 語音檔網址' })}{field('durationMs', '語音長度', { type: 'number', hint: '不確定可以留空。若要填，1000 等於 1 秒。' })}</>)}
       {type === 'record' && (<>{field('category', '分類')}{field('title', '標題')}{field('content', '內容', { multiline: true })}{field('tags', '標籤（逗號分隔）')}</>)}
       {type === 'schedule_message' && (<>{field('text', '訊息內容', { multiline: true })}{field('sendAt', SEND_AT_LABEL, { type: 'datetime-local' })}</>)}
       <ErrorText error={error ?? groups.error} />
       <Button type="submit" disabled={busy}>送出動作</Button>
-      {result && <p role="status" className={`text-sm ${result.status === 'done' ? 'text-emerald-600' : result.status === 'queued' ? 'text-blue-600' : 'text-red-600'}`}>{describeResult(result)}</p>}
+      {result && (
+        <FriendlyNotice
+          notice={describeResult(result)}
+          role="status"
+          className={`text-sm ${result.status === 'done' ? 'text-emerald-600' : result.status === 'queued' ? 'text-blue-600' : 'text-red-600'}`}
+        />
+      )}
     </form>
   );
 }
@@ -128,11 +161,11 @@ export default function WorkbenchPage({ title }: { title?: string }) {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [doneResult, setDoneResult] = useState<ActionResult | null>(null);
-  const [doneError, setDoneError] = useState<string | null>(null);
+  const [doneNotice, setDoneNotice] = useState<HelperNotice | null>(null);
   const [completing, setCompleting] = useState(false);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<MessageView[] | null>(null);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchNotice, setSearchNotice] = useState<HelperNotice | null>(null);
   const [searching, setSearching] = useState(false);
 
   async function open(item: InboxItem) {
@@ -140,18 +173,18 @@ export default function WorkbenchPage({ title }: { title?: string }) {
     setDetail(null);
     setDetailError(null);
     setDoneResult(null);
-    setDoneError(null);
+    setDoneNotice(null);
     try {
       setDetail(await hubApi.agent.dispatch(item.dispatchId));
     } catch (err) {
-      setDetailError(getErrorMessage(err, '載入失敗'));
+      setDetailError(shownError(err, '沒有載入成功。請稍後再打開一次。'));
     }
   }
 
   async function complete() {
     if (!selected || completing) return;
     setCompleting(true);
-    setDoneError(null);
+    setDoneNotice(null);
     setDoneResult(null);
     try {
       const res = await hubApi.agent.act('complete_inbox', { itemId: selected.id, note: note.trim() });
@@ -161,7 +194,8 @@ export default function WorkbenchPage({ title }: { title?: string }) {
         void inbox.reload();
       }
     } catch (err) {
-      setDoneError(`無法標記完成，請稍後重試：${getErrorMessage(err, '連線失敗')}`);
+      const notice = explainRaw(err instanceof Error ? err.message : null, '連線失敗，請稍後再試一次。');
+      setDoneNotice(notice.raw ? notice : plain(`無法標記完成，請稍後重試：${notice.message}`));
     } finally {
       setCompleting(false);
     }
@@ -171,12 +205,13 @@ export default function WorkbenchPage({ title }: { title?: string }) {
     e.preventDefault();
     if (!query.trim() || searching) return;
     setSearching(true);
-    setSearchError(null);
+    setSearchNotice(null);
     setHits(null);
     try {
       setHits((await hubApi.agent.search(query.trim())).messages);
     } catch (err) {
-      setSearchError(`搜尋失敗，請稍後重試：${getErrorMessage(err, '連線失敗')}`);
+      const notice = explainRaw(err instanceof Error ? err.message : null, '連線失敗，請稍後再試一次。');
+      setSearchNotice(notice.raw ? notice : plain(`搜尋失敗，請稍後重試：${notice.message}`));
     } finally {
       setSearching(false);
     }
@@ -185,7 +220,7 @@ export default function WorkbenchPage({ title }: { title?: string }) {
   return (
     <div className="space-y-4">
       {title && <h1 className="text-lg font-bold text-gray-900">{title}</h1>}
-      <Card title="收件匣（待處理）" actions={<Button variant="secondary" onClick={() => void inbox.reload()}>重新整理</Button>}>
+      <Card title="待處理" actions={<Button variant="secondary" onClick={() => void inbox.reload()}>重新整理</Button>}>
         <ErrorText error={inbox.error} />
         {inbox.data?.length === 0 && <p className="text-sm text-gray-400">目前沒有待處理的項目</p>}
         <ul className="space-y-2">
@@ -204,27 +239,21 @@ export default function WorkbenchPage({ title }: { title?: string }) {
         <Card title={`項目：${selected.ruleName}｜${selected.groupName}`}>
           <ErrorText error={detailError} />
           <div>
-            <p className="text-xs font-medium text-gray-600">擁有者的指令</p>
+            <p className="text-xs font-medium text-gray-600">交代要做的事</p>
             <p className="text-sm text-gray-900 whitespace-pre-wrap">{selected.instruction}</p>
           </div>
-          {detail?.digest && (
-            <div>
-              <p className="text-xs font-medium text-gray-600">重點整理{detail.digest.skipped ? `（未整理：${detail.digest.skipReason}）` : ''}</p>
-              {detail.digest.summary && <p className="text-sm text-gray-900">{detail.digest.summary}</p>}
-              <ul className="list-disc pl-5 text-sm text-gray-700">{detail.digest.points.map((p) => <li key={p}>{p}</li>)}</ul>
-            </div>
-          )}
+          {detail?.digest && <DigestSummary digest={detail.digest} />}
           {detail && (
             <div>
               <p className="text-xs font-medium text-gray-600">訊息（{detail.messageCount} 則）</p>
               <MessageList messages={detail.messages} />
-              <p className="text-xs text-gray-400 mt-2">LINE 剩餘額度 {detail.quota.lineRemaining ?? '未知'} 則・今天還能發 {detail.quota.agentDailyRemaining} 次</p>
+              <p className="text-xs text-gray-400 mt-2">這個月 LINE 還能發 {detail.quota.lineRemaining ?? '未知'} 則，今天還能再發 {detail.quota.agentDailyRemaining} 次</p>
             </div>
           )}
           <TextField label="完成備註" value={note} onChange={setNote} multiline />
-          <ErrorText error={doneError} />
+          <FriendlyNotice notice={doneNotice} role="alert" className="text-sm text-red-600" />
           <Button onClick={() => void complete()} disabled={completing}>標記完成</Button>
-          {doneResult && <p className="text-sm text-gray-600">{describeResult(doneResult)}</p>}
+          {doneResult && <FriendlyNotice notice={describeResult(doneResult)} role="status" className="text-sm text-gray-600" />}
         </Card>
       )}
 
@@ -237,7 +266,7 @@ export default function WorkbenchPage({ title }: { title?: string }) {
           <div className="flex-1"><TextField label="搜尋關鍵字" value={query} onChange={setQuery} /></div>
           <Button type="submit" variant="secondary" disabled={searching}>搜尋</Button>
         </form>
-        <ErrorText error={searchError} />
+        <FriendlyNotice notice={searchNotice} role="alert" className="text-sm text-red-600" />
         {hits?.length === 0 && <p className="text-sm text-gray-600">沒有符合的訊息</p>}
         {hits && <MessageList messages={hits} />}
       </Card>

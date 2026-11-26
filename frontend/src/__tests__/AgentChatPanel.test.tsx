@@ -77,7 +77,7 @@ beforeEach(() => {
 describe('AgentChatPanel — initial state', () => {
   it('shows placeholder hint message', () => {
     renderPanel();
-    expect(screen.getByText(/向 Agent 描述活動/)).toBeInTheDocument();
+    expect(screen.getByText(/跟小幫手說你的活動/)).toBeInTheDocument();
   });
 
   it('shows hint shortcut buttons', () => {
@@ -167,7 +167,9 @@ describe('AgentChatPanel — async queued + onSnapshot', () => {
     await waitFor(() => expect(capturedSnapshotCallback).not.toBeNull());
     triggerSnapshot({ status: 'failed', lastError: 'max_llm_calls_exceeded' });
 
-    await waitFor(() => expect(screen.getByText(/AI 嘗試次數已達上限/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('小幫手這次試太多次了'));
+    expect(screen.getByRole('alert')).not.toHaveTextContent('max_llm_calls_exceeded');
+    expect(document.querySelector('details')?.textContent).toContain('max_llm_calls_exceeded');
   });
 
   it('shows generic error for unknown failure reason', async () => {
@@ -178,7 +180,9 @@ describe('AgentChatPanel — async queued + onSnapshot', () => {
     await waitFor(() => expect(capturedSnapshotCallback).not.toBeNull());
     triggerSnapshot({ status: 'failed', lastError: 'persistence_error' });
 
-    await waitFor(() => expect(screen.getByText(/處理失敗/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('這次沒能存下來'));
+    expect(screen.getByRole('alert')).not.toHaveTextContent('persistence_error');
+    expect(document.querySelector('details')?.textContent).toContain('persistence_error');
   });
 });
 
@@ -190,7 +194,7 @@ describe('AgentChatPanel — rate limited', () => {
     fireEvent.change(screen.getByPlaceholderText(/輸入訊息/), { target: { value: '測試' } });
     fireEvent.click(screen.getByRole('button', { name: '送出' }));
 
-    await waitFor(() => expect(screen.getByText(/稍作休息/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/喘口氣/)).toBeInTheDocument());
     expect(screen.getByText(/30/)).toBeInTheDocument();
   });
 
@@ -199,7 +203,7 @@ describe('AgentChatPanel — rate limited', () => {
     fireEvent.change(screen.getByPlaceholderText(/輸入訊息/), { target: { value: '測試' } });
     fireEvent.click(screen.getByRole('button', { name: '送出' }));
 
-    await waitFor(() => expect(screen.getByText(/稍作休息/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/喘口氣/)).toBeInTheDocument());
     expect(screen.getByRole('button', { name: '送出' })).toBeDisabled();
   });
 
@@ -209,7 +213,7 @@ describe('AgentChatPanel — rate limited', () => {
     fireEvent.change(textarea, { target: { value: '被限制的訊息' } });
     fireEvent.click(screen.getByRole('button', { name: '送出' }));
 
-    await waitFor(() => expect(screen.getByText(/稍作休息/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/喘口氣/)).toBeInTheDocument());
     expect(textarea.value).toBe('被限制的訊息');
   });
 
@@ -220,7 +224,7 @@ describe('AgentChatPanel — rate limited', () => {
     fireEvent.change(screen.getByPlaceholderText(/輸入訊息/), { target: { value: '測試' } });
     fireEvent.click(screen.getByRole('button', { name: '送出' }));
 
-    await waitFor(() => expect(screen.getByText(/剩餘 2 次/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/還能再回 2 次/)).toBeInTheDocument());
   });
 });
 
@@ -250,7 +254,9 @@ describe('AgentChatPanel — input behavior', () => {
     const textarea = screen.getByPlaceholderText(/輸入訊息/) as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: '失敗的訊息' } });
     fireEvent.click(screen.getByRole('button', { name: '送出' }));
-    await waitFor(() => expect(screen.getByText(/Agent request failed/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('沒能送出'));
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Agent request failed');
+    expect(document.querySelector('details')?.textContent).toContain('Agent request failed');
     expect(textarea.value).toBe('失敗的訊息');
   });
 
@@ -277,7 +283,7 @@ describe('AgentChatPanel — input behavior', () => {
     const input = screen.getByPlaceholderText(/輸入訊息/);
     fireEvent.change(input, { target: { value: '請幫我整理親子活動說明' } });
     fireEvent.click(screen.getByRole('button', { name: '送出' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('無法連線至 AI 助理，請檢查網路連線後重新送出；輸入內容已保留');
+    expect(await screen.findByRole('alert')).toHaveTextContent('沒有連上小幫手。請檢查網路後再按一次送出，剛才打的字還在。');
     expect(input).toHaveValue('請幫我整理親子活動說明');
     expect(screen.queryByText('Failed to fetch')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '送出' }));
@@ -296,9 +302,9 @@ describe('AgentChatPanel — one primary action per state', () => {
     expect(screen.queryAllByRole('button').filter((button) => button.getAttribute('data-primary') === 'true')).toHaveLength(0);
   });
 
-  it('uses 請 AI 規劃 as the only primary when there is no plan yet', () => {
+  it('uses 請小幫手安排 as the only primary when there is no plan yet', () => {
     renderPanel(vi.fn(), { workflowPrimary: 'plan' });
-    onlyPrimary(/請 AI 規劃第一份推播/);
+    onlyPrimary(/請小幫手安排第一則訊息/);
     expect(screen.queryByRole('button', { name: /確認排程/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '送出' })).not.toHaveAttribute('data-primary');
   });
@@ -327,7 +333,8 @@ describe('AgentChatPanel — one primary action per state', () => {
       .mockResolvedValueOnce(makeSyncResponse());
     renderPanel(onSendMessage, { workflowPrimary: 'confirm', onScheduleConfirmed });
     fireEvent.click(screen.getByRole('button', { name: /確認排程/ }));
-    expect(await screen.findByText(/Agent request failed/)).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent('沒能送出');
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Agent request failed');
     expect(onScheduleConfirmed).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: /確認排程/ }));
     await waitFor(() => expect(onScheduleConfirmed).toHaveBeenCalledTimes(1));
